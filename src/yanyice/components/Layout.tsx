@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { 
@@ -9,12 +8,11 @@ import {
   Search, 
   Download, 
   Settings, 
-  LogOut,
+  ChevronLeft, 
+  ChevronRight,
   Plus,
   UserPlus,
-  FilePlus,
-  ChevronLeft,
-  ChevronRight,
+  FilePlus
 } from 'lucide-react';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useUIStore } from '../stores/useUIStore';
@@ -73,17 +71,10 @@ const SidebarItem = ({
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { logout, user } = useAuthStore();
   const { isSidebarCollapsed, toggleSidebar } = useUIStore();
   const [isFabOpen, setIsFabOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const fabRef = useRef<HTMLDivElement>(null);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -143,38 +134,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <SidebarItem to="/rules" icon={ShieldCheck} label="规则系统" active={location.pathname.startsWith('/rules')} collapsed={isSidebarCollapsed} />
           <SidebarItem icon={Search} label="全局搜索" active={isSearchOpen} collapsed={isSidebarCollapsed} onClick={() => setIsSearchOpen(true)} />
           <SidebarItem to="/export" icon={Download} label="数据备份" active={location.pathname === '/export'} collapsed={isSidebarCollapsed} />
+          <SidebarItem to="/settings" icon={Settings} label="个人设置" active={location.pathname === '/settings'} collapsed={isSidebarCollapsed} />
         </nav>
 
-        <div className={`mt-auto p-4 border-t border-[#B37D56]/10 ${isSidebarCollapsed ? 'items-center' : ''}`}>
-          <Link 
-            to="/settings" 
-            className={`flex items-center px-4 py-2 text-sm text-[#2F2F2F] opacity-60 hover:opacity-100 transition-opacity chinese-font ${isSidebarCollapsed ? 'justify-center px-0' : 'space-x-3'}`}
-            title={isSidebarCollapsed ? "个人设置" : ""}
-          >
-            <Settings size={16} />
-            {!isSidebarCollapsed && <span>个人设置</span>}
-          </Link>
-          <button 
-            onClick={handleLogout}
-            className={`w-full flex items-center px-4 py-2 mt-2 text-sm text-[#A62121]/70 hover:text-[#A62121] transition-colors chinese-font ${isSidebarCollapsed ? 'justify-center px-0' : 'space-x-3'}`}
-            title={isSidebarCollapsed ? "退出登录" : ""}
-          >
-            <LogOut size={16} />
-            {!isSidebarCollapsed && <span>退出登录</span>}
-          </button>
-          
-          {!isSidebarCollapsed ? (
-            <div className="mt-6 px-4 py-3 bg-white/40 border border-[#B37D56]/10 rounded-none animate-in fade-in slide-in-from-bottom-2">
-              <p className="text-[10px] text-[#B37D56] uppercase tracking-widest font-bold">当前账号</p>
-              <p className="text-sm font-bold text-[#2F2F2F] truncate chinese-font">{user?.username}</p>
-            </div>
-          ) : (
-            <div className="mt-4 flex justify-center">
-              <div className="w-8 h-8 bg-[#2F2F2F] text-[#FAF7F2] flex items-center justify-center text-xs font-bold chinese-font rounded-none">
-                {user?.username?.charAt(0).toUpperCase()}
-              </div>
-            </div>
-          )}
+        <div className="p-4 flex justify-center text-[10px] text-[#B37D56]/30 font-bold chinese-font tracking-tighter">
+          {!isSidebarCollapsed && <span>YAN YI CE v0.1</span>}
         </div>
       </aside>
 
@@ -227,3 +191,4 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     </div>
   );
 };
+
