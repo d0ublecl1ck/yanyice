@@ -1,6 +1,7 @@
+"use client";
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Users, BookOpen, ShieldCheck, Clock, ArrowRight, Plus, Hash } from 'lucide-react';
 import { useCustomerStore } from '../../stores/useCustomerStore';
 import { useCaseStore } from '../../stores/useCaseStore';
@@ -46,7 +47,7 @@ export const DashboardPage: React.FC = () => {
               <Clock size={18} className="text-[#A62121]" />
               最近咨询记录
             </h3>
-            <Link to="/cases" className="text-xs text-[#B37D56] hover:text-[#A62121] font-bold tracking-widest uppercase flex items-center gap-1 transition-colors">
+            <Link href="/cases" className="text-xs text-[#B37D56] hover:text-[#A62121] font-bold tracking-widest uppercase flex items-center gap-1 transition-colors">
               查看全部 <ArrowRight size={12} />
             </Link>
           </div>
@@ -56,7 +57,7 @@ export const DashboardPage: React.FC = () => {
               recentRecords.map(record => (
                 <Link 
                   key={record.id} 
-                  to={`/cases/edit/${record.id}`}
+                  href={`/cases/edit/${record.id}`}
                   className="group flex items-center justify-between p-6 hover:bg-black/[0.02] border-b border-[#B37D56]/10 transition-all"
                 >
                   <div className="space-y-1">
@@ -88,7 +89,7 @@ export const DashboardPage: React.FC = () => {
           
           <div className="space-y-4">
             <Link 
-              to="/cases/new" 
+              href="/cases/new" 
               className="block p-8 bg-[#A62121] text-white relative group overflow-hidden rounded-none shadow-sm"
             >
               <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/brush-strokes.png')] pointer-events-none" />
@@ -100,7 +101,7 @@ export const DashboardPage: React.FC = () => {
             </Link>
 
             <Link 
-              to="/cases/new" 
+              href="/cases/new" 
               onClick={() => {
                 // TODO: 考虑通过 state 传递默认 module
               }}
@@ -114,7 +115,7 @@ export const DashboardPage: React.FC = () => {
             </Link>
             
             <Link 
-              to="/customers/new" 
+              href="/customers/new" 
               className="block p-8 bg-white border border-[#B37D56]/20 group hover:border-[#A62121] transition-all rounded-none"
             >
               <p className="text-xl font-bold text-[#2F2F2F] group-hover:text-[#A62121] transition-colors chinese-font mb-1 tracking-widest">添加客户</p>

@@ -1,3 +1,4 @@
+"use client";
 
 import React, { useState } from 'react';
 import { Plus, Shield, ToggleLeft, ToggleRight, Trash2, BookOpen, Layers } from 'lucide-react';

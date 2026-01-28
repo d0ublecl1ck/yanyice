@@ -1,6 +1,7 @@
+"use client";
 
 import React, { useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import Link from 'next/link';
 import { 
   ChevronLeft, 
   History, 
@@ -13,8 +14,7 @@ import {
 import { useCustomerStore } from '../../stores/useCustomerStore';
 import { useCaseStore } from '../../stores/useCaseStore';
 
-export const CustomerHistoryPage: React.FC = () => {
-  const { id } = useParams();
+export const CustomerHistoryPage: React.FC<{ id: string }> = ({ id }) => {
   const customers = useCustomerStore(state => state.customers);
   const events = useCustomerStore(state => state.events);
   const records = useCaseStore(state => state.records);
@@ -61,7 +61,7 @@ export const CustomerHistoryPage: React.FC = () => {
     return (
       <div className="py-20 text-center">
         <p className="text-[#2F2F2F]/40 chinese-font italic">未找到该客户资料</p>
-        <Link to="/customers" className="text-[#A62121] text-sm mt-4 inline-block font-bold">返回名录</Link>
+        <Link href="/customers" className="text-[#A62121] text-sm mt-4 inline-block font-bold">返回名录</Link>
       </div>
     );
   }
@@ -70,7 +70,7 @@ export const CustomerHistoryPage: React.FC = () => {
     <div className="space-y-12 pb-20">
       <header className="flex justify-between items-end border-b border-[#B37D56]/10 pb-8">
         <div className="space-y-4">
-          <Link to={`/customers/edit/${id}`} className="flex items-center gap-1 text-[10px] text-[#B37D56] font-bold uppercase tracking-widest hover:text-[#A62121] transition-colors">
+          <Link href={`/customers/edit/${id}`} className="flex items-center gap-1 text-[10px] text-[#B37D56] font-bold uppercase tracking-widest hover:text-[#A62121] transition-colors">
             <ChevronLeft size={12} /> 返回资料编辑
           </Link>
           <div className="flex items-center gap-4">
@@ -119,7 +119,7 @@ export const CustomerHistoryPage: React.FC = () => {
                     </p>
                   )}
                   {item.type === 'consultation' && (
-                    <Link to={`/cases/edit/${item.id}`} className={`mt-4 inline-flex items-center gap-1 text-[9px] font-bold text-[#B37D56] hover:text-[#A62121] uppercase tracking-widest transition-colors ${index % 2 === 0 ? 'md:flex-row-reverse' : ''}`}>
+                    <Link href={`/cases/edit/${item.id}`} className={`mt-4 inline-flex items-center gap-1 text-[9px] font-bold text-[#B37D56] hover:text-[#A62121] uppercase tracking-widest transition-colors ${index % 2 === 0 ? 'md:flex-row-reverse' : ''}`}>
                       查看详情 <ExternalLink size={10} />
                     </Link>
                   )}
@@ -161,8 +161,8 @@ export const CustomerHistoryPage: React.FC = () => {
               每一笔记录都是对他/她人生轨迹的深度还原。
             </p>
             <div className="flex justify-center gap-4">
-               <Link to="/cases/new" className="px-6 py-2 bg-[#2F2F2F] text-white text-[10px] font-bold tracking-widest uppercase rounded-[2px] hover:bg-black transition-all">起卦录入</Link>
-               <Link to={`/customers/edit/${id}`} className="px-6 py-2 border border-[#B37D56]/20 text-[#2F2F2F] text-[10px] font-bold tracking-widest uppercase rounded-[2px] hover:bg-[#FAF7F2] transition-all">记录大事</Link>
+               <Link href="/cases/new" className="px-6 py-2 bg-[#2F2F2F] text-white text-[10px] font-bold tracking-widest uppercase rounded-[2px] hover:bg-black transition-all">起卦录入</Link>
+               <Link href={`/customers/edit/${id}`} className="px-6 py-2 border border-[#B37D56]/20 text-[#2F2F2F] text-[10px] font-bold tracking-widest uppercase rounded-[2px] hover:bg-[#FAF7F2] transition-all">记录大事</Link>
             </div>
          </div>
       </div>

@@ -1,17 +1,20 @@
+"use client";
 
 import React from 'react';
 import { Download, ShieldCheck, Database, FileArchive } from 'lucide-react';
 import { useCustomerStore } from '../../stores/useCustomerStore';
 import { useCaseStore } from '../../stores/useCaseStore';
 import { useRuleStore } from '../../stores/useRuleStore';
+import { useToastStore } from '../../stores/useToastStore';
 
 export const ExportPage: React.FC = () => {
   const customerCount = useCustomerStore(state => state.customers.length);
   const recordCount = useCaseStore(state => state.records.length);
   const ruleCount = useRuleStore(state => state.rules.length);
+  const toast = useToastStore();
 
   const handleExport = () => {
-    alert('正在打包数据并生成加密 ZIP 压缩包...');
+    toast.show('正在打包数据并生成加密 ZIP 压缩包...', 'info');
     // TODO: 实现真正的持久化数据导出逻辑
   };
 

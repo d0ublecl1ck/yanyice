@@ -1,12 +1,14 @@
+"use client";
 
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { User, Calendar, ChevronRight, History, Search, Filter } from 'lucide-react';
 import { useCustomerStore } from '../../stores/useCustomerStore';
 
 export const CustomerListPage: React.FC = () => {
   const customers = useCustomerStore(state => state.customers);
-  const navigate = useNavigate();
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [genderFilter, setGenderFilter] = useState<'all' | 'male' | 'female'>('all');
 
@@ -63,7 +65,7 @@ export const CustomerListPage: React.FC = () => {
           {filteredCustomers.map(customer => (
             <div 
               key={customer.id} 
-              onClick={() => navigate(`/customers/edit/${customer.id}`)}
+              onClick={() => router.push(`/customers/edit/${customer.id}`)}
               className="group bg-white border border-[#B37D56]/10 p-6 hover:border-[#A62121] transition-all relative overflow-hidden shadow-sm cursor-pointer hover:translate-y-[-2px]"
             >
               <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
@@ -78,7 +80,7 @@ export const CustomerListPage: React.FC = () => {
                     </span>
                   </div>
                   <Link 
-                    to={`/customers/history/${customer.id}`}
+                    href={`/customers/history/${customer.id}`}
                     onClick={(e) => e.stopPropagation()}
                     className="p-2 text-[#B37D56]/40 hover:text-[#A62121] hover:bg-[#A62121]/5 transition-all rounded-none"
                     title="查看历程纪"

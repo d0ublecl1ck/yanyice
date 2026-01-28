@@ -1,6 +1,7 @@
+"use client";
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Plus, Search, Calendar, Filter, ChevronRight, FileText } from 'lucide-react';
 import { useCaseStore } from '../../stores/useCaseStore';
 import { useCustomerStore } from '../../stores/useCustomerStore';
@@ -26,8 +27,8 @@ export const CaseListPage: React.FC = () => {
           <h2 className="text-3xl font-bold text-[#2F2F2F] chinese-font tracking-widest">咨询记录库</h2>
           <p className="text-xs text-[#B37D56] font-bold mt-1 uppercase tracking-widest">Consultation Archives ({filteredRecords.length})</p>
         </div>
-        <Link 
-          to="/cases/new" 
+        <Link
+          href="/cases/new"
           className="flex items-center gap-2 px-6 py-2 bg-[#A62121] text-white font-bold text-sm tracking-widest hover:bg-[#8B1A1A] transition-all rounded-[2px]"
         >
           <Plus size={16} />
@@ -67,7 +68,7 @@ export const CaseListPage: React.FC = () => {
               return (
                 <Link 
                   key={record.id} 
-                  to={`/cases/edit/${record.id}`}
+                  href={`/cases/edit/${record.id}`}
                   className="flex items-center group hover:bg-[#FAF7F2] transition-all p-6"
                 >
                   <div className="w-12 h-12 bg-[#B37D56]/5 flex items-center justify-center shrink-0">

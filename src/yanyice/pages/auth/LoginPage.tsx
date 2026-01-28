@@ -1,6 +1,7 @@
+"use client";
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { BookOpen, User as UserIcon, Lock } from 'lucide-react';
 import { useAuthStore } from '../../stores/useAuthStore';
 
@@ -8,14 +9,14 @@ export const LoginPage: React.FC = () => {
   const [isRegister, setIsRegister] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const navigate = useNavigate();
+  const router = useRouter();
   const login = useAuthStore(state => state.login);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (username && password) {
       login(username);
-      navigate('/');
+      router.replace('/');
     }
   };
 

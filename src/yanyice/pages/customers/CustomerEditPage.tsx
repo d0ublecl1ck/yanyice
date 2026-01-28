@@ -1,18 +1,21 @@
+"use client";
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Save, Trash2, Plus, Calendar, Clock, User, Tag, History } from 'lucide-react';
 import { useCustomerStore } from '../../stores/useCustomerStore';
 import { useToastStore } from '../../stores/useToastStore';
 import { Customer, TimelineEvent } from '../../types';
 import { ChineseDatePicker } from '../../components/ChineseDatePicker';
 import { ChineseTimePicker } from '../../components/ChineseTimePicker';
+import { ConfirmDialog } from '../../components/ConfirmDialog';
 
-export const CustomerEditPage: React.FC = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
+export const CustomerEditPage: React.FC<{ id?: string }> = ({ id }) => {
+  const router = useRouter();
   const toast = useToastStore();
   const { customers, events, addCustomer, updateCustomer, deleteCustomer, addEvent, deleteEvent } = useCustomerStore();
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const [name, setName] = useState('');
   const [gender, setGender] = useState<'male' | 'female' | 'other'>('male');
@@ -63,7 +66,7 @@ export const CustomerEditPage: React.FC = () => {
       addCustomer(data);
       toast.show('新客户已成功建档', 'success');
     }
-    navigate('/customers');
+    router.push('/customers');
   };
 
   const handleAddEvent = () => {
@@ -90,7 +93,7 @@ export const CustomerEditPage: React.FC = () => {
         <div className="flex gap-4">
           {id && (
             <Link 
-              to={`/customers/history/${id}`}
+              href={`/customers/history/${id}`}
               className="flex items-center gap-2 px-6 py-2 border border-[#B37D56]/20 text-[#B37D56] font-bold text-sm tracking-widest hover:bg-[#FAF7F2] transition-all rounded-[2px]"
             >
               <History size={16} />
@@ -99,13 +102,7 @@ export const CustomerEditPage: React.FC = () => {
           )}
           {id && (
             <button 
-              onClick={() => { 
-                if(window.confirm('确定删除该客户及其所有记录吗？')) { 
-                  deleteCustomer(id); 
-                  toast.show('客户资料已移除', 'info');
-                  navigate('/customers'); 
-                } 
-              }}
+              onClick={() => setIsDeleteOpen(true)}
               className="px-4 py-2 text-[#A62121]/60 hover:text-[#A62121] transition-colors"
             >
               <Trash2 size={20} />
@@ -113,6 +110,21 @@ export const CustomerEditPage: React.FC = () => {
           )}
         </div>
       </header>
+
+      <ConfirmDialog
+        open={isDeleteOpen}
+        title="确认删除客户？"
+        description="此操作会移除客户资料及其关联记录，且不可撤销。"
+        confirmText="删除"
+        cancelText="取消"
+        onCancel={() => setIsDeleteOpen(false)}
+        onConfirm={() => {
+          if (!id) return;
+          deleteCustomer(id);
+          toast.show('客户资料已移除', 'info');
+          router.push('/customers');
+        }}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
         {/* Left: Basic Info */}

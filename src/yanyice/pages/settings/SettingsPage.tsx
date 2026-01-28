@@ -1,15 +1,17 @@
+"use client";
+
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { Shield, Info, User, LogOut } from 'lucide-react';
 
 export const SettingsPage: React.FC = () => {
   const { user, logout } = useAuthStore();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    router.replace('/login');
   };
 
   return (
@@ -97,4 +99,3 @@ export const SettingsPage: React.FC = () => {
     </div>
   );
 };
-

@@ -1,5 +1,8 @@
+"use client";
+
 import React, { useState, useRef, useEffect } from 'react';
-import { useLocation, Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { 
   Home, 
   Users, 
@@ -20,14 +23,14 @@ import { GlobalSearch } from './GlobalSearch';
 import { ToastContainer } from './ToastContainer';
 
 const SidebarItem = ({ 
-  to, 
+  href, 
   icon: Icon, 
   label, 
   active, 
   collapsed, 
   onClick 
 }: { 
-  to?: string, 
+  href?: string, 
   icon: any, 
   label: string, 
   active: boolean, 
@@ -63,14 +66,18 @@ const SidebarItem = ({
     </div>
   );
 
-  if (to) {
-    return <Link to={to} onClick={onClick}>{content}</Link>;
+  if (href) {
+    return (
+      <Link href={href} onClick={onClick}>
+        {content}
+      </Link>
+    );
   }
   return <div onClick={onClick}>{content}</div>;
 };
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const location = useLocation();
+  const pathname = usePathname();
   const { isSidebarCollapsed, toggleSidebar } = useUIStore();
   const [isFabOpen, setIsFabOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -128,13 +135,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-2">
-          <SidebarItem to="/" icon={Home} label="首页" active={location.pathname === '/'} collapsed={isSidebarCollapsed} />
-          <SidebarItem to="/customers" icon={Users} label="客户管理" active={location.pathname.startsWith('/customers')} collapsed={isSidebarCollapsed} />
-          <SidebarItem to="/cases" icon={BookOpen} label="咨询记录" active={location.pathname.startsWith('/cases')} collapsed={isSidebarCollapsed} />
-          <SidebarItem to="/rules" icon={ShieldCheck} label="规则系统" active={location.pathname.startsWith('/rules')} collapsed={isSidebarCollapsed} />
+          <SidebarItem href="/" icon={Home} label="首页" active={pathname === '/'} collapsed={isSidebarCollapsed} />
+          <SidebarItem href="/customers" icon={Users} label="客户管理" active={pathname.startsWith('/customers')} collapsed={isSidebarCollapsed} />
+          <SidebarItem href="/cases" icon={BookOpen} label="咨询记录" active={pathname.startsWith('/cases')} collapsed={isSidebarCollapsed} />
+          <SidebarItem href="/rules" icon={ShieldCheck} label="规则系统" active={pathname.startsWith('/rules')} collapsed={isSidebarCollapsed} />
           <SidebarItem icon={Search} label="全局搜索" active={isSearchOpen} collapsed={isSidebarCollapsed} onClick={() => setIsSearchOpen(true)} />
-          <SidebarItem to="/export" icon={Download} label="数据备份" active={location.pathname === '/export'} collapsed={isSidebarCollapsed} />
-          <SidebarItem to="/settings" icon={Settings} label="个人设置" active={location.pathname === '/settings'} collapsed={isSidebarCollapsed} />
+          <SidebarItem href="/export" icon={Download} label="数据备份" active={pathname === '/export'} collapsed={isSidebarCollapsed} />
+          <SidebarItem href="/settings" icon={Settings} label="个人设置" active={pathname === '/settings'} collapsed={isSidebarCollapsed} />
         </nav>
 
         <div className="p-4 flex justify-center text-[10px] text-[#B37D56]/30 font-bold chinese-font tracking-tighter">
@@ -154,7 +161,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           {isFabOpen && (
             <div className="flex flex-col gap-3 mb-2 animate-in fade-in slide-in-from-bottom-4 duration-200">
               <Link 
-                to="/customers/new" 
+                href="/customers/new" 
                 onClick={() => setIsFabOpen(false)}
                 className="flex items-center gap-3 bg-white border border-[#B37D56]/20 px-4 py-3 shadow-lg hover:border-[#A62121] transition-all group rounded-none"
               >
@@ -164,7 +171,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 </div>
               </Link>
               <Link 
-                to="/cases/new" 
+                href="/cases/new" 
                 onClick={() => setIsFabOpen(false)}
                 className="flex items-center gap-3 bg-white border border-[#B37D56]/20 px-4 py-3 shadow-lg hover:border-[#A62121] transition-all group rounded-none"
               >
@@ -191,4 +198,3 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     </div>
   );
 };
-

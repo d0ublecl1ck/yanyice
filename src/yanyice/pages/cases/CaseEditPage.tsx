@@ -1,6 +1,7 @@
+"use client";
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { 
   Save, 
   Trash2, 
@@ -21,9 +22,8 @@ import { extractLiuYaoData } from '../../services/geminiService';
 import { ChineseDatePicker } from '../../components/ChineseDatePicker';
 import { ChineseTimePicker } from '../../components/ChineseTimePicker';
 
-export const CaseEditPage: React.FC = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
+export const CaseEditPage: React.FC<{ id?: string }> = ({ id }) => {
+  const router = useRouter();
   const toast = useToastStore();
   const records = useCaseStore(state => state.records);
   const addRecord = useCaseStore(state => state.addRecord);
@@ -133,7 +133,7 @@ export const CaseEditPage: React.FC = () => {
       });
       toast.show('新咨询已归档入册', 'success');
     }
-    navigate('/cases');
+    router.push('/cases');
   };
 
   return (

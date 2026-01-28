@@ -1,7 +1,10 @@
 
+
+"use client";
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, User, FileText, ChevronRight, X, Command } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useCustomerStore } from '../stores/useCustomerStore';
 import { useCaseStore } from '../stores/useCaseStore';
 
@@ -12,7 +15,7 @@ interface Props {
 
 export const GlobalSearch: React.FC<Props> = ({ isOpen, onClose }) => {
   const [query, setQuery] = useState('');
-  const navigate = useNavigate();
+  const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   
   const customers = useCustomerStore(state => state.customers);
@@ -43,7 +46,7 @@ export const GlobalSearch: React.FC<Props> = ({ isOpen, onClose }) => {
   ).slice(0, 5) : [];
 
   const handleSelect = (path: string) => {
-    navigate(path);
+    router.push(path);
     onClose();
   };
 
