@@ -1,0 +1,41 @@
+:root {
+  --paper-bg: #faf7f2;
+  --ink-dark: #2f2f2f;
+  --cinnabar: #a62121;
+  --celadon: #8da399;
+  --ochre: #b37d56;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: "Inter", "Noto Serif SC", serif;
+  background-color: var(--paper-bg);
+  background-image: url("https://www.transparenttextures.com/patterns/natural-paper.png");
+  color: var(--ink-dark);
+}
+
+.chinese-font {
+  font-family: "Noto Serif SC", serif;
+}
+
+.border-sepia {
+  border-color: rgba(179, 125, 86, 0.2);
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--celadon);
+  border-radius: 2px;
+}
+
