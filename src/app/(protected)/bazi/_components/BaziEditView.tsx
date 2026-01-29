@@ -799,7 +799,7 @@ const BaziTimePickerModal = ({
   );
 };
 
-export function BaziEditView({ id }: { id?: string }) {
+export function BaziEditView({ id, embedded = false }: { id?: string; embedded?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToastStore();
@@ -943,27 +943,41 @@ export function BaziEditView({ id }: { id?: string }) {
   }, [recordDate]);
 
   return (
-    <div className="w-full max-w-none space-y-8 animate-in fade-in duration-500 pb-20">
-      <header className="flex items-center gap-4">
-        <div className="w-10 h-10 bg-black text-white rounded-none flex items-center justify-center shrink-0 rotate-45">
-          <Hash size={18} className="-rotate-45" />
-        </div>
-        <div className="flex-1">
-          <h2 className="text-2xl font-bold text-[#2F2F2F] chinese-font tracking-tight">
-            八字推演
-          </h2>
-          <p className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest opacity-60">
-            Professional Bazi Engine
-          </p>
-        </div>
-      </header>
+    <div
+      className={`w-full max-w-none animate-in fade-in duration-500 ${
+        embedded ? "space-y-6 pb-6" : "space-y-8 pb-20"
+      }`}
+    >
+      {!embedded ? (
+        <header className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-black text-white rounded-none flex items-center justify-center shrink-0 rotate-45">
+            <Hash size={18} className="-rotate-45" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold text-[#2F2F2F] chinese-font tracking-tight">
+              八字推演
+            </h2>
+            <p className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest opacity-60">
+              Professional Bazi Engine
+            </p>
+          </div>
+        </header>
+      ) : null}
 
-      <div className="bg-white p-10 rounded-[4px] border border-[#B37D56]/20 shadow-none space-y-12 relative">
+      <div
+        className={`bg-white rounded-[4px] border border-[#B37D56]/20 shadow-none relative ${
+          embedded ? "p-6 md:p-8 space-y-8" : "p-10 space-y-12"
+        }`}
+      >
         <div className="absolute top-0 right-0 w-24 h-24 border-r border-t border-[#B37D56]/10 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-24 h-24 border-l border-b border-[#B37D56]/10 pointer-events-none" />
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 items-end">
-          <div className="md:col-span-3 space-y-2">
+        <div
+          className={`grid grid-cols-1 items-end ${
+            embedded ? "md:grid-cols-2 gap-6" : "md:grid-cols-5 gap-8"
+          }`}
+        >
+          <div className={`${embedded ? "space-y-2" : "md:col-span-3 space-y-2"}`}>
             <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest ml-1">
               姓名
             </label>
@@ -975,7 +989,7 @@ export function BaziEditView({ id }: { id?: string }) {
               className="w-full bg-transparent border-b border-[#B37D56]/10 py-2 outline-none focus:border-[#B37D56] transition-all chinese-font font-bold text-lg"
             />
           </div>
-          <div className="md:col-span-2 relative">
+          <div className={`${embedded ? "relative" : "md:col-span-2 relative"}`}>
             <select
               value={customerId}
               onChange={(e) => {
@@ -1033,7 +1047,7 @@ export function BaziEditView({ id }: { id?: string }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+        <div className={`grid grid-cols-1 md:grid-cols-2 items-center ${embedded ? "gap-6" : "gap-12"}`}>
           <div className="flex gap-4">
             {(
               [
@@ -1074,7 +1088,9 @@ export function BaziEditView({ id }: { id?: string }) {
 
         <div
           onClick={() => setShowTimePicker(true)}
-          className="w-full bg-[#FAF7F2] hover:bg-white border border-[#B37D56]/15 py-5 px-8 rounded-[4px] cursor-pointer group transition-all flex items-center justify-between gap-4"
+          className={`w-full bg-[#FAF7F2] hover:bg-white border border-[#B37D56]/15 rounded-[4px] cursor-pointer group transition-all flex items-center justify-between gap-4 ${
+            embedded ? "py-4 px-5" : "py-5 px-8"
+          }`}
         >
           <div className="flex items-center gap-5 flex-1 min-w-0">
             <div className="w-10 h-10 bg-white border border-[#B37D56]/20 flex items-center justify-center text-[#B37D56] shrink-0 rounded-[2px]">
@@ -1089,7 +1105,10 @@ export function BaziEditView({ id }: { id?: string }) {
                     { s: bazi.dayStem, b: bazi.dayBranch },
                     { s: bazi.hourStem, b: bazi.hourBranch },
                   ].map((p, i) => (
-                    <span key={i} className="text-xl font-bold text-[#2F2F2F] chinese-font">
+                    <span
+                      key={i}
+                      className={`font-bold text-[#2F2F2F] chinese-font ${embedded ? "text-lg" : "text-xl"}`}
+                    >
                       {p.s}
                       {p.b}
                     </span>
@@ -1097,7 +1116,11 @@ export function BaziEditView({ id }: { id?: string }) {
                 </div>
               ) : (
                 <>
-                  <span className="text-2xl font-bold text-[#2F2F2F] chinese-font tracking-tight shrink-0">
+                  <span
+                    className={`font-bold text-[#2F2F2F] chinese-font tracking-tight shrink-0 ${
+                      embedded ? "text-xl" : "text-2xl"
+                    }`}
+                  >
                     {dateParts.date}
                   </span>
                   <span className="text-base font-bold text-[#B37D56] chinese-font opacity-60 shrink-0">
@@ -1145,14 +1168,16 @@ export function BaziEditView({ id }: { id?: string }) {
             真太阳时
           </button>
         </div>
-      </div>
 
-      <button
-        onClick={() => void handleSave()}
-        className="w-full h-16 bg-[#2F2F2F] text-white rounded-[2px] text-xl font-bold chinese-font tracking-[0.6em] hover:bg-black transition-all active:scale-[0.98] flex items-center justify-center shadow-lg"
-      >
-        立即排盘
-      </button>
+        <div className={`pt-6 ${embedded ? "mt-2" : "pt-8"} border-t border-[#B37D56]/10`}>
+          <button
+            onClick={() => void handleSave()}
+            className="w-full h-14 bg-[#2F2F2F] text-white rounded-[2px] text-lg font-bold chinese-font tracking-[0.6em] hover:bg-black transition-all active:scale-[0.98] flex items-center justify-center shadow-none"
+          >
+            立即排盘
+          </button>
+        </div>
+      </div>
 
       <BaziTimePickerModal
         isOpen={showTimePicker}

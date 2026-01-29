@@ -203,8 +203,8 @@ export function CaseBazi() {
               </button>
             </div>
 
-            <div className="overflow-y-auto max-h-[90vh] p-6 md:p-8 bg-[#FAF7F2]">
-              <BaziEditView />
+            <div className="overflow-y-auto max-h-[90vh] p-4 md:p-6 bg-[#FAF7F2]">
+              <BaziEditView embedded />
             </div>
           </div>
         </div>

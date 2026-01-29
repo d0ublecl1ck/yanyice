@@ -22,7 +22,7 @@ describe("layout width constraints", () => {
       "src/app/(protected)/bazi/_components/BaziEditView.tsx",
       "utf8",
     );
-    expect(source).toContain('className="w-full max-w-none');
+    expect(source).toContain("w-full max-w-none");
     expect(source).not.toContain("max-w-2xl mx-auto");
   });
 
