@@ -987,7 +987,7 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
           </div>
           <div className="space-y-2">
             <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest ml-1">
-              性别/造化
+              性别
             </label>
             <div className="grid grid-cols-2 gap-3">
               {(
@@ -1014,7 +1014,7 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
         </div>
 
         <div
-          className={`w-full bg-[#FAF7F2] border border-[#B37D56]/15 rounded-[4px] transition-all flex flex-col md:flex-row md:items-stretch gap-4 ${
+          className={`w-full border border-[#B37D56]/15 rounded-[4px] transition-all flex flex-col md:flex-row md:items-stretch gap-4 ${
             embedded ? "py-4 px-5" : "py-5 px-8"
           }`}
         >
@@ -1025,7 +1025,7 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") setShowTimePicker(true);
             }}
-            className="flex items-center justify-between gap-4 flex-1 min-w-0 cursor-pointer hover:bg-white/60 rounded-[4px] transition-colors px-2 -mx-2"
+            className="flex items-center justify-between gap-4 flex-1 min-w-0 cursor-pointer bg-[#FAF7F2] hover:bg-white/80 rounded-[4px] transition-colors px-4 py-3"
           >
             <div className="flex items-center gap-5 flex-1 min-w-0">
               <div className="w-10 h-10 bg-white border border-[#B37D56]/20 flex items-center justify-center text-[#B37D56] shrink-0 rounded-[2px]">
@@ -1124,45 +1124,57 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
 
         <div className={`pt-6 ${embedded ? "mt-2" : "pt-8"} border-t border-[#B37D56]/10`}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-            <div className="relative space-y-2">
-              <select
-                value={customerId}
-                onChange={(e) => {
-                  const cust = customers.find((c) => c.id === e.target.value);
-                  if (cust) {
-                    setCustomerId(cust.id);
-                    setSubject(cust.name);
-                    setGender(cust.gender === "female" ? "female" : "male");
-                    setCreateCustomerAlso(false);
-                  } else {
-                    setCustomerId("");
-                  }
-                }}
-                className="w-full bg-[#FAF7F2] border border-[#B37D56]/10 px-4 py-3 rounded-[2px] outline-none text-xs chinese-font appearance-none cursor-pointer hover:bg-[#FAF7F2]/80 transition-colors"
-              >
-                <option value="">-- 关联已有档案 --</option>
-                {customers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronRight
-                className="absolute right-4 top-4 text-[#B37D56]/30 rotate-90 pointer-events-none"
-                size={14}
-              />
+            <div className={`grid gap-3 ${id ? "grid-cols-1" : "grid-cols-2"} items-center`}>
+              <div className="relative w-full">
+                <select
+                  value={customerId}
+                  disabled={!id && createCustomerAlso}
+                  onChange={(e) => {
+                    const nextId = e.target.value;
+                    const cust = customers.find((c) => c.id === nextId);
+                    if (cust) {
+                      setCustomerId(cust.id);
+                      setSubject(cust.name);
+                      setGender(cust.gender === "female" ? "female" : "male");
+                      setCreateCustomerAlso(false);
+                    } else {
+                      setCustomerId("");
+                    }
+                  }}
+                  className={`w-full border border-[#B37D56]/10 px-4 py-3 rounded-[2px] outline-none text-xs chinese-font appearance-none transition-colors ${
+                    !id && createCustomerAlso
+                      ? "bg-[#FAF7F2]/40 text-[#2F2F2F]/30 cursor-not-allowed"
+                      : "bg-[#FAF7F2] cursor-pointer hover:bg-[#FAF7F2]/80"
+                  }`}
+                >
+                  <option value="">-- 关联已有档案 --</option>
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronRight
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#B37D56]/30 rotate-90 pointer-events-none"
+                  size={14}
+                />
+              </div>
 
               {!id ? (
                 <button
                   type="button"
                   onClick={() => {
                     if (customerId) return;
-                    setCreateCustomerAlso((v) => !v);
+                    setCreateCustomerAlso((v) => {
+                      const next = !v;
+                      if (next) setCustomerId("");
+                      return next;
+                    });
                   }}
-                  className={`w-full flex items-center gap-2 text-[10px] font-bold chinese-font tracking-widest transition-colors ${
+                  className={`w-full h-[44px] border px-3 rounded-[2px] flex items-center gap-2 text-[10px] font-bold chinese-font tracking-widest transition-colors ${
                     customerId
-                      ? "text-[#2F2F2F]/20 cursor-not-allowed"
-                      : "text-[#2F2F2F]/40 hover:text-[#2F2F2F]"
+                      ? "bg-[#FAF7F2]/40 border-[#B37D56]/10 text-[#2F2F2F]/20 cursor-not-allowed"
+                      : "bg-white border-[#B37D56]/20 text-[#2F2F2F]/40 hover:border-[#A62121] hover:text-[#2F2F2F]"
                   }`}
                 >
                   <div
