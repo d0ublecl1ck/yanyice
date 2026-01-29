@@ -17,6 +17,11 @@ const PublicUser = Type.Object({
   email: Type.String({ format: "email" }),
 });
 
+const ErrorResponse = Type.Object({
+  code: Type.String(),
+  message: Type.String(),
+});
+
 type RegisterBodyType = Static<typeof RegisterBody>;
 type LoginBodyType = Static<typeof LoginBody>;
 
@@ -29,6 +34,7 @@ export async function authRoutes(app: FastifyInstance) {
         body: RegisterBody,
         response: {
           201: Type.Object({ user: PublicUser, accessToken: Type.String() }),
+          409: ErrorResponse,
         },
       },
     },
@@ -58,6 +64,7 @@ export async function authRoutes(app: FastifyInstance) {
         body: LoginBody,
         response: {
           200: Type.Object({ user: PublicUser, accessToken: Type.String() }),
+          401: ErrorResponse,
         },
       },
     },
@@ -85,7 +92,7 @@ export async function authRoutes(app: FastifyInstance) {
       schema: {
         tags: ["auth"],
         security: [{ bearerAuth: [] }],
-        response: { 200: Type.Object({ user: PublicUser }) },
+        response: { 200: Type.Object({ user: PublicUser }), 401: ErrorResponse },
       },
       onRequest: [app.authenticate],
     },
