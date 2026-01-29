@@ -1,30 +1,46 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { 
   Home, 
   Users, 
   BookOpen,
-  ShieldCheck,
   Search, 
   Download, 
   Settings, 
   ChevronLeft, 
   ChevronRight,
-  type LucideIcon,
   Plus,
   UserPlus,
   FilePlus,
-  Hash,
-  Layers,
-  Gavel
+  type LucideIcon
 } from 'lucide-react';
 import { useUIStore } from '@/stores/useUIStore';
 import { GlobalSearch } from './GlobalSearch';
 import { ToastContainer } from './ToastContainer';
 import { coerceModuleType } from '@/lib/moduleParam';
+
+type SidebarIconComponent = React.ComponentType<{
+  size?: number;
+  strokeWidth?: number;
+  className?: string;
+}>;
+
+const makeSidebarImageIcon = (src: string): SidebarIconComponent => {
+  const SidebarImageIcon: SidebarIconComponent = ({ size = 18, className }) => (
+    <Image src={src} width={size} height={size} alt="" aria-hidden className={className} />
+  );
+  SidebarImageIcon.displayName = `SidebarImageIcon(${src})`;
+  return SidebarImageIcon;
+};
+
+const BaziCasesIcon = makeSidebarImageIcon('/icons/sidebar/bazi-cases.svg');
+const BaziRulesIcon = makeSidebarImageIcon('/icons/sidebar/bazi-rules.svg');
+const LiuyaoExamplesIcon = makeSidebarImageIcon('/icons/sidebar/liuyao-examples.svg');
+const LiuyaoRulesIcon = makeSidebarImageIcon('/icons/sidebar/liuyao-rules.svg');
 
 const SidebarItem = ({ 
   href, 
@@ -35,7 +51,7 @@ const SidebarItem = ({
   onClick
 }: { 
   href?: string, 
-  icon: LucideIcon, 
+  icon: LucideIcon | SidebarIconComponent, 
   label: string, 
   active: boolean, 
   collapsed: boolean,
@@ -148,7 +164,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </div>
           <SidebarItem
             href="/bazi"
-            icon={Hash}
+            icon={BaziCasesIcon}
             label="八字案卷"
             active={
               pathname === "/bazi" ||
@@ -160,7 +176,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           />
           <SidebarItem
             href="/bazi/rules"
-            icon={ShieldCheck}
+            icon={BaziRulesIcon}
             label="八字断诀"
             active={isBaziRulesActive}
             collapsed={isSidebarCollapsed}
@@ -172,7 +188,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </div>
           <SidebarItem
             href="/liuyao"
-            icon={Layers}
+            icon={LiuyaoExamplesIcon}
             label="六爻卦例"
             active={
               pathname === "/liuyao" ||
@@ -184,7 +200,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           />
           <SidebarItem
             href="/liuyao/rules"
-            icon={Gavel}
+            icon={LiuyaoRulesIcon}
             label="六爻断诀"
             active={isLiuyaoRulesActive}
             collapsed={isSidebarCollapsed}
