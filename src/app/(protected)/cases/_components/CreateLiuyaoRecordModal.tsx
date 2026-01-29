@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 
 import { ChineseDatePicker } from "@/components/ChineseDatePicker";
 import { ChineseTimePicker } from "@/components/ChineseTimePicker";
-import { LINE_SYMBOLS } from "@/lib/constants";
+import { Select, type SelectOption } from "@/components/Select";
+import { LiuyaoLineSvg } from "@/components/liuyao/LiuyaoLineSvg";
 import { calcLiuyaoGanzhiFromIso } from "@/lib/lunarGanzhi";
 import { recordEditHref } from "@/lib/caseLinks";
 import { LineType, type LiuYaoData } from "@/lib/types";
@@ -29,6 +30,15 @@ const setIsoTime = (iso: string, hhmm: string) => {
   d.setHours(Number.isFinite(h) ? h : 0, Number.isFinite(m) ? m : 0, 0, 0);
   return d.toISOString();
 };
+
+const LINE_OPTIONS: Array<SelectOption<LineType>> = [
+  { value: LineType.SHAO_YANG, label: "少阳" },
+  { value: LineType.SHAO_YIN, label: "少阴" },
+  { value: LineType.LAO_YANG, label: "老阳（动）" },
+  { value: LineType.LAO_YIN, label: "老阴（动）" },
+];
+
+const LINE_LABELS = ["初爻", "二爻", "三爻", "四爻", "五爻", "上爻"] as const;
 
 export function CreateLiuyaoRecordModal({
   open,
@@ -87,10 +97,10 @@ export function CreateLiuyaoRecordModal({
   const monthBranch = ganzhi?.monthBranch ?? "子";
   const dayBranch = ganzhi?.dayGanzhi ?? "甲子";
 
-  const handleLineToggle = (index: number) => {
+  const setLineAtIndex = (index: number, nextLine: LineType) => {
     setLines((prev) => {
       const next = [...prev];
-      next[index] = ((next[index] + 1) % 4) as LineType;
+      next[index] = nextLine;
       return next;
     });
   };
@@ -121,18 +131,12 @@ export function CreateLiuyaoRecordModal({
                   <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
                     关联客户（可选）
                   </label>
-                  <select
+                  <Select
                     value={customerId}
-                    onChange={(e) => setCustomerId(e.target.value)}
-                    className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-2 outline-none focus:border-[#A62121] transition-colors chinese-font font-bold rounded-none"
-                  >
-                    <option value="">-- 不绑定 --</option>
-                    {customers.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
+                    onValueChange={(v) => setCustomerId(String(v))}
+                    emptyLabel="-- 不绑定 --"
+                    options={customers.map((c) => ({ value: c.id, label: c.name }))}
+                  />
                 </div>
 
                 <div className="space-y-2 group">
@@ -231,34 +235,33 @@ export function CreateLiuyaoRecordModal({
               <h3 className="text-center text-[10px] text-[#B37D56] mb-6 tracking-[0.5em] font-bold uppercase">
                 六爻（自下而上）
               </h3>
-              <div className="flex flex-col-reverse gap-4 items-center">
-                {lines.map((line, idx) => {
-                  const info = LINE_SYMBOLS[line];
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => handleLineToggle(idx)}
-                      className="group relative flex items-center justify-center py-2 px-10 transition-all hover:bg-black/[0.01]"
-                      aria-label={`切换第 ${idx + 1} 爻`}
-                    >
-                      <span className="absolute left-[-1.5rem] text-[9px] font-bold text-[#2F2F2F]/20 chinese-font">
-                        爻{idx + 1}
-                      </span>
-                      <div className="text-3xl font-light tracking-[-0.1em] text-[#2F2F2F] select-none">
-                        {info.base.replace(/—/g, "━").replace(/ /g, "　")}
-                      </div>
-                      {info.isMoving && (
-                        <span className="absolute right-[-0.75rem] text-lg font-bold text-[#A62121]">
-                          {info.mark === "O" ? "●" : "×"}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+              <div className="flex flex-col-reverse gap-3 items-stretch">
+                {lines.map((line, idx) => (
+                  <div
+                    key={idx}
+                    className="grid grid-cols-[3rem_minmax(0,1fr)_7rem] items-center gap-3 py-2 px-3 border border-transparent hover:bg-black/[0.01]"
+                  >
+                    <span className="text-[9px] font-bold text-[#2F2F2F]/20 chinese-font">
+                      {LINE_LABELS[idx] ?? `爻${idx + 1}`}
+                    </span>
+                    <div className="flex justify-center min-w-0">
+                      <LiuyaoLineSvg
+                        line={line}
+                        className="h-6 w-full max-w-[160px]"
+                        lineColor="#2F2F2F"
+                        markColor="#A62121"
+                      />
+                    </div>
+                    <Select
+                      aria-label={`第 ${idx + 1} 爻`}
+                      value={line}
+                      onValueChange={(v) => setLineAtIndex(idx, v as LineType)}
+                      options={LINE_OPTIONS}
+                      size="sm"
+                    />
+                  </div>
+                ))}
               </div>
-              <p className="mt-6 text-[10px] text-center text-[#2F2F2F]/30 chinese-font italic leading-loose">
-                点击每一爻循环切换：少阳 → 少阴 → 老阳 → 老阴
-              </p>
             </section>
           </div>
         </div>
