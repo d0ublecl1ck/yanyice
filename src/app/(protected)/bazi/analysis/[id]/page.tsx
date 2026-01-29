@@ -414,13 +414,13 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           <table className="w-full text-center border-collapse table-fixed">
             <thead>
               <tr className="bg-[#FAF7F2]/50 border-b border-[#B37D56]/10">
-                <th className="py-4 text-[24px] text-[#2F2F2F]/30 uppercase font-bold tracking-[0.3em] w-16">
+                <th className="py-2 text-[14px] text-[#2F2F2F]/30 uppercase font-bold tracking-[0.3em] w-16">
                   项目
                 </th>
                 {analysis.pillars.map((p) => (
                   <th
                     key={p.label}
-                    className="py-4 text-[24px] text-[#B37D56] font-bold chinese-font tracking-[0.5em]"
+                    className="py-2 text-[14px] text-[#B37D56] font-bold chinese-font tracking-[0.5em]"
                   >
                     {p.label}
                   </th>
@@ -429,23 +429,23 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             </thead>
             <tbody className="divide-y divide-[#B37D56]/10">
               <tr>
-                <td className="py-4 text-[24px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
+                <td className="py-2 text-[14px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
                   主星
                 </td>
                 {analysis.pillars.map((p, i) => (
-                  <td key={i} className="py-4 text-[24px] text-[#2F2F2F] chinese-font font-bold">
+                  <td key={i} className="py-2 text-[14px] text-[#2F2F2F] chinese-font font-bold">
                     {p.mainStar}
                   </td>
                 ))}
               </tr>
               <tr>
-                <td className="py-8 text-[24px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
+                <td className="py-3 text-[14px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
                   天干
                 </td>
                 {analysis.pillars.map((p, i) => (
-                  <td key={i} className="py-8">
+                  <td key={i} className="py-3">
                     <span
-                      className="text-5xl font-bold chinese-font leading-none"
+                      className="text-[28px] font-bold chinese-font leading-none"
                       style={{ color: ELEMENT_STYLES[p.stemEl].color }}
                     >
                       {p.stem}
@@ -454,13 +454,13 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                 ))}
               </tr>
               <tr>
-                <td className="py-8 text-[24px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
+                <td className="py-3 text-[14px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
                   地支
                 </td>
                 {analysis.pillars.map((p, i) => (
-                  <td key={i} className="py-8">
+                  <td key={i} className="py-3">
                     <span
-                      className="text-5xl font-bold chinese-font leading-none"
+                      className="text-[28px] font-bold chinese-font leading-none"
                       style={{ color: ELEMENT_STYLES[p.branchEl].color }}
                     >
                       {p.branch}
@@ -469,61 +469,67 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                 ))}
               </tr>
               <tr>
-                <td className="py-6 text-[24px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
+                <td className="py-2 text-[14px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
                   藏干
                 </td>
                 {analysis.pillars.map((p, i) => (
-                  <td key={i} className="py-6 space-y-1">
+                  <td key={i} className="py-2">
+                    <div className="flex flex-col gap-1">
                     {p.hiddenStems.map((hs, hidx) => (
                       <div
                         key={hidx}
-                        className="text-[24px] font-bold chinese-font"
+                        className="text-[14px] font-bold chinese-font"
                         style={{ color: ELEMENT_STYLES[hs.e].color }}
                       >
                         {hs.s}
                       </div>
                     ))}
+                    </div>
                   </td>
                 ))}
               </tr>
               <tr>
-                <td className="py-6 text-[24px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
+                <td className="py-2 text-[14px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
                   副星
                 </td>
                 {analysis.pillars.map((p, i) => (
-                  <td key={i} className="py-6 space-y-1">
+                  <td key={i} className="py-2">
+                    <div className="flex flex-col gap-1">
                     {p.hiddenStems.map((hs, hidx) => (
-                      <div key={hidx} className="text-[24px] text-[#2F2F2F]/40 chinese-font">
+                      <div key={hidx} className="text-[14px] text-[#2F2F2F]/40 chinese-font">
                         {hs.g}
                       </div>
                     ))}
+                    </div>
                   </td>
                 ))}
               </tr>
               {EXTRA_ROWS.map((row) => (
                 <tr key={row.key}>
-                  <td className="py-4 text-[24px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
+                  <td className="py-2 text-[14px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
                     {row.label}
                   </td>
                   {analysis.pillars.map((p, i) => (
-                    <td key={i} className="py-4 text-[24px] text-[#2F2F2F] chinese-font font-bold">
+                    <td key={i} className="py-2 text-[14px] text-[#2F2F2F] chinese-font font-bold">
                       {p[row.key]}
                     </td>
                   ))}
                 </tr>
               ))}
               <tr>
-                <td className="py-8 text-[24px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
+                <td className="py-3 text-[14px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
                   神煞
                 </td>
                 {analysis.pillars.map((p, i) => (
                   <td
                     key={i}
-                    className="py-8 px-2 space-y-1.5 text-[24px] text-[#B37D56] chinese-font leading-tight font-medium"
+                    className="py-3 px-1 text-[14px] text-[#B37D56] chinese-font leading-tight font-medium"
                   >
-                    {p.sha.map((s: string, sidx: number) => (
-                      <div key={sidx}>{s}</div>
-                    ))}
+                    <div className="flex flex-col gap-1">
+                      {p.sha.map((s: string, sidx: number) => (
+                        <div key={sidx}>{s}</div>
+                      ))}
+                    </div>
                   </td>
                 ))}
               </tr>
