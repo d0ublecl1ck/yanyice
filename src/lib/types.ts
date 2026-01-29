@@ -32,6 +32,7 @@ export interface BaZiData {
   isTrueSolarTime?: boolean;
   isEarlyLateZi?: boolean;
   category?: string;
+  derived?: Record<string, unknown>;
 }
 
 export interface Customer {

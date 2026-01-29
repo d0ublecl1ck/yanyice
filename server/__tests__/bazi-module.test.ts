@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { buildApp } from "../src/app";
+import { LunarHour, LunarSect2EightCharProvider, SolarTime } from "tyme4ts";
 
 function runPrismaMigrateDeploy(databaseUrl: string) {
   const result = Bun.spawnSync(
@@ -115,28 +116,33 @@ describe("bazi module persistence", () => {
         notes: "日主强旺",
         tags: ["事业"],
         baziData: {
-          yearStem: "乙",
-          yearBranch: "丑",
-          monthStem: "壬",
-          monthBranch: "午",
-          dayStem: "甲",
-          dayBranch: "寅",
-          hourStem: "己",
-          hourBranch: "巳",
-          calendarType: "solar",
-          birthDate: "1985-06-15T10:30:00.000Z",
+          birthDate: "1985-06-15T10:30:00+08:00",
           location: "北京市 北京市 --",
-          isTrueSolarTime: true,
-          isDst: false,
+          isEarlyLateZi: false,
         },
         verifiedStatus: "unverified",
         verifiedNotes: "",
       },
     });
     expect(createRecord.statusCode).toBe(201);
-    const record = (createRecord.json() as { record: { id: string; module: string; customerId: string } }).record;
+    const record = (createRecord.json() as {
+      record: {
+        id: string;
+        module: string;
+        customerId: string;
+        baziData: { birthDate: string; yearStem: string; yearBranch: string; derived?: unknown };
+      };
+    }).record;
     expect(record.module).toBe("bazi");
     expect(record.customerId).toBe(customer.id);
+    expect(record.baziData.birthDate).toBe("1985-06-15T10:30:00+08:00");
+
+    LunarHour.provider = new LunarSect2EightCharProvider();
+    const solarTime = SolarTime.fromYmdHms(1985, 6, 15, 10, 30, 0);
+    const eightChar = solarTime.getLunarHour().getEightChar();
+    expect(record.baziData.yearStem).toBe(eightChar.getYear().getHeavenStem().getName());
+    expect(record.baziData.yearBranch).toBe(eightChar.getYear().getEarthBranch().getName());
+    expect(record.baziData.derived).toBeTruthy();
 
     const listBazi = await app.inject({
       method: "GET",
