@@ -32,45 +32,31 @@ const SidebarItem = ({
   label, 
   active, 
   collapsed, 
-  onClick,
-  variant = 'default'
+  onClick
 }: { 
   href?: string, 
   icon: LucideIcon, 
   label: string, 
   active: boolean, 
   collapsed: boolean,
-  onClick?: () => void,
-  variant?: 'default' | 'bazi' | 'liuyao'
+  onClick?: () => void
 }) => {
-  const activeClass =
-    variant === 'liuyao'
-      ? 'text-[#A62121] bg-[#A62121]/5'
-      : 'text-[#2F2F2F] bg-[#B37D56]/10 font-bold';
-  const indicatorClass = variant === 'liuyao' ? 'bg-[#A62121]' : 'bg-[#2F2F2F]';
-
   const content = (
     <div 
-      className={`flex items-center px-6 py-3.5 transition-all duration-300 relative group cursor-pointer ${
+      className={`flex items-center px-6 py-4 transition-all duration-300 relative group cursor-pointer select-none ${
         collapsed ? 'justify-center px-0' : 'space-x-4'
       } ${
-        active ? activeClass : 'text-[#2F2F2F] opacity-60 hover:opacity-100 hover:bg-black/5'
+        active ? 'text-[#2F2F2F] bg-black/5' : 'text-[#2F2F2F]/60 hover:text-[#2F2F2F] hover:bg-black/5'
       }`}
       title={collapsed ? label : ''}
     >
-      <Icon size={16} strokeWidth={active ? 2.5 : 2} className="shrink-0" />
+      <Icon size={18} strokeWidth={active ? 2.5 : 2} className="shrink-0" />
       {!collapsed && (
         <>
-          <span className="text-[14px] whitespace-nowrap overflow-hidden transition-all duration-300 chinese-font">
+          <span className={`text-[15px] whitespace-nowrap overflow-hidden transition-all duration-300 chinese-font ${active ? 'font-bold' : 'font-medium'}`}>
             {label}
           </span>
-          {active && (
-            <div className={`absolute left-0 w-[3px] h-full ${indicatorClass}`} />
-          )}
         </>
-      )}
-      {collapsed && active && (
-        <div className={`absolute left-0 w-[4px] h-8 top-1/2 -translate-y-1/2 ${indicatorClass}`} />
       )}
     </div>
   );
@@ -156,7 +142,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <SidebarItem href="/" icon={Home} label="首页工作台" active={pathname === '/'} collapsed={isSidebarCollapsed} />
           <SidebarItem href="/customers" icon={Users} label="客户档案" active={pathname.startsWith('/customers')} collapsed={isSidebarCollapsed} />
           
-          <div className="mt-4 px-6 mb-2">
+          <div className="mt-3 px-6 mb-1">
             {!isSidebarCollapsed && <p className="text-[10px] font-bold text-[#B37D56] uppercase tracking-widest opacity-40">Bazi Module</p>}
             {isSidebarCollapsed && <div className="h-[1px] bg-[#B37D56]/10 w-full" />}
           </div>
@@ -166,7 +152,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             label="八字案卷"
             active={pathname === '/bazi' || pathname.startsWith('/bazi/edit') || pathname.startsWith('/bazi/new')}
             collapsed={isSidebarCollapsed}
-            variant="bazi"
           />
           <SidebarItem
             href="/bazi/rules"
@@ -174,10 +159,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             label="八字断诀"
             active={isBaziRulesActive}
             collapsed={isSidebarCollapsed}
-            variant="bazi"
           />
 
-          <div className="mt-4 px-6 mb-2">
+          <div className="mt-3 px-6 mb-1">
             {!isSidebarCollapsed && <p className="text-[10px] font-bold text-[#A62121] uppercase tracking-widest opacity-40">Liuyao Module</p>}
             {isSidebarCollapsed && <div className="h-[1px] bg-[#A62121]/10 w-full" />}
           </div>
@@ -187,7 +171,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             label="六爻卦例"
             active={pathname === '/liuyao' || pathname.startsWith('/liuyao/edit') || pathname.startsWith('/liuyao/new')}
             collapsed={isSidebarCollapsed}
-            variant="liuyao"
           />
           <SidebarItem
             href="/liuyao/rules"
@@ -195,10 +178,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             label="六爻断诀"
             active={isLiuyaoRulesActive}
             collapsed={isSidebarCollapsed}
-            variant="liuyao"
           />
 
-          <div className="mt-8 border-t border-[#B37D56]/5 pt-4">
+          <div className="mt-3">
             <SidebarItem
               icon={Search}
               label="全局搜索 (Ctrl+K)"
