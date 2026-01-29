@@ -7,22 +7,22 @@ export function parseExtractRequestBody(body: unknown):
   | { kind: "image"; image: { data: string; mimeType: string } }
   | null {
   if (typeof body !== "object" || body === null) return null;
-  const anyBody = body as any;
+  const obj = body as Record<string, unknown>;
 
-  if (typeof anyBody.text === "string") {
-    return { kind: "text", text: anyBody.text };
+  if (typeof obj.text === "string") {
+    return { kind: "text", text: obj.text };
   }
 
-  if (
-    typeof anyBody.image?.data === "string" &&
-    typeof anyBody.image?.mimeType === "string"
-  ) {
+  const image = obj.image;
+  if (typeof image === "object" && image !== null) {
+    const imageObj = image as Record<string, unknown>;
+    if (typeof imageObj.data === "string" && typeof imageObj.mimeType === "string") {
     return {
       kind: "image",
-      image: { data: anyBody.image.data, mimeType: anyBody.image.mimeType },
+        image: { data: imageObj.data, mimeType: imageObj.mimeType },
     };
+    }
   }
 
   return null;
 }
-

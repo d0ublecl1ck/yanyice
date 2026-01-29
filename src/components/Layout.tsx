@@ -13,11 +13,11 @@ import {
   Settings, 
   ChevronLeft, 
   ChevronRight,
+  type LucideIcon,
   Plus,
   UserPlus,
   FilePlus
 } from 'lucide-react';
-import { useAuthStore } from '@/stores/useAuthStore';
 import { useUIStore } from '@/stores/useUIStore';
 import { GlobalSearch } from './GlobalSearch';
 import { ToastContainer } from './ToastContainer';
@@ -31,7 +31,7 @@ const SidebarItem = ({
   onClick 
 }: { 
   href?: string, 
-  icon: any, 
+  icon: LucideIcon, 
   label: string, 
   active: boolean, 
   collapsed: boolean,
