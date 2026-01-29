@@ -38,10 +38,10 @@ export default function Page() {
               <p className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest mb-1">
                 当前登录账号
               </p>
-              <p className="font-bold text-[#2F2F2F] text-lg chinese-font">{user?.username}</p>
+              <p className="font-bold text-[#2F2F2F] text-lg chinese-font">{user?.email}</p>
             </div>
             <div className="w-10 h-10 bg-[#2F2F2F] text-white flex items-center justify-center font-bold text-xl chinese-font">
-              {user?.username?.charAt(0).toUpperCase()}
+              {user?.email?.charAt(0).toUpperCase()}
             </div>
           </div>
         </section>

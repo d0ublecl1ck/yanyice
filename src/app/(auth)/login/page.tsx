@@ -5,19 +5,32 @@ import { useRouter } from "next/navigation";
 import { BookOpen } from "lucide-react";
 
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useToastStore } from "@/stores/useToastStore";
+import { ApiError } from "@/lib/apiClient";
 
 export default function Page() {
   const [isRegister, setIsRegister] = useState(false);
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
+  const register = useAuthStore((state) => state.register);
+  const status = useAuthStore((state) => state.status);
+  const toast = useToastStore((s) => s.show);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (username && password) {
-      login(username);
+    try {
+      if (isRegister) await register(email, password);
+      else await login(email, password);
+      toast(isRegister ? "注册成功，已自动登录" : "登录成功", "success");
       router.replace("/");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        toast(err.message, "error");
+        return;
+      }
+      toast("登录失败，请稍后重试", "error");
     }
   };
 
@@ -54,15 +67,15 @@ export default function Page() {
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="space-y-2 group">
               <label className="text-xs font-bold text-[#B37D56] uppercase tracking-widest">
-                用户名
+                邮箱
               </label>
               <div className="relative border-b border-[#2F2F2F]/10 group-focus-within:border-[#A62121] transition-colors">
                 <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full py-3 bg-transparent text-[#2F2F2F] outline-none placeholder:text-[#2F2F2F]/20 rounded-none"
-                  placeholder="请输入用户名"
+                  placeholder="请输入邮箱"
                   required
                 />
               </div>
@@ -86,9 +99,10 @@ export default function Page() {
 
             <button
               type="submit"
+              disabled={status === "loading"}
               className="w-full bg-[#A62121] text-white py-4 font-bold tracking-widest hover:bg-[#8B1A1A] transition-colors rounded-[2px] chinese-font"
             >
-              {isRegister ? "立即注册" : "立即登录"}
+              {status === "loading" ? "处理中..." : isRegister ? "立即注册" : "立即登录"}
             </button>
 
             <div className="text-center pt-4">
