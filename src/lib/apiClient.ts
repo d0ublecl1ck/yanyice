@@ -29,6 +29,9 @@ export async function apiFetch<T>(
     : null;
 
   if (!response.ok) {
+    if (response.status === 401 && init?.accessToken && typeof globalThis.dispatchEvent === "function") {
+      globalThis.dispatchEvent(new Event("yanyice:unauthorized"));
+    }
     const message =
       (maybeJson && typeof maybeJson === "object" && "message" in maybeJson && typeof maybeJson.message === "string"
         ? maybeJson.message
@@ -42,4 +45,3 @@ export async function apiFetch<T>(
 
   return maybeJson as T;
 }
-
