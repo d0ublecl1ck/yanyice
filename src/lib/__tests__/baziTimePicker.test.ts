@@ -4,10 +4,12 @@ import { SolarTime } from "tyme4ts";
 import {
   BAZI_PICKER_YEAR_END,
   BAZI_PICKER_YEAR_START,
+  deriveBaziPickerFromSolar,
   deriveBaziPickerFromSolarTime,
   getBaziPickerYearItems,
   getBaziTimePickerOpenDefaults,
   getNowButtonResult,
+  tryDeriveSolarFromLunar,
 } from "../baziTimePicker";
 
 describe("baziTimePicker helpers", () => {
@@ -40,5 +42,19 @@ describe("baziTimePicker helpers", () => {
     const st = SolarTime.fromYmdHms(2024, 1, 2, 3, 4, 0);
     const derived = deriveBaziPickerFromSolarTime(st);
     expect(derived.solar).toEqual({ y: 2024, m: 1, d: 2, h: 3, min: 4 });
+  });
+
+  test("deriveBaziPickerFromSolar matches deriveBaziPickerFromSolarTime", () => {
+    const solar = { y: 2024, m: 1, d: 2, h: 3, min: 4 };
+    const a = deriveBaziPickerFromSolar(solar);
+    const b = deriveBaziPickerFromSolarTime(SolarTime.fromYmdHms(2024, 1, 2, 3, 4, 0));
+    expect(a).toEqual(b);
+  });
+
+  test("tryDeriveSolarFromLunar roundtrips through tyme4ts", () => {
+    const solar = { y: 2024, m: 6, d: 18, h: 9, min: 8 };
+    const derived = deriveBaziPickerFromSolar(solar);
+    const back = tryDeriveSolarFromLunar(derived.lunar);
+    expect(back).toEqual(solar);
   });
 });

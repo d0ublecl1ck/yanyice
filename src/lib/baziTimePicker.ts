@@ -1,4 +1,4 @@
-import { SolarTime } from "tyme4ts";
+import { LunarDay, SolarTime } from "tyme4ts";
 
 export const BAZI_PICKER_YEAR_START = 1900;
 export const BAZI_PICKER_YEAR_END = 2099;
@@ -43,6 +43,39 @@ export type BaziPickerDerived = {
   fourPillars: BaziPickerFourPillars;
 };
 
+const LUNAR_DAY_NAMES = [
+  "初一",
+  "初二",
+  "初三",
+  "初四",
+  "初五",
+  "初六",
+  "初七",
+  "初八",
+  "初九",
+  "初十",
+  "十一",
+  "十二",
+  "十三",
+  "十四",
+  "十五",
+  "十六",
+  "十七",
+  "十八",
+  "十九",
+  "二十",
+  "廿一",
+  "廿二",
+  "廿三",
+  "廿四",
+  "廿五",
+  "廿六",
+  "廿七",
+  "廿八",
+  "廿九",
+  "三十",
+] as const;
+
 const lunarMonthNameFromNumber = (month: number) => {
   if (month === 1) return "正月";
   if (month === 11) return "冬月";
@@ -50,6 +83,38 @@ const lunarMonthNameFromNumber = (month: number) => {
   const map = ["", "正", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
   if (month >= 2 && month <= 10) return `${map[month]}月`;
   return `${month}月`;
+};
+
+const lunarMonthNumberFromName = (name: string) => {
+  const raw = name.trim();
+  const isLeap = raw.startsWith("闰");
+  const normalized = isLeap ? raw.slice(1) : raw;
+  const monthName = normalized.endsWith("月") ? normalized : `${normalized}月`;
+  const map: Record<string, number> = {
+    正月: 1,
+    二月: 2,
+    三月: 3,
+    四月: 4,
+    五月: 5,
+    六月: 6,
+    七月: 7,
+    八月: 8,
+    九月: 9,
+    十月: 10,
+    冬月: 11,
+    腊月: 12,
+    十一月: 11,
+    十二月: 12,
+  };
+  const month = map[monthName];
+  if (!month) return null;
+  return isLeap ? -month : month;
+};
+
+const lunarDayNumberFromName = (name: string) => {
+  const idx = (LUNAR_DAY_NAMES as readonly string[]).indexOf(name.trim());
+  if (idx < 0) return null;
+  return idx + 1;
 };
 
 export const deriveBaziPickerFromSolarTime = (solarTime: SolarTime): BaziPickerDerived => {
@@ -89,6 +154,11 @@ export const deriveBaziPickerFromSolarTime = (solarTime: SolarTime): BaziPickerD
   return { solar, lunar, fourPillars };
 };
 
+export const deriveBaziPickerFromSolar = (solar: BaziPickerSolar): BaziPickerDerived => {
+  const solarTime = SolarTime.fromYmdHms(solar.y, solar.m, solar.d, solar.h, solar.min, 0);
+  return deriveBaziPickerFromSolarTime(solarTime);
+};
+
 export const deriveBaziPickerFromNow = (now: Date): BaziPickerDerived => {
   const solar = {
     y: now.getFullYear(),
@@ -97,8 +167,7 @@ export const deriveBaziPickerFromNow = (now: Date): BaziPickerDerived => {
     h: now.getHours(),
     min: now.getMinutes(),
   };
-  const solarTime = SolarTime.fromYmdHms(solar.y, solar.m, solar.d, solar.h, solar.min, 0);
-  return deriveBaziPickerFromSolarTime(solarTime);
+  return deriveBaziPickerFromSolar(solar);
 };
 
 export type NowButtonResult = {
@@ -118,4 +187,17 @@ export type BaziTimePickerOpenDefaults = {
 
 export const getBaziTimePickerOpenDefaults = (now: Date): BaziTimePickerOpenDefaults => {
   return { tab: "solar", derived: deriveBaziPickerFromNow(now) };
+};
+
+export const tryDeriveSolarFromLunar = (lunar: BaziPickerLunar): BaziPickerSolar | null => {
+  const month = lunarMonthNumberFromName(lunar.m);
+  const day = lunarDayNumberFromName(lunar.d);
+  if (!month || !day) return null;
+  try {
+    const lunarDay = LunarDay.fromYmd(lunar.y, month, day);
+    const solarDay = lunarDay.getSolarDay();
+    return { y: solarDay.getYear(), m: solarDay.getMonth(), d: solarDay.getDay(), h: lunar.h, min: lunar.min };
+  } catch {
+    return null;
+  }
 };

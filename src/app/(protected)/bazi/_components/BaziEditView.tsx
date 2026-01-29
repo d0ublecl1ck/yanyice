@@ -20,10 +20,12 @@ import { useToastStore } from "@/stores/useToastStore";
 import type { BaZiData } from "@/lib/types";
 import { BRANCHES, STEMS } from "@/lib/constants";
 import {
+  deriveBaziPickerFromSolar,
   deriveBaziPickerFromSolarTime,
   getBaziPickerYearItems,
   getBaziTimePickerOpenDefaults,
   getNowButtonResult,
+  tryDeriveSolarFromLunar,
 } from "@/lib/baziTimePicker";
 
 const PROVINCES = ["北京市", "上海市", "天津市", "广东省", "江苏省", "浙江省", "四川省"];
@@ -303,6 +305,12 @@ const BaziTimePickerModal = ({
   const [fourPillarsCandidates, setFourPillarsCandidates] = useState<SolarTime[]>([]);
   const [selectedCandidateIndex, setSelectedCandidateIndex] = useState(0);
   const wasOpenRef = React.useRef(false);
+  const lastSolarSyncKeyRef = React.useRef<string | null>(null);
+
+  const getSolarMaxDay = React.useCallback((y: number, m: number) => {
+    const safeMonth = Math.min(12, Math.max(1, m));
+    return new Date(y, safeMonth, 0).getDate();
+  }, []);
 
   useEffect(() => {
     if (isOpen && !wasOpenRef.current) {
@@ -317,6 +325,52 @@ const BaziTimePickerModal = ({
     }
     wasOpenRef.current = isOpen;
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    lastSolarSyncKeyRef.current = null;
+  }, [isOpen, tab]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (tab === "fourPillars") return;
+
+    const maxDay = getSolarMaxDay(solar.y, solar.m);
+    if (solar.d > maxDay) {
+      setSolar({ ...solar, d: maxDay });
+      return;
+    }
+
+    const key = `${solar.y}-${solar.m}-${solar.d}-${solar.h}-${solar.min}`;
+    if (lastSolarSyncKeyRef.current === key) return;
+    lastSolarSyncKeyRef.current = key;
+
+    try {
+      const derived = deriveBaziPickerFromSolar(solar);
+      setLunar(derived.lunar);
+      setFourPillars(derived.fourPillars);
+    } catch {
+      // ignore invalid dates while scrolling
+    }
+  }, [getSolarMaxDay, isOpen, solar, tab]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (tab !== "lunar") return;
+
+    const nextSolar = tryDeriveSolarFromLunar(lunar);
+    if (!nextSolar) return;
+    if (
+      nextSolar.y === solar.y &&
+      nextSolar.m === solar.m &&
+      nextSolar.d === solar.d &&
+      nextSolar.h === solar.h &&
+      nextSolar.min === solar.min
+    )
+      return;
+
+    setSolar(nextSolar);
+  }, [isOpen, lunar, solar, tab]);
 
   const computeCandidates = React.useCallback((fp: typeof fourPillars) => {
     try {
