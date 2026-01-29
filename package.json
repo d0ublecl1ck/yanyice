@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:api": "bun run prisma:generate && AUTO_MIGRATE=1 PORT=3311 bun --watch server/src/index.ts",
-    "dev:a": "bun run prisma:generate && concurrently -n web,api -c cyan,magenta \"API_PORT=3311 next dev\" \"AUTO_MIGRATE=1 PORT=3311 bun --watch server/src/index.ts\"",
+    "dev:api": "bun run prisma:deploy && PORT=3311 bun --watch server/src/index.ts",
+    "dev:a": "bun run prisma:generate && bun run prisma:deploy && concurrently -n web,api -c cyan,magenta \"API_PORT=3311 next dev\" \"PORT=3311 bun --watch server/src/index.ts\"",
     "build": "bun run prisma:generate && next build",
     "start": "next start",
     "lint": "eslint",

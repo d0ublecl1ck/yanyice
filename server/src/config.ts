@@ -1,3 +1,5 @@
+import path from "node:path";
+
 export function getEnv(name: string): string | undefined {
   const value = process.env[name];
   if (!value) return undefined;
@@ -18,7 +20,9 @@ export function getPort(): number {
 }
 
 export function getDatabaseUrl(): string {
-  return getEnv("DATABASE_URL") ?? "file:./server/prisma/dev.db";
+  const repoRoot = path.resolve(import.meta.dir, "../..");
+  const defaultDbPath = path.resolve(import.meta.dir, "../prisma/dev.db");
+  return normalizeDatabaseUrl(getEnv("DATABASE_URL") ?? `file:${defaultDbPath}`, repoRoot);
 }
 
 export function getJwtSecret(): string {
@@ -40,4 +44,21 @@ export function getCorsOrigin(): string | string[] | true {
 
   if (origins.length <= 1) return origins[0] ?? true;
   return origins;
+}
+
+export function normalizeDatabaseUrl(databaseUrl: string, repoRoot: string): string {
+  if (!databaseUrl.startsWith("file:")) return databaseUrl;
+
+  const fileUrl = databaseUrl.slice("file:".length);
+  if (fileUrl.startsWith("//")) return databaseUrl;
+
+  const [filePath, query] = fileUrl.split("?", 2);
+  if (!filePath) return databaseUrl;
+
+  const isWindowsAbs = /^[A-Za-z]:[\\/]/.test(filePath);
+  const isPosixAbs = path.isAbsolute(filePath);
+  if (isWindowsAbs || isPosixAbs) return databaseUrl;
+
+  const absolutePath = path.resolve(repoRoot, filePath);
+  return `file:${absolutePath}${query ? `?${query}` : ""}`;
 }
