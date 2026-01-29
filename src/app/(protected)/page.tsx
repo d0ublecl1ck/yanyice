@@ -14,11 +14,13 @@ import {
 
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useCaseStore } from "@/stores/useCaseStore";
+import { useRuleStore } from "@/stores/useRuleStore";
 import { formatGanzhiYearMonth } from "@/lib/lunarGanzhi";
 
 export default function Page() {
   const customers = useCustomerStore((state) => state.customers);
   const records = useCaseStore((state) => state.records);
+  const rules = useRuleStore((state) => state.rules);
   const [ganzhiYearMonth, setGanzhiYearMonth] = useState<string>("");
 
   useEffect(() => {
@@ -60,7 +62,7 @@ export default function Page() {
         {[
           { label: "客户总数", val: customers.length, icon: Users, color: "#8DA399" },
           { label: "记录总数", val: records.length, icon: BookOpen, color: "#A62121" },
-          { label: "规则条数", val: 12, icon: ShieldCheck, color: "#B37D56" },
+          { label: "规则条数", val: rules.length, icon: ShieldCheck, color: "#B37D56" },
         ].map((stat, i) => (
           <div
             key={i}
