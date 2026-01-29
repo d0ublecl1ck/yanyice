@@ -37,6 +37,14 @@ yarn-error.log*
 # vercel
 .vercel
 
+# conductor / local workspace
+.context/
+
+# sqlite dev databases
+server/prisma/*.db
+server/prisma/*.sqlite
+server/prisma/*.sqlite3
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
