@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Users,
@@ -14,10 +14,16 @@ import {
 
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useCaseStore } from "@/stores/useCaseStore";
+import { formatGanzhiYearMonth } from "@/lib/lunarGanzhi";
 
 export default function Page() {
   const customers = useCustomerStore((state) => state.customers);
   const records = useCaseStore((state) => state.records);
+  const [ganzhiYearMonth, setGanzhiYearMonth] = useState<string>("");
+
+  useEffect(() => {
+    setGanzhiYearMonth(formatGanzhiYearMonth(new Date()));
+  }, []);
 
   const recentRecords = records.slice(-5).reverse();
 
@@ -45,7 +51,7 @@ export default function Page() {
             农历岁次
           </p>
           <p className="text-lg font-bold text-[#2F2F2F] chinese-font">
-            乙巳年 丙戌月
+            {ganzhiYearMonth}
           </p>
         </div>
       </header>
