@@ -12,6 +12,7 @@ interface CustomerState {
   events: TimelineEvent[];
   status: LoadStatus;
   hasHydrated: boolean;
+  hasLoaded: boolean;
   loadedForUserId: string | null;
 
   setHasHydrated: (hasHydrated: boolean) => void;
@@ -23,6 +24,7 @@ interface CustomerState {
   deleteCustomer: (id: string) => Promise<void>;
 
   refreshEvents: (customerId: string) => Promise<void>;
+  loadCustomerEvents: (customerId: string) => Promise<void>;
   addEvent: (event: Omit<TimelineEvent, "id">) => Promise<void>;
   deleteEvent: (customerId: string, eventId: string) => Promise<void>;
 }
@@ -44,6 +46,7 @@ export const useCustomerStore = create<CustomerState>()(
       events: [],
       status: "idle",
       hasHydrated: false,
+      hasLoaded: false,
       loadedForUserId: null,
 
       setHasHydrated: (hasHydrated) => set({ hasHydrated }),
@@ -51,21 +54,22 @@ export const useCustomerStore = create<CustomerState>()(
       bootstrap: async () => {
         const auth = getAuthContext();
         if (!auth) {
-          set({ customers: [], events: [], status: "idle", loadedForUserId: null });
+          set({ customers: [], events: [], status: "idle", hasLoaded: false, loadedForUserId: null });
           return;
         }
 
         if (get().loadedForUserId !== auth.userId) {
-          set({ customers: [], events: [], loadedForUserId: auth.userId, status: "idle" });
+          set({ customers: [], events: [], loadedForUserId: auth.userId, status: "idle", hasLoaded: false });
         }
 
         await get().refreshCustomers();
+        set({ hasLoaded: true });
       },
 
       refreshCustomers: async () => {
         const auth = getAuthContext();
         if (!auth) {
-          set({ customers: [], events: [], status: "idle", loadedForUserId: null });
+          set({ customers: [], events: [], status: "idle", hasLoaded: false, loadedForUserId: null });
           return;
         }
 
@@ -79,7 +83,7 @@ export const useCustomerStore = create<CustomerState>()(
           set({ customers, status: "ready" });
         } catch (err) {
           if (isUnauthorized(err)) {
-            set({ customers: [], events: [], status: "idle", loadedForUserId: null });
+            set({ customers: [], events: [], status: "idle", hasLoaded: false, loadedForUserId: null });
             return;
           }
           set({ customers: prev.customers, events: prev.events, status: "error" });
@@ -145,6 +149,10 @@ export const useCustomerStore = create<CustomerState>()(
         }));
       },
 
+      loadCustomerEvents: async (customerId) => {
+        await get().refreshEvents(customerId);
+      },
+
       addEvent: async (event) => {
         const auth = getAuthContext();
         if (!auth) throw new Error("未登录");
@@ -202,4 +210,3 @@ export const useCustomerStore = create<CustomerState>()(
     },
   ),
 );
-
