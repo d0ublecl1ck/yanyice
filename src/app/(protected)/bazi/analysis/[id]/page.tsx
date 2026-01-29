@@ -350,7 +350,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   if (isLoading) {
     return (
       <div className="py-24 text-center">
-        <p className="text-[24px] text-[#2F2F2F]/30 chinese-font italic">加载中…</p>
+        <p className="text-[#2F2F2F]/30 chinese-font italic">加载中…</p>
       </div>
     );
   }
@@ -358,11 +358,11 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   if (!record || !analysis) {
     return (
       <div className="py-24 text-center">
-        <p className="text-[24px] text-[#2F2F2F]/20 chinese-font italic">未找到该八字卷宗</p>
+        <p className="text-[#2F2F2F]/20 chinese-font italic">未找到该八字卷宗</p>
         <div className="mt-6">
           <button
             onClick={() => router.push("/bazi")}
-            className="px-4 py-2 border border-[#B37D56]/20 text-[24px] font-bold tracking-widest rounded-[2px] hover:bg-[#B37D56]/5"
+            className="px-4 py-2 border border-[#B37D56]/20 text-xs font-bold tracking-widest rounded-[2px] hover:bg-[#B37D56]/5"
           >
             返回案卷库
           </button>
@@ -378,17 +378,17 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.push("/bazi")}
-              className="text-[#B37D56] text-[24px] font-bold tracking-[0.2em] uppercase hover:underline underline-offset-4"
+              className="text-[#B37D56] text-[10px] font-bold tracking-[0.2em] uppercase hover:underline underline-offset-4"
             >
               返回
             </button>
-            <span className="text-[24px] text-[#2F2F2F]/20">/</span>
-            <span className="text-[24px] text-[#2F2F2F]/40 font-bold tracking-widest uppercase">
+            <span className="text-[10px] text-[#2F2F2F]/20">/</span>
+            <span className="text-[10px] text-[#2F2F2F]/40 font-bold tracking-widest uppercase">
               {analysis.gender}
             </span>
           </div>
           <h2 className="text-2xl font-bold text-[#2F2F2F] chinese-font">{analysis.subject}</h2>
-          <p className="text-[24px] text-[#2F2F2F]/40 chinese-font tracking-widest uppercase">
+          <p className="text-[10px] text-[#2F2F2F]/40 chinese-font tracking-widest uppercase">
             {customer?.name ? `${customer.name} · ` : ""}
             {analysis.solarDate}
           </p>
@@ -396,13 +396,13 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         <div className="flex gap-3">
           <button
             onClick={() => setIsPanelOpen(true)}
-            className="text-[#B37D56] text-[24px] font-bold tracking-[0.2em] uppercase border border-[#B37D56]/20 px-4 py-2 rounded-[2px] hover:bg-[#B37D56]/5"
+            className="text-[#B37D56] text-[10px] font-bold tracking-[0.2em] uppercase border border-[#B37D56]/20 px-4 py-2 rounded-[2px] hover:bg-[#B37D56]/5"
           >
             探讨易理
           </button>
           <Link
             href={`/bazi/edit/${encodeURIComponent(id)}`}
-            className="bg-[#2F2F2F] text-white px-5 py-2 text-[24px] font-bold tracking-[0.2em] uppercase rounded-[2px] hover:bg-black"
+            className="bg-[#2F2F2F] text-white px-5 py-2 text-[10px] font-bold tracking-[0.2em] uppercase rounded-[2px] hover:bg-black"
           >
             编辑案卷
           </Link>
@@ -531,111 +531,111 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           </table>
         </div>
 
-	        <div className="lg:col-span-4 space-y-8">
-	          <div className="bg-white border border-[#B37D56]/15 p-10 space-y-10 rounded-[4px] shadow-none">
-	            <div className="space-y-6">
-	              <h3 className="text-[24px] font-bold text-[#B37D56] uppercase tracking-[0.3em] border-b border-[#B37D56]/15 pb-2">
-	                命局关系
-	              </h3>
-	              <div className="space-y-8">
-	                <div className="space-y-2">
-	                  <span className="text-[24px] font-bold text-[#B37D56]/40 uppercase tracking-widest">
-	                    天干理法
-	                  </span>
-	                  <p className="text-[24px] text-[#2F2F2F] chinese-font leading-relaxed font-bold">
-	                    {analysis.tgNotes}
-	                  </p>
-	                </div>
-	                <div className="space-y-2">
-	                  <span className="text-[24px] font-bold text-[#B37D56]/40 uppercase tracking-widest">
-	                    地支神煞
-	                  </span>
-	                  <p className="text-[24px] text-[#2F2F2F] chinese-font leading-relaxed font-bold">
-	                    {analysis.dzNotes}
-	                  </p>
-	                </div>
-	              </div>
-	            </div>
+        <div className="lg:col-span-4 space-y-8">
+          <div className="bg-white border border-[#B37D56]/15 p-10 space-y-10 rounded-[4px] shadow-none">
+            <div className="space-y-6">
+              <h3 className="text-[10px] font-bold text-[#B37D56] uppercase tracking-[0.3em] border-b border-[#B37D56]/15 pb-2">
+                命局关系
+              </h3>
+              <div className="space-y-8">
+                <div className="space-y-2">
+                  <span className="text-[9px] font-bold text-[#B37D56]/40 uppercase tracking-widest">
+                    天干理法
+                  </span>
+                  <p className="text-[13px] text-[#2F2F2F] chinese-font leading-relaxed font-bold">
+                    {analysis.tgNotes}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <span className="text-[9px] font-bold text-[#B37D56]/40 uppercase tracking-widest">
+                    地支神煞
+                  </span>
+                  <p className="text-[13px] text-[#2F2F2F] chinese-font leading-relaxed font-bold">
+                    {analysis.dzNotes}
+                  </p>
+                </div>
+              </div>
+            </div>
 
-	            <div className="space-y-3">
-	              <h3 className="text-[24px] font-bold text-[#B37D56] uppercase tracking-[0.3em] border-b border-[#B37D56]/15 pb-2">
-	                备注
-	              </h3>
-	              <p className="text-[24px] text-[#2F2F2F]/40 chinese-font leading-relaxed">
-	                {record.notes?.trim() ? record.notes : "（暂无备注）"}
-	              </p>
-	            </div>
-	          </div>
-	        </div>
+            <div className="space-y-3">
+              <h3 className="text-[10px] font-bold text-[#B37D56] uppercase tracking-[0.3em] border-b border-[#B37D56]/15 pb-2">
+                备注
+              </h3>
+              <p className="text-[12px] text-[#2F2F2F]/40 chinese-font leading-relaxed">
+                {record.notes?.trim() ? record.notes : "（暂无备注）"}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {isPanelOpen && (
-	          <div className="fixed inset-0 bg-black/10 z-[60] flex justify-end">
-	          <div className="w-[360px] bg-white border-l border-[#B37D56]/20 flex flex-col h-full shadow-none">
-	            <div className="p-5 border-b border-[#B37D56]/10 bg-[#FAF7F2] flex justify-between items-center">
-	              <div className="flex items-center gap-3">
-	                <span className="text-[24px] font-bold chinese-font text-[#2F2F2F] tracking-widest">
-	                  易理探讨
-	                </span>
-	                <button
-	                  onClick={() => {
-	                    clearHistory(id);
-	                    toast.show("已清空对话", "info");
-	                  }}
-	                  className="text-[24px] font-bold tracking-[0.2em] uppercase text-[#2F2F2F]/30 hover:text-[#A62121]"
-	                >
-	                  清空
-	                </button>
-	              </div>
-	              <button
-	                onClick={() => setIsPanelOpen(false)}
-	                className="text-[#2F2F2F]/30 uppercase text-[24px] hover:text-[#A62121]"
-	              >
-	                Close
-	              </button>
-	            </div>
-	            <div className="flex-1 overflow-y-auto p-5 space-y-4">
-	              {history.map((msg, idx) => (
-	                <div
-	                  key={idx}
-	                  className={`p-3 text-[24px] border chinese-font leading-relaxed ${
-	                    msg.role === "user"
-	                      ? "bg-[#FAF7F2] border-[#B37D56]/20 ml-8"
-	                      : "bg-white border-black/10 mr-8"
-	                  }`}
-	                >
-	                  {msg.text}
-	                </div>
-	              ))}
-	              {isTyping && (
-	                <div className="p-3 text-[24px] border border-black/10 mr-8 text-[#2F2F2F]/40">
-	                  正在推演...
-	                </div>
-	              )}
-	              <div ref={chatEndRef} />
-	            </div>
-	            <div className="p-5 border-t border-[#B37D56]/10 bg-white space-y-3">
-	              <input
-	                type="text"
-	                value={inputText}
-	                onChange={(e) => setInputText(e.target.value)}
-	                onKeyDown={(e) => {
-	                  if (e.key === "Enter") void handleSend();
-	                }}
-	                placeholder="请问..."
-	                className="w-full bg-[#FAF7F2] border border-[#B37D56]/20 px-3 py-2 text-[24px] outline-none rounded-[2px]"
-	              />
-	              <button
-	                onClick={() => void handleSend()}
-	                disabled={isTyping || inputText.trim().length === 0}
-	                className="w-full h-10 bg-[#2F2F2F] text-white text-[24px] font-bold chinese-font tracking-[0.4em] rounded-[2px] hover:bg-black disabled:opacity-40 disabled:hover:bg-[#2F2F2F] transition-all"
-	              >
-	                发送
-	              </button>
-	            </div>
-	          </div>
-	        </div>
-	      )}
+        <div className="fixed inset-0 bg-black/10 z-[60] flex justify-end">
+          <div className="w-[360px] bg-white border-l border-[#B37D56]/20 flex flex-col h-full shadow-none">
+            <div className="p-5 border-b border-[#B37D56]/10 bg-[#FAF7F2] flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-bold chinese-font text-[#2F2F2F] tracking-widest">
+                  易理探讨
+                </span>
+                <button
+                  onClick={() => {
+                    clearHistory(id);
+                    toast.show("已清空对话", "info");
+                  }}
+                  className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#2F2F2F]/30 hover:text-[#A62121]"
+                >
+                  清空
+                </button>
+              </div>
+              <button
+                onClick={() => setIsPanelOpen(false)}
+                className="text-[#2F2F2F]/30 uppercase text-[10px] hover:text-[#A62121]"
+              >
+                Close
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              {history.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`p-3 text-xs border chinese-font leading-relaxed ${
+                    msg.role === "user"
+                      ? "bg-[#FAF7F2] border-[#B37D56]/20 ml-8"
+                      : "bg-white border-black/10 mr-8"
+                  }`}
+                >
+                  {msg.text}
+                </div>
+              ))}
+              {isTyping && (
+                <div className="p-3 text-xs border border-black/10 mr-8 text-[#2F2F2F]/40">
+                  正在推演...
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+            <div className="p-5 border-t border-[#B37D56]/10 bg-white space-y-3">
+              <input
+                type="text"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void handleSend();
+                }}
+                placeholder="请问..."
+                className="w-full bg-[#FAF7F2] border border-[#B37D56]/20 px-3 py-2 text-xs outline-none rounded-[2px]"
+              />
+              <button
+                onClick={() => void handleSend()}
+                disabled={isTyping || inputText.trim().length === 0}
+                className="w-full h-10 bg-[#2F2F2F] text-white font-bold chinese-font tracking-[0.4em] rounded-[2px] hover:bg-black disabled:opacity-40 disabled:hover:bg-[#2F2F2F] transition-all"
+              >
+                发送
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
