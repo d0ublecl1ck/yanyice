@@ -18,6 +18,7 @@ import { useToastStore } from '@/stores/useToastStore';
 import { LineType, LiuYaoData, BaZiData } from '@/lib/types';
 import { ApiError } from '@/lib/apiClient';
 import { LINE_SYMBOLS, BRANCHES, STEMS } from '@/lib/constants';
+import { calcLiuyaoGanzhiFromIso } from "@/lib/lunarGanzhi";
 import { loadLocationPickerSchema, findSelectionByNames, formatSelection } from '@/lib/locationData';
 import { filterCities, filterDistricts, filterProvinces, type LocationNode } from '@/lib/locationSearch';
 import { ChineseDatePicker } from '@/components/ChineseDatePicker';
@@ -391,7 +392,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
   // 六爻专有状态
   const [lines, setLines] = useState<LineType[]>([0, 0, 0, 0, 0, 0]);
   const [monthBranch, setMonthBranch] = useState('子');
-  const [dayBranch, setDayBranch] = useState('子');
+  const [dayBranch, setDayBranch] = useState('甲子');
 
   // 八字专有状态
   const [bazi, setBazi] = useState<Partial<BaZiData>>({
@@ -431,6 +432,14 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
     if (moduleParam === 'liuyao' || moduleParam === 'bazi') setModule(moduleParam);
     if (customerParam) setCustomerId(customerParam);
   }, [id, router, searchParams]);
+
+  useEffect(() => {
+    if (module !== "liuyao") return;
+    const ganzhi = calcLiuyaoGanzhiFromIso(recordDate);
+    if (!ganzhi) return;
+    setMonthBranch(ganzhi.monthBranch);
+    setDayBranch(ganzhi.dayGanzhi);
+  }, [module, recordDate]);
 
   useEffect(() => {
     if (id) {
@@ -748,15 +757,15 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">月建</label>
-                    <select value={monthBranch} onChange={e => setMonthBranch(e.target.value)} className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-1.5 outline-none font-bold">
-                      {BRANCHES.map(b => <option key={b} value={b}>{b}月</option>)}
-                    </select>
+                    <div className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-1.5 font-bold chinese-font">
+                      {monthBranch}月
+                    </div>
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">日辰</label>
-                    <select value={dayBranch} onChange={e => setDayBranch(e.target.value)} className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-1.5 outline-none font-bold">
-                      {BRANCHES.map(b => <option key={b} value={b}>{b}日</option>)}
-                    </select>
+                    <div className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-1.5 font-bold chinese-font">
+                      {dayBranch}日
+                    </div>
                   </div>
                 </div>
               </div>
