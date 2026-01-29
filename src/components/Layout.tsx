@@ -167,9 +167,19 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 onClick={() => setIsFabOpen(false)}
                 className="flex items-center gap-3 bg-white border border-[#B37D56]/20 px-4 py-3 shadow-lg hover:border-[#A62121] transition-all group rounded-none"
               >
-                <span className="text-xs font-bold text-[#2F2F2F] chinese-font tracking-widest group-hover:text-[#A62121]">登记新客户</span>
-                <div className="w-10 h-10 bg-[#8DA399]/10 text-[#8DA399] flex items-center justify-center rounded-none group-hover:bg-[#8DA399] group-hover:text-white transition-all">
+                <span className="text-xs font-bold text-[#2F2F2F] chinese-font tracking-widest group-hover:text-[#A62121]">登记客户</span>
+                <div className="w-10 h-10 bg-[#8DA399]/10 text-[#8DA399] flex items-center justify-center">
                   <UserPlus size={18} />
+                </div>
+              </Link>
+              <Link 
+                href="/bazi/new" 
+                onClick={() => setIsFabOpen(false)}
+                className="flex items-center gap-3 bg-white border border-[#B37D56]/20 px-4 py-3 shadow-lg hover:border-[#A62121] transition-all group rounded-none"
+              >
+                <span className="text-xs font-bold text-[#2F2F2F] chinese-font tracking-widest group-hover:text-[#A62121]">排盘八字</span>
+                <div className="w-10 h-10 bg-black text-white flex items-center justify-center">
+                  <FilePlus size={18} />
                 </div>
               </Link>
               <Link 
@@ -177,9 +187,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 onClick={() => setIsFabOpen(false)}
                 className="flex items-center gap-3 bg-white border border-[#B37D56]/20 px-4 py-3 shadow-lg hover:border-[#A62121] transition-all group rounded-none"
               >
-                <span className="text-xs font-bold text-[#2F2F2F] chinese-font tracking-widest group-hover:text-[#A62121]">录入新咨询</span>
-                <div className="w-10 h-10 bg-[#A62121]/10 text-[#A62121] flex items-center justify-center rounded-none group-hover:bg-[#A62121] group-hover:text-white transition-all">
-                  <FilePlus size={18} />
+                <span className="text-xs font-bold text-[#2F2F2F] chinese-font tracking-widest group-hover:text-[#A62121]">起卦六爻</span>
+                <div className="w-10 h-10 bg-[#A62121] text-white flex items-center justify-center">
+                  <Plus size={18} />
                 </div>
               </Link>
             </div>
@@ -187,10 +197,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           
           <button 
             onClick={() => setIsFabOpen(!isFabOpen)}
-            className={`w-14 h-14 bg-[#A62121] text-white flex items-center justify-center transition-all active:scale-95 shadow-[0_4px_12px_rgba(166,33,33,0.2)] rounded-[2px] ${isFabOpen ? 'rotate-45' : ''}`}
+            className={`w-14 h-14 bg-[#A62121] text-white flex items-center justify-center transition-all active:scale-95 shadow-xl rounded-sm ${isFabOpen ? 'rotate-45' : ''}`}
           >
             <Plus size={28} />
-            <div className="absolute inset-1 border border-white/20 pointer-events-none rounded-[1px]" />
           </button>
         </div>
       </main>
