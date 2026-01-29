@@ -19,7 +19,7 @@ import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useToastStore } from "@/stores/useToastStore";
 import type { BaZiData } from "@/lib/types";
 import { BRANCHES, STEMS } from "@/lib/constants";
-import { deriveBaziPickerFromSolarTime, getNowButtonResult } from "@/lib/baziTimePicker";
+import { deriveBaziPickerFromSolarTime, getBaziPickerYearItems, getNowButtonResult } from "@/lib/baziTimePicker";
 
 const PROVINCES = ["北京市", "上海市", "天津市", "广东省", "江苏省", "浙江省", "四川省"];
 const CITIES: Record<string, string[]> = {
@@ -372,7 +372,7 @@ const BaziTimePickerModal = ({
             <div className="flex justify-between">
               <PickerColumn
                 label="年"
-                items={Array.from({ length: 121 }, (_, i) => 1900 + i)}
+                items={getBaziPickerYearItems()}
                 value={solar.y}
                 onChange={(v) => setSolar({ ...solar, y: Number(v) })}
               />
@@ -407,7 +407,7 @@ const BaziTimePickerModal = ({
             <div className="flex justify-between">
               <PickerColumn
                 label="年"
-                items={Array.from({ length: 121 }, (_, i) => 1900 + i)}
+                items={getBaziPickerYearItems()}
                 value={lunar.y}
                 onChange={(v) => setLunar({ ...lunar, y: Number(v) })}
               />

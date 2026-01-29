@@ -1,5 +1,15 @@
 import { SolarTime } from "tyme4ts";
 
+export const BAZI_PICKER_YEAR_START = 1900;
+export const BAZI_PICKER_YEAR_END = 2099;
+
+export const getBaziPickerYearItems = () => {
+  return Array.from(
+    { length: BAZI_PICKER_YEAR_END - BAZI_PICKER_YEAR_START + 1 },
+    (_, i) => BAZI_PICKER_YEAR_START + i,
+  );
+};
+
 export type BaziPickerSolar = {
   y: number;
   m: number;
@@ -100,4 +110,3 @@ export type NowButtonResult = {
 export const getNowButtonResult = (now: Date): NowButtonResult => {
   return { derived: deriveBaziPickerFromNow(now), shouldAutoConfirm: false, shouldAutoClose: false };
 };
-
