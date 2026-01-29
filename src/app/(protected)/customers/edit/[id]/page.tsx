@@ -1,6 +1,6 @@
-import { CustomerEditPage } from "@/yanyice/pages/customers/CustomerEditPage";
+import { CustomerEditView } from "../../_components/CustomerEditView";
 
 export default function Page({ params }: { params: { id: string } }) {
   const { id } = params;
-  return <CustomerEditPage id={id} />;
+  return <CustomerEditView id={id} />;
 }

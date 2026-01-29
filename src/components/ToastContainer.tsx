@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { CheckCircle, AlertCircle, Info, X, AlertTriangle } from 'lucide-react';
-import { useToastStore, ToastType } from '../stores/useToastStore';
+import { useToastStore, ToastType } from '@/stores/useToastStore';
 
 const ToastIcon = ({ type }: { type: ToastType }) => {
   switch (type) {

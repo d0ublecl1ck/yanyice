@@ -1,7 +1,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Customer, TimelineEvent } from '../types';
+import { Customer, TimelineEvent } from '@/lib/types';
 
 interface CustomerState {
   customers: Customer[];

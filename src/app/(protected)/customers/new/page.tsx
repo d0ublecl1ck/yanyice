@@ -1,6 +1,5 @@
-import { CustomerEditPage } from "@/yanyice/pages/customers/CustomerEditPage";
+import { CustomerEditView } from "../_components/CustomerEditView";
 
 export default function Page() {
-  return <CustomerEditPage />;
+  return <CustomerEditView />;
 }
-

@@ -13,16 +13,16 @@ import {
   CalendarDays,
   RefreshCw
 } from 'lucide-react';
-import { useCaseStore } from '../../stores/useCaseStore';
-import { useCustomerStore } from '../../stores/useCustomerStore';
-import { useToastStore } from '../../stores/useToastStore';
-import { LineType, LiuYaoData, BaZiData } from '../../types';
-import { LINE_SYMBOLS, BRANCHES, STEMS } from '../../constants';
-import { extractLiuYaoData } from '../../services/geminiService';
-import { ChineseDatePicker } from '../../components/ChineseDatePicker';
-import { ChineseTimePicker } from '../../components/ChineseTimePicker';
+import { useCaseStore } from '@/stores/useCaseStore';
+import { useCustomerStore } from '@/stores/useCustomerStore';
+import { useToastStore } from '@/stores/useToastStore';
+import { LineType, LiuYaoData, BaZiData } from '@/lib/types';
+import { LINE_SYMBOLS, BRANCHES, STEMS } from '@/lib/constants';
+import { extractLiuYaoData } from '@/lib/geminiService';
+import { ChineseDatePicker } from '@/components/ChineseDatePicker';
+import { ChineseTimePicker } from '@/components/ChineseTimePicker';
 
-export const CaseEditPage: React.FC<{ id?: string }> = ({ id }) => {
+export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
   const router = useRouter();
   const toast = useToastStore();
   const records = useCaseStore(state => state.records);

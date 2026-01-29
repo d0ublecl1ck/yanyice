@@ -3,8 +3,8 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-import { Layout } from "@/yanyice/components/Layout";
-import { useAuthStore } from "@/yanyice/stores/useAuthStore";
+import { Layout } from "@/components/Layout";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -23,4 +23,3 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
 
   return <Layout key={pathname}>{children}</Layout>;
 }
-

@@ -5,8 +5,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, User, FileText, ChevronRight, X, Command } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCustomerStore } from '../stores/useCustomerStore';
-import { useCaseStore } from '../stores/useCaseStore';
+import { useCustomerStore } from '@/stores/useCustomerStore';
+import { useCaseStore } from '@/stores/useCaseStore';
 
 interface Props {
   isOpen: boolean;

@@ -4,14 +4,13 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Save, Trash2, Plus, Calendar, Clock, User, Tag, History } from 'lucide-react';
-import { useCustomerStore } from '../../stores/useCustomerStore';
-import { useToastStore } from '../../stores/useToastStore';
-import { Customer, TimelineEvent } from '../../types';
-import { ChineseDatePicker } from '../../components/ChineseDatePicker';
-import { ChineseTimePicker } from '../../components/ChineseTimePicker';
-import { ConfirmDialog } from '../../components/ConfirmDialog';
+import { useCustomerStore } from '@/stores/useCustomerStore';
+import { useToastStore } from '@/stores/useToastStore';
+import { ChineseDatePicker } from '@/components/ChineseDatePicker';
+import { ChineseTimePicker } from '@/components/ChineseTimePicker';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
-export const CustomerEditPage: React.FC<{ id?: string }> = ({ id }) => {
+export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
   const router = useRouter();
   const toast = useToastStore();
   const { customers, events, addCustomer, updateCustomer, deleteCustomer, addEvent, deleteEvent } = useCustomerStore();

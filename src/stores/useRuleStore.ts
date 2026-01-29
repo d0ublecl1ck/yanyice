@@ -1,7 +1,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Rule } from '../types';
+import { Rule } from '@/lib/types';
 
 interface RuleState {
   rules: Rule[];

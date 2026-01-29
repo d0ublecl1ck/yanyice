@@ -1,6 +1,5 @@
-import { CaseEditPage } from "@/yanyice/pages/cases/CaseEditPage";
+import { CaseEditView } from "../_components/CaseEditView";
 
 export default function Page() {
-  return <CaseEditPage />;
+  return <CaseEditView />;
 }
-

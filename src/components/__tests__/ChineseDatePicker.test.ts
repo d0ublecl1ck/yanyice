@@ -18,4 +18,3 @@ describe("ChineseDatePicker date helpers", () => {
     expect(firstDayOfMonth(2020, 2)).toBe(0);
   });
 });
-

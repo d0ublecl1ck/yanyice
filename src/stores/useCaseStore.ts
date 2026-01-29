@@ -1,7 +1,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { ConsultationRecord } from '../types';
+import { ConsultationRecord } from '@/lib/types';
 
 interface CaseState {
   records: ConsultationRecord[];

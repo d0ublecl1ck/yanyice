@@ -1,4 +1,6 @@
 
+export type ModuleType = "liuyao" | "bazi";
+
 export enum LineType {
   SHAO_YANG = 0, // 少阳 —
   SHAO_YIN = 1,  // 少阴 --
@@ -51,7 +53,7 @@ export interface TimelineEvent {
 export interface ConsultationRecord {
   id: string;
   customerId: string;
-  module: 'liuyao' | 'bazi';
+  module: ModuleType;
   subject: string;
   notes: string;
   tags: string[];
@@ -64,7 +66,7 @@ export interface ConsultationRecord {
 
 export interface Rule {
   id: string;
-  module: 'liuyao' | 'bazi';
+  module: ModuleType;
   name: string;
   enabled: boolean;
   condition: string; // 自然语言或简单逻辑描述

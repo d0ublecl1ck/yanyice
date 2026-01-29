@@ -17,8 +17,8 @@ import {
   UserPlus,
   FilePlus
 } from 'lucide-react';
-import { useAuthStore } from '../stores/useAuthStore';
-import { useUIStore } from '../stores/useUIStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { useUIStore } from '@/stores/useUIStore';
 import { GlobalSearch } from './GlobalSearch';
 import { ToastContainer } from './ToastContainer';
 
@@ -55,7 +55,7 @@ const SidebarItem = ({
           {active && (
             <div className="absolute left-0 w-[3px] h-full bg-[#A62121]" />
           )}
-          {!to && (
+          {!href && (
             <span className="absolute right-4 text-[9px] opacity-20 group-hover:opacity-40 font-bold uppercase tracking-tighter transition-opacity">Cmd K</span>
           )}
         </>

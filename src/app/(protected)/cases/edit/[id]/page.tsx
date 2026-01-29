@@ -1,6 +1,6 @@
-import { CaseEditPage } from "@/yanyice/pages/cases/CaseEditPage";
+import { CaseEditView } from "../../_components/CaseEditView";
 
 export default function Page({ params }: { params: { id: string } }) {
   const { id } = params;
-  return <CaseEditPage id={id} />;
+  return <CaseEditView id={id} />;
 }

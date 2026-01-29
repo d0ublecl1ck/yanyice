@@ -1,6 +1,3 @@
-
-import React from 'react';
-
 export const STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 export const BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
 export const RELATIVES = ['父母', '子孙', '官鬼', '妻财', '兄弟'];
