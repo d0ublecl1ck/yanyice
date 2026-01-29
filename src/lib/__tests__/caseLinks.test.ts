@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { newCaseHref, recordEditHref, rulesHref } from "../caseLinks";
+import { newCaseHref, recordAnalysisHref, recordEditHref, rulesHref } from "../caseLinks";
 
 describe("caseLinks", () => {
   test("rulesHref routes by module", () => {
@@ -12,6 +12,12 @@ describe("caseLinks", () => {
     expect(recordEditHref("liuyao", "abc")).toBe("/liuyao/edit/abc");
     expect(recordEditHref("bazi", "abc")).toBe("/bazi/edit/abc");
     expect(recordEditHref("liuyao", "a/b")).toBe("/liuyao/edit/a%2Fb");
+  });
+
+  test("recordAnalysisHref routes by module and encodes id", () => {
+    expect(recordAnalysisHref("liuyao", "abc")).toBe("/liuyao/analysis/abc");
+    expect(recordAnalysisHref("bazi", "abc")).toBe("/bazi/analysis/abc");
+    expect(recordAnalysisHref("bazi", "a/b")).toBe("/bazi/analysis/a%2Fb");
   });
 
   test("newCaseHref routes by module", () => {

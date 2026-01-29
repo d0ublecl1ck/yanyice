@@ -25,5 +25,5 @@ export const TRIGRAMS: Record<string, string> = {
 export const getHexagramName = (_lines: number[]) => {
   // 简化的卦名推导逻辑
   void _lines;
-  return "测算卦例"; 
+  return "测算卦例";
 };

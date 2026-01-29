@@ -150,7 +150,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             href="/bazi"
             icon={Hash}
             label="八字案卷"
-            active={pathname === '/bazi' || pathname.startsWith('/bazi/edit') || pathname.startsWith('/bazi/new')}
+            active={
+              pathname === "/bazi" ||
+              pathname.startsWith("/bazi/edit") ||
+              pathname.startsWith("/bazi/new") ||
+              pathname.startsWith("/bazi/analysis")
+            }
             collapsed={isSidebarCollapsed}
           />
           <SidebarItem
@@ -169,7 +174,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             href="/liuyao"
             icon={Layers}
             label="六爻卦例"
-            active={pathname === '/liuyao' || pathname.startsWith('/liuyao/edit') || pathname.startsWith('/liuyao/new')}
+            active={
+              pathname === "/liuyao" ||
+              pathname.startsWith("/liuyao/edit") ||
+              pathname.startsWith("/liuyao/new") ||
+              pathname.startsWith("/liuyao/analysis")
+            }
             collapsed={isSidebarCollapsed}
           />
           <SidebarItem
