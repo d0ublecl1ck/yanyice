@@ -234,7 +234,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           {isFabOpen && (
             <div className="flex flex-col gap-3 mb-2 animate-in fade-in slide-in-from-bottom-4 duration-200">
               <Link 
-                href="/customers/new" 
+                href="/customers?new=1" 
                 onClick={() => setIsFabOpen(false)}
                 className="flex items-center gap-3 bg-white border border-[#B37D56]/20 px-4 py-3 shadow-lg hover:border-[#A62121] transition-all group rounded-none"
               >

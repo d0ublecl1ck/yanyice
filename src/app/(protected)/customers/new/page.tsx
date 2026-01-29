@@ -1,5 +1,5 @@
-import { CustomerEditView } from "../_components/CustomerEditView";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <CustomerEditView />;
+  redirect("/customers?new=1");
 }

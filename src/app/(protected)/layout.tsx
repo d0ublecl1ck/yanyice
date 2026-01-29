@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { Layout } from "@/components/Layout";
@@ -13,6 +13,7 @@ import { useToastStore } from "@/stores/useToastStore";
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const hasHandledUnauthorized = useRef(false);
 
   const status = useAuthStore((s) => s.status);
   const hasHydrated = useAuthStore((s) => s.hasHydrated);
@@ -27,6 +28,18 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     if (!hasHydrated) return;
     if (status === "unauthenticated") router.replace("/login");
   }, [hasHydrated, status, router]);
+
+  useEffect(() => {
+    const handler = () => {
+      if (hasHandledUnauthorized.current) return;
+      hasHandledUnauthorized.current = true;
+      useAuthStore.getState().logout();
+      showToast("登录已失效，请重新登录", "warning");
+      router.replace("/login");
+    };
+    window.addEventListener("yanyice:unauthorized", handler);
+    return () => window.removeEventListener("yanyice:unauthorized", handler);
+  }, [router, showToast]);
 
   useEffect(() => {
     if (!hasHydrated) return;

@@ -36,7 +36,7 @@ const ErrorResponse = Type.Object({
 
 const CreateCustomerBody = Type.Object({
   name: Type.String({ minLength: 1, maxLength: 128 }),
-  gender: Type.Optional(CustomerGender),
+  gender: CustomerGender,
   birthDate: Type.Optional(Type.String()),
   birthTime: Type.Optional(Type.String()),
   phone: Type.Optional(Type.String()),
@@ -137,7 +137,7 @@ export async function customerRoutes(app: FastifyInstance) {
         data: {
           userId,
           name: body.name,
-          gender: body.gender ?? "other",
+          gender: body.gender,
           birthDate: body.birthDate ?? null,
           birthTime: body.birthTime ?? null,
           phone: body.phone ?? null,
@@ -405,4 +405,3 @@ export async function customerRoutes(app: FastifyInstance) {
     },
   );
 }
-

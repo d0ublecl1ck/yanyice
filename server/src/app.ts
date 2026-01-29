@@ -45,8 +45,14 @@ export function buildApp(options?: { databaseUrl?: string; logger?: boolean }) {
 
   app.register(jwt, { secret: getJwtSecret() });
 
-  app.decorate("authenticate", async (request) => {
+  app.decorate("authenticate", async (request, reply) => {
     await request.jwtVerify();
+    const userId = request.user.sub;
+    const user = await app.prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+    if (!user) {
+      reply.status(401).send({ code: "UNAUTHORIZED", message: "登录已失效" });
+      return;
+    }
   });
 
   app.register(swagger, {

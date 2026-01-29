@@ -9,6 +9,9 @@ import { useToastStore } from '@/stores/useToastStore';
 import { ChineseDatePicker } from '@/components/ChineseDatePicker';
 import { ChineseTimePicker } from '@/components/ChineseTimePicker';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { ApiError } from '@/lib/apiClient';
+import type { CustomerGender } from '@/lib/types';
+import { buildCreateCustomerPayload, buildUpdateCustomerPayload } from './customerFormPayload';
 
 export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
   const router = useRouter();
@@ -24,15 +27,15 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
     deleteEvent,
   } = useCustomerStore();
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+	  const [isSaving, setIsSaving] = useState(false);
 
-  const [name, setName] = useState('');
-  const [gender, setGender] = useState<'male' | 'female' | 'other'>('male');
-  const [birthDate, setBirthDate] = useState('');
-  const [birthTime, setBirthTime] = useState('');
-  const [phone, setPhone] = useState('');
-  const [notes, setNotes] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
+	  const [name, setName] = useState('');
+	  const [gender, setGender] = useState<CustomerGender>('male');
+	  const [birthDate, setBirthDate] = useState('');
+	  const [birthTime, setBirthTime] = useState('');
+	  const [phone, setPhone] = useState('');
+	  const [notes, setNotes] = useState('');
+	  const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
 
   const [eventDate, setEventDate] = useState('');
@@ -58,37 +61,32 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
     void refreshEvents(id);
   }, [id, refreshEvents]);
 
-  const handleSave = async () => {
-    if (!name) {
-      toast.show('请填写客户姓名', 'error');
-      return;
-    }
-    const data = { 
-      name, 
-      gender, 
-      birthDate, 
-      birthTime, 
-      phone, 
-      notes, 
-      tags, 
-      customFields: {} 
-    };
-    setIsSaving(true);
-    try {
-      if (id) {
-        await updateCustomer(id, data);
-        toast.show('客户资料已更新', 'success');
-      } else {
-        await addCustomer(data);
-        toast.show('新客户已成功建档', 'success');
-      }
-      router.push('/customers');
-    } catch {
-      toast.show('保存失败，请稍后重试', 'error');
-    } finally {
-      setIsSaving(false);
-    }
-  };
+	  const handleSave = async () => {
+	    if (!name) {
+	      toast.show('请填写客户姓名', 'error');
+	      return;
+	    }
+	    const formState = { name, gender, birthDate, birthTime, phone, notes, tags };
+	    setIsSaving(true);
+	    try {
+	      if (id) {
+	        await updateCustomer(id, buildUpdateCustomerPayload(formState));
+	        toast.show('客户资料已更新', 'success');
+	      } else {
+	        await addCustomer(buildCreateCustomerPayload(formState));
+	        toast.show('新客户已成功建档', 'success');
+	      }
+	      router.push('/customers');
+	    } catch (e) {
+	      if (e instanceof ApiError) {
+	        toast.show(e.message, 'error');
+	        return;
+	      }
+	      toast.show('保存失败：接口不可用或网络异常（请确认服务已启动）', 'error');
+	    } finally {
+	      setIsSaving(false);
+	    }
+	  };
 
   const handleAddEvent = async () => {
     if (!id || !eventDate || !eventDesc) {
@@ -177,39 +175,43 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
                   onChange={e => setName(e.target.value)}
                   className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-1 outline-none focus:border-[#A62121] transition-colors chinese-font font-bold"
                 />
-              </div>
-              <div className="group">
-                <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">性别/造化</label>
-                <div className="flex gap-4 mt-2">
-                  {(['male', 'female'] as const).map((g) => (
-                    <button 
-                      key={g} 
-                      onClick={() => setGender(g)}
-                      className={`px-4 py-1 text-xs border transition-all ${gender === g ? 'bg-[#2F2F2F] text-white border-[#2F2F2F]' : 'border-[#B37D56]/20 text-[#2F2F2F]/40'}`}
-                    >
-                      {g === 'male' ? '乾造' : '坤造'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 gap-6">
-                <ChineseDatePicker 
-                  label="出生日期"
-                  value={birthDate}
-                  onChange={setBirthDate}
-                  placeholder="选择出生日期"
-                />
-                <ChineseTimePicker 
-                  label="出生时间"
-                  value={birthTime}
-                  onChange={setBirthTime}
-                />
-              </div>
+	              </div>
+	              {id && (
+	                <>
+	                  <div className="group">
+	                    <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">性别/造化</label>
+	                    <div className="flex gap-4 mt-2">
+	                      {(['male', 'female'] as const).map((g) => (
+	                        <button 
+	                          key={g} 
+	                          onClick={() => setGender(g)}
+	                          className={`px-4 py-1 text-xs border transition-all ${gender === g ? 'bg-[#2F2F2F] text-white border-[#2F2F2F]' : 'border-[#B37D56]/20 text-[#2F2F2F]/40'}`}
+	                        >
+	                          {g === 'male' ? '乾造' : '坤造'}
+	                        </button>
+	                      ))}
+	                    </div>
+	                  </div>
+	                  
+	                  <div className="grid grid-cols-1 gap-6">
+	                    <ChineseDatePicker 
+	                      label="出生日期"
+	                      value={birthDate}
+	                      onChange={setBirthDate}
+	                      placeholder="选择出生日期"
+	                    />
+	                    <ChineseTimePicker 
+	                      label="出生时间"
+	                      value={birthTime}
+	                      onChange={setBirthTime}
+	                    />
+	                  </div>
+	                </>
+	              )}
 
-              <div className="group">
-                <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">联系方式</label>
-                <input 
+	              <div className="group">
+	                <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">联系方式</label>
+	                <input 
                   type="text" 
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
