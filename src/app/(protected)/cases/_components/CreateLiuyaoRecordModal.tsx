@@ -37,6 +37,8 @@ const LINE_OPTIONS: Array<{ value: LineType; label: string }> = [
   { value: LineType.LAO_YIN, label: "老阴（动）" },
 ];
 
+const LINE_LABELS = ["初爻", "二爻", "三爻", "四爻", "五爻", "上爻"] as const;
+
 export function CreateLiuyaoRecordModal({
   open,
   onClose,
@@ -245,7 +247,7 @@ export function CreateLiuyaoRecordModal({
                     className="grid grid-cols-[3rem_minmax(0,1fr)_7rem] items-center gap-3 py-2 px-3 border border-transparent hover:bg-black/[0.01]"
                   >
                     <span className="text-[9px] font-bold text-[#2F2F2F]/20 chinese-font">
-                      爻{idx + 1}
+                      {LINE_LABELS[idx] ?? `爻${idx + 1}`}
                     </span>
                     <div className="flex justify-center min-w-0">
                       <LiuyaoLineSvg
@@ -270,9 +272,6 @@ export function CreateLiuyaoRecordModal({
                   </div>
                 ))}
               </div>
-              <p className="mt-6 text-[10px] text-center text-[#2F2F2F]/30 chinese-font italic leading-loose">
-                每一爻四选一：少阳 / 少阴 / 老阳（动） / 老阴（动）
-              </p>
             </section>
           </div>
         </div>
