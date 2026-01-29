@@ -64,7 +64,7 @@ function CustomerViewPage({ id }: { id: string }) {
             编辑资料
           </Link>
           <Link
-            href={`/cases/new?module=bazi&customerId=${encodeURIComponent(id)}`}
+            href={`/bazi/new?customerId=${encodeURIComponent(id)}`}
             className="px-5 py-2 bg-[#2F2F2F] text-white text-xs font-bold tracking-widest hover:bg-black transition-all rounded-[2px] flex items-center gap-2"
           >
             <Plus size={14} />
@@ -240,4 +240,3 @@ function CustomerViewPage({ id }: { id: string }) {
 export default function Page({ params }: { params: { id: string } }) {
   return <CustomerViewPage id={params.id} />;
 }
-

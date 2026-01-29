@@ -7,6 +7,7 @@ import {
   Home, 
   Users, 
   BookOpen, 
+  Hash,
   ShieldCheck, 
   Search, 
   Download, 
@@ -137,6 +138,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         <nav className="flex-1 overflow-y-auto py-2">
           <SidebarItem href="/" icon={Home} label="首页" active={pathname === '/'} collapsed={isSidebarCollapsed} />
           <SidebarItem href="/customers" icon={Users} label="客户管理" active={pathname.startsWith('/customers')} collapsed={isSidebarCollapsed} />
+          <SidebarItem href="/bazi" icon={Hash} label="八字案卷" active={pathname.startsWith('/bazi')} collapsed={isSidebarCollapsed} />
           <SidebarItem href="/cases" icon={BookOpen} label="咨询记录" active={pathname.startsWith('/cases')} collapsed={isSidebarCollapsed} />
           <SidebarItem href="/rules" icon={ShieldCheck} label="规则系统" active={pathname.startsWith('/rules')} collapsed={isSidebarCollapsed} />
           <SidebarItem icon={Search} label="全局搜索" active={isSearchOpen} collapsed={isSidebarCollapsed} onClick={() => setIsSearchOpen(true)} />
