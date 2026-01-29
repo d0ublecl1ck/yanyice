@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { parseExtractRequestBody } from "../../../pages/api/gemini/extract";
+import { parseExtractRequestBody } from "../gemini/extractRequest";
 
 describe("parseExtractRequestBody", () => {
   test("accepts text payload", () => {
@@ -26,4 +26,3 @@ describe("parseExtractRequestBody", () => {
     expect(parseExtractRequestBody({ image: { mimeType: "image/png" } })).toBeNull();
   });
 });
-
