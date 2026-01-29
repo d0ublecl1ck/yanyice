@@ -100,7 +100,7 @@ export function CaseAll({ initialFilter }: { initialFilter: CaseFilter }) {
                         className="text-[#B37D56]/30 group-hover:text-[#A62121] transition-colors"
                       />
                     </div>
-                    <div className="ml-6 flex-1 grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                    <div className="ml-6 flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
                       <div className="md:col-span-2">
                         <h4 className="font-bold text-[#2F2F2F] chinese-font group-hover:text-[#A62121] transition-colors">
                           {record.subject}
@@ -118,17 +118,6 @@ export function CaseAll({ initialFilter }: { initialFilter: CaseFilter }) {
                       <div className="text-[11px] text-[#2F2F2F]/40 font-bold uppercase tracking-widest flex items-center gap-2">
                         <Calendar size={12} />
                         {new Date(record.createdAt).toLocaleDateString()}
-                      </div>
-                      <div className="text-right">
-                        <span
-                          className={`text-[9px] px-2 py-0.5 border font-bold ${
-                            record.verifiedStatus === "accurate"
-                              ? "border-[#8DA399] text-[#8DA399]"
-                              : "border-[#B37D56]/20 text-[#2F2F2F]/30"
-                          }`}
-                        >
-                          {record.verifiedStatus === "accurate" ? "已反馈: 准确" : "未反馈"}
-                        </span>
                       </div>
                     </div>
                     <ChevronRight
