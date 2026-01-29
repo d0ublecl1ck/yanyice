@@ -410,7 +410,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       </header>
 
       <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-10">
-        <div className="lg:col-span-4 bg-white border border-[#B37D56]/15 overflow-hidden rounded-none">
+        <div className="lg:col-span-6 bg-white border border-[#B37D56]/15 overflow-hidden rounded-none">
           <table className="w-full text-center border-collapse table-fixed">
             <thead>
               <tr className="bg-[#FAF7F2]/50 border-b border-[#B37D56]/10">
@@ -531,7 +531,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           </table>
         </div>
 
-        <div className="lg:col-span-8 space-y-8">
+        <div className="lg:col-span-6 space-y-8">
           <div className="bg-white border border-[#B37D56]/15 p-10 space-y-10 rounded-[4px] shadow-none">
             <div className="space-y-6">
               <h3 className="text-[10px] font-bold text-[#B37D56] uppercase tracking-[0.3em] border-b border-[#B37D56]/15 pb-2">
