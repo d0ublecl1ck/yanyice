@@ -18,6 +18,7 @@ interface RuleState {
   bootstrap: () => Promise<void>;
   refreshRules: (params?: { module?: Rule["module"] }) => Promise<void>;
 
+  seedRules: (params?: { module?: Rule["module"] }) => Promise<number>;
   addRule: (rule: Omit<Rule, "id">) => Promise<string>;
   updateRule: (id: string, updates: Partial<Rule>) => Promise<void>;
   deleteRule: (id: string) => Promise<void>;
@@ -85,6 +86,21 @@ export const useRuleStore = create<RuleState>()(
         }
       },
 
+      seedRules: async (params) => {
+        const auth = getAuthContext();
+        if (!auth) throw new Error("未登录");
+
+        const body = params?.module ? { module: params.module } : {};
+        const { createdCount } = await apiFetch<{ createdCount: number }>("/api/rules/seed", {
+          method: "POST",
+          accessToken: auth.accessToken,
+          body: JSON.stringify(body),
+        });
+
+        await get().refreshRules();
+        return createdCount;
+      },
+
       addRule: async (rule) => {
         const auth = getAuthContext();
         if (!auth) throw new Error("未登录");
@@ -141,4 +157,3 @@ export const useRuleStore = create<RuleState>()(
     },
   ),
 );
-
