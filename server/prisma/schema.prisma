@@ -6,6 +6,18 @@ datasource db {
   provider = "sqlite"
 }
 
+enum ModuleType {
+  liuyao
+  bazi
+}
+
+enum VerifiedStatus {
+  unverified
+  accurate
+  inaccurate
+  partial
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -15,21 +27,22 @@ model User {
 
   customers      Customer[]
   customerEvents CustomerEvent[]
+  records        ConsultationRecord[]
 }
 
 model Customer {
-  id        String   @id @default(cuid())
-  userId    String
-  name      String
-  gender    String
-  birthDate String?
-  birthTime String?
-  phone     String?
-  tags      Json
-  notes     String
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  gender       String
+  birthDate    String?
+  birthTime    String?
+  phone        String?
+  tags         Json
+  notes        String
   customFields Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   events CustomerEvent[]
@@ -51,4 +64,25 @@ model CustomerEvent {
 
   @@index([userId])
   @@index([customerId])
+}
+
+model ConsultationRecord {
+  id             String         @id @default(cuid())
+  userId         String
+  module         ModuleType     @default(liuyao)
+  customerId     String?
+  customerName   String?
+  subject        String
+  notes          String
+  tagsJson       String         @default("[]")
+  liuyaoDataJson String?
+  baziDataJson   String?
+  verifiedStatus VerifiedStatus @default(unverified)
+  verifiedNotes  String         @default("")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, module, createdAt])
 }

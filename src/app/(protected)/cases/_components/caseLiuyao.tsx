@@ -19,11 +19,12 @@ export function CaseLiuyao() {
 
   const filteredRecords = records.filter((record) => {
     const customer = customers.find((c) => c.id === record.customerId);
+    const customerName = record.customerName ?? customer?.name ?? "";
     const q = search.trim().toLowerCase();
     return (
       q.length === 0 ||
       record.subject.toLowerCase().includes(q) ||
-      (customer?.name.toLowerCase().includes(q) ?? false)
+      customerName.toLowerCase().includes(q)
     );
   });
 
@@ -68,6 +69,7 @@ export function CaseLiuyao() {
               .sort((a, b) => b.createdAt - a.createdAt)
               .map((record) => {
                 const customer = customers.find((c) => c.id === record.customerId);
+                const displayCustomerName = record.customerName ?? customer?.name ?? "未知客户";
                 const editHref = recordEditHref(record.module, record.id);
                 const analysisHref = recordAnalysisHref("liuyao", record.id);
                 return (
@@ -94,7 +96,7 @@ export function CaseLiuyao() {
                         </h4>
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-[10px] font-bold text-[#B37D56] uppercase tracking-widest">
-                            {customer?.name || "未知客户"}
+                            {displayCustomerName}
                           </span>
                           <span className="text-[10px] text-[#2F2F2F]/20">|</span>
                           <span className="text-[10px] text-[#2F2F2F]/30">文王六爻</span>

@@ -59,6 +59,7 @@ export interface TimelineEvent {
 export interface ConsultationRecord {
   id: string;
   customerId: string;
+  customerName?: string;
   module: ModuleType;
   subject: string;
   notes: string;

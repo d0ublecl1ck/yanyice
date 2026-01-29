@@ -19,11 +19,12 @@ export function CaseAll({ initialFilter }: { initialFilter: CaseFilter }) {
   const filteredRecords = records.filter((record) => {
     const matchesFilter = filter === "all" || record.module === filter;
     const customer = customers.find((c) => c.id === record.customerId);
+    const customerName = record.customerName ?? customer?.name ?? "";
     const q = search.trim().toLowerCase();
     const matchesSearch =
       q.length === 0 ||
       record.subject.toLowerCase().includes(q) ||
-      (customer?.name.toLowerCase().includes(q) ?? false);
+      customerName.toLowerCase().includes(q);
     return matchesFilter && matchesSearch;
   });
 
@@ -85,6 +86,7 @@ export function CaseAll({ initialFilter }: { initialFilter: CaseFilter }) {
               .sort((a, b) => b.createdAt - a.createdAt)
               .map((record) => {
                 const customer = customers.find((c) => c.id === record.customerId);
+                const displayCustomerName = record.customerName ?? customer?.name ?? "未知客户";
                 const href = recordEditHref(record.module, record.id);
                 return (
                   <Link
@@ -105,7 +107,7 @@ export function CaseAll({ initialFilter }: { initialFilter: CaseFilter }) {
                         </h4>
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-[10px] font-bold text-[#B37D56] uppercase tracking-widest">
-                            {customer?.name || "未知客户"}
+                            {displayCustomerName}
                           </span>
                           <span className="text-[10px] text-[#2F2F2F]/20">|</span>
                           <span className="text-[10px] text-[#2F2F2F]/30">
@@ -146,4 +148,3 @@ export function CaseAll({ initialFilter }: { initialFilter: CaseFilter }) {
     </div>
   );
 }
-
