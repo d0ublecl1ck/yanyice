@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { Plus, Search, Calendar, ChevronRight, Hash } from "lucide-react";
 
@@ -9,11 +9,11 @@ import { useCustomerStore } from "@/stores/useCustomerStore";
 import { newCaseHref } from "@/lib/caseLinks";
 
 export function CaseBazi() {
-  const records = useCaseStore((state) =>
-    state.records.filter((r) => r.module === "bazi"),
-  );
+  const allRecords = useCaseStore((state) => state.records);
   const customers = useCustomerStore((state) => state.customers);
   const [search, setSearch] = useState("");
+
+  const records = useMemo(() => allRecords.filter((r) => r.module === "bazi"), [allRecords]);
 
   const filteredRecords = records.filter((record) => {
     const customer = customers.find((c) => c.id === record.customerId);
@@ -125,4 +125,3 @@ export function CaseBazi() {
     </div>
   );
 }
-
