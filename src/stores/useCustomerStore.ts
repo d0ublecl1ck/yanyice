@@ -6,7 +6,7 @@ import { Customer, TimelineEvent } from '@/lib/types';
 interface CustomerState {
   customers: Customer[];
   events: TimelineEvent[];
-  addCustomer: (customer: Omit<Customer, 'id' | 'createdAt'>) => void;
+  addCustomer: (customer: Omit<Customer, 'id' | 'createdAt'> & { id?: string }) => string;
   updateCustomer: (id: string, updates: Partial<Customer>) => void;
   deleteCustomer: (id: string) => void;
   addEvent: (event: Omit<TimelineEvent, 'id'>) => void;
@@ -61,9 +61,13 @@ export const useCustomerStore = create<CustomerState>()(
     (set) => ({
       customers: MOCK_CUSTOMERS,
       events: MOCK_EVENTS,
-      addCustomer: (c) => set((state) => ({
-        customers: [...state.customers, { ...c, id: Math.random().toString(36).substr(2, 9), createdAt: Date.now() }]
-      })),
+      addCustomer: (c) => {
+        const id = c.id ?? Math.random().toString(36).substr(2, 9);
+        set((state) => ({
+          customers: [...state.customers, { ...c, id, createdAt: Date.now() }],
+        }));
+        return id;
+      },
       updateCustomer: (id, updates) => set((state) => ({
         customers: state.customers.map(c => c.id === id ? { ...c, ...updates } : c)
       })),

@@ -22,7 +22,8 @@ export const TRIGRAMS: Record<string, string> = {
   '000': '坤',
 };
 
-export const getHexagramName = (lines: number[]) => {
+export const getHexagramName = (_lines: number[]) => {
   // 简化的卦名推导逻辑
+  void _lines;
   return "测算卦例"; 
 };
