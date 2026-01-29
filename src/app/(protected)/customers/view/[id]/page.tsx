@@ -237,6 +237,9 @@ function CustomerViewPage({ id }: { id: string }) {
   );
 }
 
-export default function Page({ params }: { params: { id: string } }) {
-  return <CustomerViewPage id={params.id} />;
+type PageProps = { params: Promise<{ id: string }> | { id: string } };
+
+export default async function Page({ params }: PageProps) {
+  const { id } = await params;
+  return <CustomerViewPage id={id} />;
 }
