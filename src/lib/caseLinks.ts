@@ -23,8 +23,7 @@ export const newCaseHref = (module: ModuleType, opts?: { customerId?: string }) 
     return `/bazi?${qs.toString()}`;
   }
 
-  const base = "/liuyao/new";
-  if (!customerId) return base;
-  const qs = new URLSearchParams({ customerId });
-  return `${base}?${qs.toString()}`;
+  const qs = new URLSearchParams({ create: "liuyao" });
+  if (customerId) qs.set("customerId", customerId);
+  return `/cases?${qs.toString()}`;
 };

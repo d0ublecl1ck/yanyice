@@ -531,12 +531,12 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
   };
 
   const handleSave = async () => {
-    if (!customerId) {
-      showToast('请选择关联客户', 'error');
-      return;
-    }
     if (!subject) {
       showToast('请填写咨询主题', 'error');
+      return;
+    }
+    if (module === "bazi" && !customerId) {
+      showToast("请选择关联客户", "error");
       return;
     }
 
@@ -552,11 +552,12 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
 
     try {
       if (module === 'liuyao' && liuyaoData && accessToken) {
-        const customer = customers.find((c) => c.id === customerId);
+        const normalizedCustomerId = customerId.trim() ? customerId.trim() : null;
+        const customer = normalizedCustomerId ? customers.find((c) => c.id === normalizedCustomerId) : undefined;
         await upsertLiuyaoRemote(accessToken, {
           id,
           payload: {
-            customerId,
+            customerId: normalizedCustomerId,
             customerName: customer?.name ?? null,
             subject,
             notes,

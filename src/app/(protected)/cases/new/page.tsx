@@ -1,7 +1,9 @@
+import { redirect } from "next/navigation";
+
+import { newCaseHref } from "@/lib/caseLinks";
 import { coerceModuleType } from "@/lib/moduleParam";
 
 import { NewBazi } from "./_components/NewBazi";
-import { NewLiuyao } from "./_components/NewLiuyao";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -17,5 +19,5 @@ export default async function Page({
   const customerId = Array.isArray(sp.customerId) ? sp.customerId[0] : sp.customerId;
 
   if (moduleType === "bazi") return <NewBazi customerId={customerId} />;
-  return <NewLiuyao />;
+  redirect(newCaseHref("liuyao", { customerId }));
 }

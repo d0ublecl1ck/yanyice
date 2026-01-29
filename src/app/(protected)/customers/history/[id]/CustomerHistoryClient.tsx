@@ -6,6 +6,7 @@ import { ChevronLeft, History, FileText, Star, ExternalLink } from "lucide-react
 
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useCaseStore } from "@/stores/useCaseStore";
+import { newCaseHref } from "@/lib/caseLinks";
 
 function CustomerHistoryPage({ id }: { id: string }) {
   const customers = useCustomerStore((state) => state.customers);
@@ -203,7 +204,7 @@ function CustomerHistoryPage({ id }: { id: string }) {
           </p>
           <div className="flex justify-center gap-4">
             <Link
-              href="/cases/new"
+              href={newCaseHref("liuyao", { customerId: id })}
               className="px-6 py-2 bg-[#2F2F2F] text-white text-[10px] font-bold tracking-widest uppercase rounded-[2px] hover:bg-black transition-all"
             >
               起卦录入
