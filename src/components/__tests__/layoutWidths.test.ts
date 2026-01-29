@@ -47,6 +47,12 @@ describe("layout width constraints", () => {
     expect(source).toContain("addCustomer");
   });
 
+  test("bazi create modal avoids page-wide max width", async () => {
+    const source = await readFile("src/app/(protected)/cases/_components/caseBazi.tsx", "utf8");
+    expect(source).toContain("max-w-4xl");
+    expect(source).not.toContain("max-w-6xl");
+  });
+
   test("settings page uses a two-column grid on large screens", async () => {
     const source = await readFile("src/app/(protected)/settings/page.tsx", "utf8");
     expect(source).toContain("grid-cols-1 lg:grid-cols-2");
