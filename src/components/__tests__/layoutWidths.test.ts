@@ -23,4 +23,10 @@ describe("layout width constraints", () => {
     expect(source).toContain("grid-cols-1 lg:grid-cols-2");
     expect(source).toContain("lg:col-span-2");
   });
+
+  test("bazi archives uses a two-column grid on medium screens", async () => {
+    const source = await readFile("src/app/(protected)/cases/_components/caseBazi.tsx", "utf8");
+    expect(source).toContain("md:grid-cols-2");
+    expect(source).toContain("gap-px");
+  });
 });
