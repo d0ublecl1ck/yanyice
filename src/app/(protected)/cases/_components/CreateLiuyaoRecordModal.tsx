@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { ChineseDatePicker } from "@/components/ChineseDatePicker";
 import { ChineseTimePicker } from "@/components/ChineseTimePicker";
+import { Select, type SelectOption } from "@/components/Select";
 import { LiuyaoLineSvg } from "@/components/liuyao/LiuyaoLineSvg";
 import { calcLiuyaoGanzhiFromIso } from "@/lib/lunarGanzhi";
 import { recordEditHref } from "@/lib/caseLinks";
@@ -30,7 +31,7 @@ const setIsoTime = (iso: string, hhmm: string) => {
   return d.toISOString();
 };
 
-const LINE_OPTIONS: Array<{ value: LineType; label: string }> = [
+const LINE_OPTIONS: Array<SelectOption<LineType>> = [
   { value: LineType.SHAO_YANG, label: "少阳" },
   { value: LineType.SHAO_YIN, label: "少阴" },
   { value: LineType.LAO_YANG, label: "老阳（动）" },
@@ -130,18 +131,12 @@ export function CreateLiuyaoRecordModal({
                   <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
                     关联客户（可选）
                   </label>
-                  <select
+                  <Select
                     value={customerId}
-                    onChange={(e) => setCustomerId(e.target.value)}
-                    className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-2 outline-none focus:border-[#A62121] transition-colors chinese-font font-bold rounded-none"
-                  >
-                    <option value="">-- 不绑定 --</option>
-                    {customers.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
+                    onValueChange={(v) => setCustomerId(String(v))}
+                    emptyLabel="-- 不绑定 --"
+                    options={customers.map((c) => ({ value: c.id, label: c.name }))}
+                  />
                 </div>
 
                 <div className="space-y-2 group">
@@ -257,18 +252,13 @@ export function CreateLiuyaoRecordModal({
                         markColor="#A62121"
                       />
                     </div>
-                    <select
+                    <Select
                       aria-label={`第 ${idx + 1} 爻`}
                       value={line}
-                      onChange={(e) => setLineAtIndex(idx, Number(e.target.value) as LineType)}
-                      className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-1 text-[10px] outline-none focus:border-[#A62121] transition-colors chinese-font font-bold rounded-none"
-                    >
-                      {LINE_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
+                      onValueChange={(v) => setLineAtIndex(idx, v as LineType)}
+                      options={LINE_OPTIONS}
+                      size="sm"
+                    />
                   </div>
                 ))}
               </div>
