@@ -26,6 +26,17 @@ describe("layout width constraints", () => {
     expect(source).not.toContain("max-w-2xl mx-auto");
   });
 
+  test("bazi new subject field is name-only", async () => {
+    const source = await readFile(
+      "src/app/(protected)/bazi/_components/BaziEditView.tsx",
+      "utf8",
+    );
+    expect(source).toContain("\n              姓名\n");
+    expect(source).toContain('placeholder="输入姓名"');
+    expect(source).not.toContain("命主姓名 / 卷首语");
+    expect(source).not.toContain('placeholder="输入姓名或事由"');
+  });
+
   test("settings page uses a two-column grid on large screens", async () => {
     const source = await readFile("src/app/(protected)/settings/page.tsx", "utf8");
     expect(source).toContain("grid-cols-1 lg:grid-cols-2");

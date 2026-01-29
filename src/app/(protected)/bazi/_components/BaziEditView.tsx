@@ -938,13 +938,13 @@ export function BaziEditView({ id }: { id?: string }) {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-8 items-end">
           <div className="md:col-span-3 space-y-2">
             <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest ml-1">
-              命主姓名 / 卷首语
+              姓名
             </label>
             <input
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="输入姓名或事由"
+              placeholder="输入姓名"
               className="w-full bg-transparent border-b border-[#B37D56]/10 py-2 outline-none focus:border-[#B37D56] transition-all chinese-font font-bold text-lg"
             />
           </div>
