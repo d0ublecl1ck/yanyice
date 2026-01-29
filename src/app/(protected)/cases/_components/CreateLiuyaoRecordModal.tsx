@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { ChineseDatePicker } from "@/components/ChineseDatePicker";
 import { ChineseTimePicker } from "@/components/ChineseTimePicker";
-import { LINE_SYMBOLS } from "@/lib/constants";
+import { LiuyaoLineSvg } from "@/components/liuyao/LiuyaoLineSvg";
 import { calcLiuyaoGanzhiFromIso } from "@/lib/lunarGanzhi";
 import { recordEditHref } from "@/lib/caseLinks";
 import { LineType, type LiuYaoData } from "@/lib/types";
@@ -29,6 +29,13 @@ const setIsoTime = (iso: string, hhmm: string) => {
   d.setHours(Number.isFinite(h) ? h : 0, Number.isFinite(m) ? m : 0, 0, 0);
   return d.toISOString();
 };
+
+const LINE_OPTIONS: Array<{ value: LineType; label: string }> = [
+  { value: LineType.SHAO_YANG, label: "少阳" },
+  { value: LineType.SHAO_YIN, label: "少阴" },
+  { value: LineType.LAO_YANG, label: "老阳（动）" },
+  { value: LineType.LAO_YIN, label: "老阴（动）" },
+];
 
 export function CreateLiuyaoRecordModal({
   open,
@@ -87,10 +94,10 @@ export function CreateLiuyaoRecordModal({
   const monthBranch = ganzhi?.monthBranch ?? "子";
   const dayBranch = ganzhi?.dayGanzhi ?? "甲子";
 
-  const handleLineToggle = (index: number) => {
+  const setLineAtIndex = (index: number, nextLine: LineType) => {
     setLines((prev) => {
       const next = [...prev];
-      next[index] = ((next[index] + 1) % 4) as LineType;
+      next[index] = nextLine;
       return next;
     });
   };
@@ -231,33 +238,40 @@ export function CreateLiuyaoRecordModal({
               <h3 className="text-center text-[10px] text-[#B37D56] mb-6 tracking-[0.5em] font-bold uppercase">
                 六爻（自下而上）
               </h3>
-              <div className="flex flex-col-reverse gap-4 items-center">
-                {lines.map((line, idx) => {
-                  const info = LINE_SYMBOLS[line];
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => handleLineToggle(idx)}
-                      className="group relative flex items-center justify-center py-2 px-10 transition-all hover:bg-black/[0.01]"
-                      aria-label={`切换第 ${idx + 1} 爻`}
+              <div className="flex flex-col-reverse gap-3 items-stretch">
+                {lines.map((line, idx) => (
+                  <div
+                    key={idx}
+                    className="grid grid-cols-[3rem_1fr_7rem] items-center gap-3 py-2 px-3 border border-transparent hover:bg-black/[0.01]"
+                  >
+                    <span className="text-[9px] font-bold text-[#2F2F2F]/20 chinese-font">
+                      爻{idx + 1}
+                    </span>
+                    <div className="flex justify-center">
+                      <LiuyaoLineSvg
+                        line={line}
+                        className="h-6 w-[160px]"
+                        lineColor="#2F2F2F"
+                        markColor="#A62121"
+                      />
+                    </div>
+                    <select
+                      aria-label={`第 ${idx + 1} 爻`}
+                      value={line}
+                      onChange={(e) => setLineAtIndex(idx, Number(e.target.value) as LineType)}
+                      className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-1 text-[10px] outline-none focus:border-[#A62121] transition-colors chinese-font font-bold rounded-none"
                     >
-                      <span className="absolute left-[-1.5rem] text-[9px] font-bold text-[#2F2F2F]/20 chinese-font">
-                        爻{idx + 1}
-                      </span>
-                      <div className="text-3xl font-light tracking-[-0.1em] text-[#2F2F2F] select-none">
-                        {info.base.replace(/—/g, "━").replace(/ /g, "　")}
-                      </div>
-                      {info.isMoving && (
-                        <span className="absolute right-[-0.75rem] text-lg font-bold text-[#A62121]">
-                          {info.mark === "O" ? "●" : "×"}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+                      {LINE_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
               </div>
               <p className="mt-6 text-[10px] text-center text-[#2F2F2F]/30 chinese-font italic leading-loose">
-                点击每一爻循环切换：少阳 → 少阴 → 老阳 → 老阴
+                每一爻四选一：少阳 / 少阴 / 老阳（动） / 老阴（动）
               </p>
             </section>
           </div>
