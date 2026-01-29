@@ -19,6 +19,7 @@ import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useToastStore } from "@/stores/useToastStore";
 import type { BaZiData } from "@/lib/types";
 import { BRANCHES, STEMS } from "@/lib/constants";
+import { filterCities, filterDistricts, filterProvinces, type LocationData } from "@/lib/locationSearch";
 import {
   deriveBaziPickerFromSolar,
   deriveBaziPickerFromSolarTime,
@@ -53,12 +54,14 @@ const PickerColumn = ({
   value,
   onChange,
   label,
+  renderItem,
   showDivider = true,
 }: {
   items: string[] | number[];
   value: string | number;
   onChange: (val: string | number) => void;
   label: string;
+  renderItem?: (item: string | number) => React.ReactNode;
   showDivider?: boolean;
 }) => {
   const scrollerRef = React.useRef<HTMLDivElement>(null);
@@ -145,7 +148,7 @@ const PickerColumn = ({
                     : "text-[#2F2F2F]/10 text-xs hover:text-[#2F2F2F]/30"
                 }`}
               >
-                {item}
+                {renderItem ? renderItem(item) : item}
               </button>
             ))}
           </div>
@@ -168,9 +171,70 @@ const LocationPickerModal = ({
   const [prov, setProv] = useState("北京市");
   const [city, setCity] = useState("北京市");
   const [dist, setDist] = useState("--");
+  const [query, setQuery] = useState("");
 
-  const availableCities = CITIES[prov] || ["--"];
-  const availableDists = DISTRICTS[city] || ["--"];
+  const locationData = useMemo<LocationData>(
+    () => ({
+      provinces: PROVINCES,
+      citiesByProvince: CITIES,
+      districtsByCity: DISTRICTS,
+    }),
+    [],
+  );
+
+  const filteredProvinces = useMemo(
+    () => filterProvinces(locationData, query),
+    [locationData, query],
+  );
+
+  const filteredCities = useMemo(
+    () => filterCities(locationData, prov, query),
+    [locationData, prov, query],
+  );
+
+  const filteredDistricts = useMemo(
+    () => filterDistricts(locationData, city, query),
+    [locationData, city, query],
+  );
+
+  useEffect(() => {
+    if (filteredProvinces.length === 0) return;
+    if (!filteredProvinces.includes(prov)) setProv(filteredProvinces[0]);
+  }, [filteredProvinces, prov]);
+
+  useEffect(() => {
+    if (filteredCities.length === 0) return;
+    if (!filteredCities.includes(city)) setCity(filteredCities[0]);
+  }, [city, filteredCities]);
+
+  useEffect(() => {
+    if (filteredDistricts.length === 0) return;
+    if (!filteredDistricts.includes(dist)) setDist(filteredDistricts[0]);
+  }, [dist, filteredDistricts]);
+
+  const highlight = useMemo(() => {
+    const q = query.trim();
+    if (!q) return undefined;
+
+    const qLower = q.toLowerCase();
+    return (raw: string | number) => {
+      const text = String(raw);
+      const lower = text.toLowerCase();
+      const idx = lower.indexOf(qLower);
+      if (idx < 0) return text;
+
+      const before = text.slice(0, idx);
+      const match = text.slice(idx, idx + q.length);
+      const after = text.slice(idx + q.length);
+      return (
+        <>
+          {before}
+          <span className="text-[#B37D56]">{match}</span>
+          {after}
+        </>
+      );
+    };
+  }, [query]);
 
   if (!isOpen) return null;
 
@@ -208,6 +272,8 @@ const LocationPickerModal = ({
             />
             <input
               type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
               placeholder="搜索全国城市及地区"
               className="w-full bg-[#FAF7F2] border border-[#B37D56]/10 pl-9 pr-4 py-2 text-xs rounded-[4px] outline-none focus:border-[#B37D56] transition-all"
             />
@@ -217,30 +283,38 @@ const LocationPickerModal = ({
         <div className="p-8 flex justify-between min-h-[240px]">
           <PickerColumn
             label="省份"
-            items={PROVINCES}
+            items={filteredProvinces}
             value={prov}
             onChange={(v) => {
               const p = String(v);
               setProv(p);
-              setCity(CITIES[p]?.[0] || "--");
+              const nextCities = filterCities(locationData, p, query);
+              const nextCity = nextCities[0] ?? "--";
+              setCity(nextCity);
+              const nextDists = filterDistricts(locationData, nextCity, query);
+              setDist(nextDists[0] ?? "--");
             }}
+            renderItem={highlight}
           />
           <PickerColumn
             label="城市"
-            items={availableCities}
+            items={filteredCities}
             value={city}
             onChange={(v) => {
               const c = String(v);
               setCity(c);
-              setDist(DISTRICTS[c]?.[0] || "--");
+              const nextDists = filterDistricts(locationData, c, query);
+              setDist(nextDists[0] ?? "--");
             }}
+            renderItem={highlight}
           />
           <PickerColumn
             label="区县"
-            items={availableDists}
+            items={filteredDistricts}
             value={dist}
             onChange={(v) => setDist(String(v))}
             showDivider={false}
+            renderItem={highlight}
           />
         </div>
 
