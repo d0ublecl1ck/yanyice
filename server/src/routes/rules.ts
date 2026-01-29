@@ -3,6 +3,8 @@ import { Type, type Static } from "@sinclair/typebox";
 
 import type { ModuleType } from "@prisma/client";
 
+import { BUILTIN_RULE_SEEDS } from "../rules/builtinRuleSeeds";
+
 const ErrorResponse = Type.Object({
   code: Type.String(),
   message: Type.String(),
@@ -56,20 +58,14 @@ function toRuleDto(row: {
   };
 }
 
-async function ensureSeedRule(app: FastifyInstance, userId: string) {
-  await app.prisma.rule.upsert({
-    where: { userId_seedKey: { userId, seedKey: "builtin:default" } },
-    update: {},
-    create: {
-      userId,
-      seedKey: "builtin:default",
-      module: "liuyao",
-      name: "动爻克用神",
-      enabled: true,
-      condition: "动爻五行克制用神五行",
-      message: "注意：当前卦象中存在动爻克制用神的情况，请详察应期。",
-    },
-  });
+async function ensureSeedRules(app: FastifyInstance, userId: string) {
+  for (const seed of BUILTIN_RULE_SEEDS) {
+    await app.prisma.rule.upsert({
+      where: { userId_seedKey: { userId, seedKey: seed.seedKey } },
+      update: {},
+      create: { userId, ...seed },
+    });
+  }
 }
 
 export async function ruleRoutes(app: FastifyInstance) {
@@ -86,7 +82,7 @@ export async function ruleRoutes(app: FastifyInstance) {
     },
     async (request) => {
       const userId = request.user.sub;
-      await ensureSeedRule(app, userId);
+      await ensureSeedRules(app, userId);
 
       const { module } = request.query as { module?: Static<typeof RuleDto>["module"] };
       const where = module ? { userId, module: normalizeModule(module) } : { userId };
@@ -195,4 +191,3 @@ export async function ruleRoutes(app: FastifyInstance) {
     },
   );
 }
-
