@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { coerceModuleType } from "@/lib/moduleParam";
-import { rulesPathForModule } from "@/lib/rulesRoutes";
+import { rulesHref } from "@/lib/caseLinks";
 
 export default function Page({
   searchParams,
@@ -11,5 +11,5 @@ export default function Page({
   };
 }) {
   const moduleType = coerceModuleType(searchParams?.module) ?? "liuyao";
-  redirect(rulesPathForModule(moduleType));
+  redirect(rulesHref(moduleType));
 }

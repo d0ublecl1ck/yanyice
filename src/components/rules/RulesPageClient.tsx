@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Layers, Plus, Shield, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
 
 import type { ModuleType } from "@/lib/types";
-import { rulesPathForModule } from "@/lib/rulesRoutes";
+import { rulesHref } from "@/lib/caseLinks";
 import { useRuleStore } from "@/stores/useRuleStore";
 
 const moduleLabel: Record<ModuleType, string> = {
@@ -60,7 +60,7 @@ export default function RulesPageClient({ module }: { module: ModuleType }) {
         {(["liuyao", "bazi"] as const).map((m) => (
           <Link
             key={m}
-            href={rulesPathForModule(m)}
+            href={rulesHref(m)}
             className={`px-6 py-2 text-xs font-bold tracking-widest uppercase border transition-all flex items-center gap-2 ${
               module === m
                 ? "bg-[#2F2F2F] text-white border-[#2F2F2F]"
@@ -169,4 +169,3 @@ export default function RulesPageClient({ module }: { module: ModuleType }) {
     </div>
   );
 }
-
