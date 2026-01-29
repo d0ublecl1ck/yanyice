@@ -9,6 +9,7 @@ import { useToastStore } from '@/stores/useToastStore';
 import { ChineseDatePicker } from '@/components/ChineseDatePicker';
 import { ChineseTimePicker } from '@/components/ChineseTimePicker';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { ApiError } from '@/lib/apiClient';
 import type { CustomerGender } from '@/lib/types';
 import { buildCreateCustomerPayload, buildUpdateCustomerPayload } from './customerFormPayload';
 
@@ -76,12 +77,16 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
 	        toast.show('新客户已成功建档', 'success');
 	      }
 	      router.push('/customers');
-	    } catch {
-	      toast.show('保存失败，请稍后重试', 'error');
+	    } catch (e) {
+	      if (e instanceof ApiError) {
+	        toast.show(e.message, 'error');
+	        return;
+	      }
+	      toast.show('保存失败：接口不可用或网络异常（请确认服务已启动）', 'error');
 	    } finally {
-      setIsSaving(false);
-    }
-  };
+	      setIsSaving(false);
+	    }
+	  };
 
   const handleAddEvent = async () => {
     if (!id || !eventDate || !eventDesc) {

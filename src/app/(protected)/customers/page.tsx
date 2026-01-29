@@ -7,6 +7,7 @@ import { User, Calendar, ChevronRight, History, Search, X } from "lucide-react";
 
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useToastStore } from "@/stores/useToastStore";
+import { ApiError } from "@/lib/apiClient";
 
 export default function Page() {
   const customers = useCustomerStore((state) => state.customers);
@@ -185,8 +186,12 @@ export default function Page() {
                       });
                       toast.show("新客户已成功建档", "success");
                       closeCreateModal();
-                    } catch {
-                      toast.show("创建失败，请稍后重试", "error");
+                    } catch (e) {
+                      if (e instanceof ApiError) {
+                        toast.show(e.message, "error");
+                        return;
+                      }
+                      toast.show("创建失败：接口不可用或网络异常（请确认服务已启动）", "error");
                     } finally {
                       setIsCreating(false);
                     }
