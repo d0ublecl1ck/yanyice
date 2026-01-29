@@ -4,3 +4,4 @@
 - Use 0px or 4px border-radius for search inputs; avoid full pill/capsule shapes.
 - Use 0-2px border-radius for the overall frame; reserve 4px for key interactive elements.
 - Use hairline dividers for separation; avoid relying on shadows for structure.
+- Run `bun lint` after modifications and fix all lint errors.

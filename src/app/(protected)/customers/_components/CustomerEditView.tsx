@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Save, Trash2, Plus, Calendar, Clock, User, Tag, History } from 'lucide-react';
+import { Save, Trash2, Plus, History } from 'lucide-react';
 import { useCustomerStore } from '@/stores/useCustomerStore';
 import { useToastStore } from '@/stores/useToastStore';
 import { ChineseDatePicker } from '@/components/ChineseDatePicker';

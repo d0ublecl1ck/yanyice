@@ -4,13 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Save, 
-  Trash2, 
   Sparkles, 
   Plus, 
   UserPlus, 
   X,
-  Layers,
-  CalendarDays,
   RefreshCw
 } from 'lucide-react';
 import { useCaseStore } from '@/stores/useCaseStore';
@@ -18,7 +15,6 @@ import { useCustomerStore } from '@/stores/useCustomerStore';
 import { useToastStore } from '@/stores/useToastStore';
 import { LineType, LiuYaoData, BaZiData } from '@/lib/types';
 import { LINE_SYMBOLS, BRANCHES, STEMS } from '@/lib/constants';
-import { extractLiuYaoData } from '@/lib/geminiService';
 import { ChineseDatePicker } from '@/components/ChineseDatePicker';
 import { ChineseTimePicker } from '@/components/ChineseTimePicker';
 
@@ -199,7 +195,6 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
   const [baziBirthTime, setBaziBirthTime] = useState(() => isoTimeToHHmm(new Date().toISOString()));
   const [showLocPicker, setShowLocPicker] = useState(false);
 
-  const [isAiLoading, setIsAiLoading] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
   const [aiInput, setAiInput] = useState('');
   const [showQuickCustomerModal, setShowQuickCustomerModal] = useState(false);
@@ -349,6 +344,81 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
         onClose={() => setShowLocPicker(false)}
         onConfirm={(loc) => setBazi((prev) => ({ ...prev, location: loc }))}
       />
+      {showQuickCustomerModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[210] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-[4px] border border-[#B37D56]/20 shadow-none overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-[#B37D56]/10 flex justify-between items-center">
+              <p className="text-xs font-bold tracking-widest chinese-font text-[#2F2F2F] flex items-center gap-2">
+                <UserPlus size={16} />
+                快速创建客户
+              </p>
+              <button
+                onClick={() => setShowQuickCustomerModal(false)}
+                className="text-[#2F2F2F]/20 hover:text-[#A62121]"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div className="space-y-2">
+                <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">姓名</label>
+                <input
+                  value={quickName}
+                  onChange={(e) => setQuickName(e.target.value)}
+                  placeholder="请输入客户姓名"
+                  className="w-full bg-white border border-[#B37D56]/10 px-3 py-2 text-xs font-bold rounded-[2px] outline-none focus:border-[#A62121] transition-colors chinese-font"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">性别/造化</label>
+                <div className="flex gap-3">
+                  {(['male', 'female'] as const).map((g) => (
+                    <button
+                      key={g}
+                      onClick={() => setQuickGender(g)}
+                      className={`px-4 py-2 text-xs border font-bold transition-all rounded-[2px] ${
+                        quickGender === g
+                          ? 'bg-[#2F2F2F] text-white border-[#2F2F2F]'
+                          : 'border-[#B37D56]/20 text-[#2F2F2F]/50 hover:border-[#A62121]'
+                      }`}
+                    >
+                      {g === 'male' ? '乾造' : '坤造'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  const name = quickName.trim();
+                  if (!name) {
+                    toast.show('请先填写客户姓名', 'warning');
+                    return;
+                  }
+                  const newId = addCustomer({
+                    id: `cust-${Math.random().toString(36).slice(2, 9)}`,
+                    name,
+                    gender: quickGender,
+                    tags: [],
+                    notes: '',
+                    customFields: {},
+                  });
+                  setCustomerId(newId);
+                  setQuickName('');
+                  setQuickGender('male');
+                  setShowQuickCustomerModal(false);
+                  toast.show('客户已创建并已自动选择', 'success');
+                }}
+                className="w-full h-12 bg-[#2F2F2F] text-white font-bold chinese-font tracking-[0.4em] rounded-[2px] hover:bg-black transition-all"
+              >
+                创建
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Header & Module Toggle */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-[#B37D56]/10 pb-6 gap-6">
         <div>
