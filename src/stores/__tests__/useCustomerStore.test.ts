@@ -96,10 +96,12 @@ test("bootstrap loads customers once authenticated", async () => {
 test("addCustomer appends to list", async () => {
   process.env.NEXT_PUBLIC_API_BASE_URL = "http://example.test";
 
+  let receivedBody: unknown = null;
   globalThis.fetch = async (input, init) => {
     const url = String(input);
     const method = (init?.method ?? "GET").toUpperCase();
     if (url.endsWith("/api/customers") && method === "POST") {
+      receivedBody = init?.body ? JSON.parse(String(init.body)) : null;
       return new Response(
         JSON.stringify({
           customer: {
@@ -127,14 +129,11 @@ test("addCustomer appends to list", async () => {
   useAuthStore.setState({ accessToken: "token", status: "authenticated", hasHydrated: true, user: { id: "u1", email: "u@example.com" } });
   const id = await useCustomerStore.getState().addCustomer({
     name: "李四",
-    gender: "female",
-    tags: [],
-    notes: "",
-    customFields: {},
   });
 
   expect(id).toBe("c2");
   expect(useCustomerStore.getState().customers.some((c) => c.id === "c2")).toBe(true);
+  expect(receivedBody).toEqual({ name: "李四" });
 });
 
 test("loadCustomerEvents replaces events for customer", async () => {
@@ -176,4 +175,3 @@ test("loadCustomerEvents replaces events for customer", async () => {
   expect(useCustomerStore.getState().events.some((e) => e.id === "e1")).toBe(true);
   expect(useCustomerStore.getState().events.some((e) => e.id === "old")).toBe(false);
 });
-

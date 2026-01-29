@@ -35,10 +35,26 @@ export interface BaZiData {
   derived?: Record<string, unknown>;
 }
 
+export type CustomerGender = "male" | "female" | "other";
+
+export type CustomerCreateInput = {
+  id?: string;
+  name: string;
+  gender?: CustomerGender;
+  birthDate?: string;
+  birthTime?: string;
+  phone?: string;
+  tags?: string[];
+  notes?: string;
+  customFields?: Record<string, string>;
+};
+
+export type CustomerUpdateInput = Partial<CustomerCreateInput>;
+
 export interface Customer {
   id: string;
   name: string;
-  gender: 'male' | 'female' | 'other';
+  gender: CustomerGender;
   birthDate?: string;
   birthTime?: string; // 精确时间点
   phone?: string;

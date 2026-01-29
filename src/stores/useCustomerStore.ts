@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { ApiError, apiFetch } from "@/lib/apiClient";
-import type { Customer, TimelineEvent } from "@/lib/types";
+import type { Customer, CustomerCreateInput, CustomerUpdateInput, TimelineEvent } from "@/lib/types";
 import { useAuthStore } from "@/stores/useAuthStore";
 
 type LoadStatus = "idle" | "loading" | "ready" | "error";
@@ -19,8 +19,8 @@ interface CustomerState {
   bootstrap: () => Promise<void>;
   refreshCustomers: () => Promise<void>;
 
-  addCustomer: (customer: Omit<Customer, "id" | "createdAt"> & { id?: string }) => Promise<string>;
-  updateCustomer: (id: string, updates: Partial<Customer>) => Promise<void>;
+  addCustomer: (customer: CustomerCreateInput) => Promise<string>;
+  updateCustomer: (id: string, updates: CustomerUpdateInput) => Promise<void>;
   deleteCustomer: (id: string) => Promise<void>;
 
   refreshEvents: (customerId: string) => Promise<void>;
