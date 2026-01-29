@@ -25,8 +25,13 @@ export interface BaZiData {
   dayBranch: string;
   hourStem: string;
   hourBranch: string;
-  isLunar: boolean;
   birthDate: string;
+  calendarType?: "solar" | "lunar" | "fourPillars";
+  location?: string;
+  isDst?: boolean;
+  isTrueSolarTime?: boolean;
+  isEarlyLateZi?: boolean;
+  category?: string;
 }
 
 export interface Customer {
@@ -46,6 +51,7 @@ export interface TimelineEvent {
   id: string;
   customerId: string;
   time: string;
+  timestamp?: number;
   description: string;
   tags: string[];
 }

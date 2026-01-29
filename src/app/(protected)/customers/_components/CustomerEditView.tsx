@@ -74,7 +74,13 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
       return;
     }
     const displayDate = new Date(eventDate).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
-    addEvent({ customerId: id, time: displayDate, description: eventDesc, tags: [] });
+    addEvent({
+      customerId: id,
+      time: displayDate,
+      timestamp: new Date(eventDate).getTime(),
+      description: eventDesc,
+      tags: [],
+    });
     setEventDate('');
     setEventDesc('');
     toast.show('大事记已记录', 'info');
@@ -143,10 +149,10 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
               <div className="group">
                 <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">性别/造化</label>
                 <div className="flex gap-4 mt-2">
-                  {['male', 'female'].map(g => (
+                  {(['male', 'female'] as const).map((g) => (
                     <button 
                       key={g} 
-                      onClick={() => setGender(g as any)}
+                      onClick={() => setGender(g)}
                       className={`px-4 py-1 text-xs border transition-all ${gender === g ? 'bg-[#2F2F2F] text-white border-[#2F2F2F]' : 'border-[#B37D56]/20 text-[#2F2F2F]/40'}`}
                     >
                       {g === 'male' ? '乾造' : '坤造'}

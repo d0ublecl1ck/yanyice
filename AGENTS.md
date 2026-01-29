@@ -1,0 +1,6 @@
+- Use 0px border-radius for primary layout frames to evoke a board/ancient-book grid.
+- Use 2-4px border-radius for buttons to resemble seals while staying sturdy.
+- Use 4px border-radius for cards and modals to reduce visual heaviness.
+- Use 0px or 4px border-radius for search inputs; avoid full pill/capsule shapes.
+- Use 0-2px border-radius for the overall frame; reserve 4px for key interactive elements.
+- Use hairline dividers for separation; avoid relying on shadows for structure.

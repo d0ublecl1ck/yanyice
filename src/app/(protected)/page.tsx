@@ -161,7 +161,7 @@ export default function Page() {
             </Link>
 
             <Link
-              href="/cases/new"
+              href="/bazi/new"
               onClick={() => {
                 // TODO: 考虑通过 state 传递默认 module
               }}
