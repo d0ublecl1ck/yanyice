@@ -13,8 +13,10 @@ import {
 } from 'lucide-react';
 import { useCaseStore } from '@/stores/useCaseStore';
 import { useCustomerStore } from '@/stores/useCustomerStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { useToastStore } from '@/stores/useToastStore';
 import { LineType, LiuYaoData, BaZiData } from '@/lib/types';
+import { ApiError } from '@/lib/apiClient';
 import { LINE_SYMBOLS, BRANCHES, STEMS } from '@/lib/constants';
 import { loadLocationPickerSchema, findSelectionByNames, formatSelection } from '@/lib/locationData';
 import { filterCities, filterDistricts, filterProvinces, type LocationNode } from '@/lib/locationSearch';
@@ -370,10 +372,13 @@ const LocationPickerModal = ({
 export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const toast = useToastStore();
+  const showToast = useToastStore((s) => s.show);
+  const accessToken = useAuthStore((s) => s.accessToken);
   const records = useCaseStore(state => state.records);
   const addRecord = useCaseStore(state => state.addRecord);
   const updateRecord = useCaseStore(state => state.updateRecord);
+  const upsertLiuyaoRemote = useCaseStore((s) => s.upsertLiuyaoRemote);
+  const syncLiuyaoFromApi = useCaseStore((s) => s.syncLiuyaoFromApi);
   const { customers, addCustomer } = useCustomerStore();
   const [isRedirecting, setIsRedirecting] = useState(false);
 
@@ -454,6 +459,16 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
     }
   }, [id, records, router]);
 
+  useEffect(() => {
+    if (!id) return;
+    if (!accessToken) return;
+    const exists = records.some((r) => r.id === id);
+    if (exists) return;
+    void syncLiuyaoFromApi(accessToken).catch(() => {
+      showToast('加载六爻记录失败，请稍后重试', 'warning');
+    });
+  }, [accessToken, id, records, showToast, syncLiuyaoFromApi]);
+
   if (isRedirecting) return null;
 
   const handleLineToggle = (index: number) => {
@@ -482,11 +497,11 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
   const importFromCustomer = () => {
     const customer = customers.find(c => c.id === customerId);
     if (!customer) {
-      toast.show('请先选择客户', 'warning');
+      showToast('请先选择客户', 'warning');
       return;
     }
     if (!customer.birthDate) {
-      toast.show('该客户未录入出生日期', 'warning');
+      showToast('该客户未录入出生日期', 'warning');
       return;
     }
 
@@ -502,16 +517,16 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
       calendarType: prev.calendarType ?? 'solar',
     }));
     setBaziBirthTime(isoTimeToHHmm(iso) || rawTime);
-    toast.show(`已导入客户 ${customer.name} 生辰信息`, 'success');
+    showToast(`已导入客户 ${customer.name} 生辰信息`, 'success');
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!customerId) {
-      toast.show('请选择关联客户', 'error');
+      showToast('请选择关联客户', 'error');
       return;
     }
     if (!subject) {
-      toast.show('请填写咨询主题', 'error');
+      showToast('请填写咨询主题', 'error');
       return;
     }
 
@@ -525,24 +540,52 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
 
     const baziData: BaZiData | undefined = module === 'bazi' ? bazi as BaZiData : undefined;
 
-    if (id) {
-      updateRecord(id, { subject, customerId, notes, module, liuyaoData, baziData });
-      toast.show('卷宗已成功更新', 'success');
-    } else {
-      addRecord({
-        customerId,
-        module,
-        subject,
-        notes,
-        tags: [],
-        liuyaoData,
-        baziData,
-        verifiedStatus: 'unverified',
-        verifiedNotes: ''
-      });
-      toast.show('新咨询已归档入册', 'success');
+    try {
+      if (module === 'liuyao' && liuyaoData && accessToken) {
+        const customer = customers.find((c) => c.id === customerId);
+        await upsertLiuyaoRemote(accessToken, {
+          id,
+          payload: {
+            customerId,
+            customerName: customer?.name ?? null,
+            subject,
+            notes,
+            tags: [],
+            liuyaoData,
+            verifiedStatus: 'unverified',
+            verifiedNotes: '',
+          },
+        });
+        showToast(id ? '卷宗已成功更新' : '新咨询已归档入册', 'success');
+        router.push('/cases');
+        return;
+      }
+
+      if (id) {
+        updateRecord(id, { subject, customerId, notes, module, liuyaoData, baziData });
+        showToast('卷宗已成功更新', 'success');
+      } else {
+        addRecord({
+          customerId,
+          module,
+          subject,
+          notes,
+          tags: [],
+          liuyaoData,
+          baziData,
+          verifiedStatus: 'unverified',
+          verifiedNotes: ''
+        });
+        showToast('新咨询已归档入册', 'success');
+      }
+      router.push('/cases');
+    } catch (e) {
+      if (e instanceof ApiError) {
+        showToast(e.message, 'error');
+        return;
+      }
+      showToast('保存失败，请稍后重试', 'error');
     }
-    router.push('/cases');
   };
 
   return (
@@ -603,7 +646,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
                 onClick={async () => {
                   const name = quickName.trim();
                   if (!name) {
-                    toast.show('请先填写客户姓名', 'warning');
+                    showToast('请先填写客户姓名', 'warning');
                     return;
                   }
 
@@ -619,9 +662,9 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
                     setQuickName('');
                     setQuickGender('male');
                     setShowQuickCustomerModal(false);
-                    toast.show('客户已创建并已自动选择', 'success');
+                    showToast('客户已创建并已自动选择', 'success');
                   } catch {
-                    toast.show('创建失败，请稍后重试', 'error');
+                    showToast('创建失败，请稍后重试', 'error');
                   }
                 }}
                 className="w-full h-12 bg-[#2F2F2F] text-white font-bold chinese-font tracking-[0.4em] rounded-[2px] hover:bg-black transition-all"
@@ -904,7 +947,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
       {/* Floating Save Button */}
       <div className="fixed bottom-10 right-28 z-40">
         <button 
-          onClick={handleSave}
+          onClick={() => void handleSave()}
           className="flex items-center gap-3 px-8 py-4 bg-[#2F2F2F] text-white font-bold tracking-[0.3em] hover:bg-black transition-all shadow-[0_12px_32px_rgba(0,0,0,0.15)] rounded-none group"
         >
           <Save size={18} className="group-hover:scale-110 transition-transform" />
@@ -931,7 +974,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
              </div>
              <div className="p-8 bg-white flex justify-end">
                 <button 
-                  onClick={() => { toast.show('正在处理中...', 'info'); setShowAiModal(false); }}
+                  onClick={() => { showToast('正在处理中...', 'info'); setShowAiModal(false); }}
                   className="px-8 py-2 bg-[#2F2F2F] text-white font-bold tracking-widest hover:bg-black"
                 >
                   开始提取

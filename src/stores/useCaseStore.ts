@@ -2,12 +2,25 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ConsultationRecord } from '@/lib/types';
+import {
+  createLiuyaoRecord,
+  deleteLiuyaoRecord,
+  listLiuyaoRecords,
+  updateLiuyaoRecord,
+  type LiuyaoRecordPayload,
+} from '@/lib/liuyaoApi';
 
 interface CaseState {
   records: ConsultationRecord[];
   addRecord: (record: Omit<ConsultationRecord, 'id' | 'createdAt'>) => string;
   updateRecord: (id: string, updates: Partial<ConsultationRecord>) => void;
   deleteRecord: (id: string) => void;
+  syncLiuyaoFromApi: (accessToken: string) => Promise<void>;
+  upsertLiuyaoRemote: (
+    accessToken: string,
+    args: { id?: string; payload: LiuyaoRecordPayload | Partial<LiuyaoRecordPayload> },
+  ) => Promise<string>;
+  deleteLiuyaoRemote: (accessToken: string, id: string) => Promise<void>;
 }
 
 const MOCK_ID = 'cust-001';
@@ -41,16 +54,24 @@ const MOCK_RECORDS: ConsultationRecord[] = [
   {
     id: 'rec-2',
     customerId: MOCK_ID,
-    module: 'liuyao',
-    subject: '占近期某项目投资可否',
-    notes: '世爻财动化退，虽财旺但化退说明资金后续乏力，不建议大额追加。',
-    tags: ['投资'],
-    liuyaoData: {
-      lines: [0, 2, 1, 0, 1, 0],
-      date: new Date().toISOString(),
-      subject: '项目投资',
-      monthBranch: '戌',
-      dayBranch: '甲子',
+    module: 'bazi',
+    subject: '家庭与子女运势',
+    notes: '子女宫得生，未来两年多关注教育投入与亲子沟通。',
+    tags: ['家庭', '子女'],
+    baziData: {
+      yearStem: '辛',
+      yearBranch: '酉',
+      monthStem: '丁',
+      monthBranch: '卯',
+      dayStem: '癸',
+      dayBranch: '亥',
+      hourStem: '乙',
+      hourBranch: '巳',
+      calendarType: 'solar',
+      birthDate: '1992-03-21T09:10:00.000Z',
+      location: '上海市 上海市 --',
+      isTrueSolarTime: false,
+      isDst: false,
     },
     verifiedStatus: 'unverified',
     verifiedNotes: '',
@@ -75,6 +96,27 @@ export const useCaseStore = create<CaseState>()(
       deleteRecord: (id) => set((state) => ({
         records: state.records.filter(r => r.id !== id)
       })),
+      syncLiuyaoFromApi: async (accessToken) => {
+        const remote = await listLiuyaoRecords(accessToken);
+        set((state) => ({
+          records: [...state.records.filter((r) => r.module !== 'liuyao'), ...remote],
+        }));
+      },
+      upsertLiuyaoRemote: async (accessToken, args) => {
+        const record = args.id
+          ? await updateLiuyaoRecord(accessToken, args.id, args.payload)
+          : await createLiuyaoRecord(accessToken, args.payload as LiuyaoRecordPayload);
+
+        set((state) => {
+          const rest = state.records.filter((r) => r.id !== record.id);
+          return { records: [...rest, record] };
+        });
+        return record.id;
+      },
+      deleteLiuyaoRemote: async (accessToken, id) => {
+        await deleteLiuyaoRecord(accessToken, id);
+        set((state) => ({ records: state.records.filter((r) => r.id !== id) }));
+      },
     }),
     { name: 'yanyice-records' }
   )

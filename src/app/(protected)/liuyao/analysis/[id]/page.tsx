@@ -10,6 +10,7 @@ import { geminiChat, type ChatMessage } from "@/lib/geminiService";
 import type { LineType } from "@/lib/types";
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { useChatStore, type Message } from "@/stores/useChatStore";
 import { useToastStore } from "@/stores/useToastStore";
 
@@ -32,13 +33,18 @@ const getLineDisplay = (line: LineType, idxFromBottom: number) => {
 export default function Page({ params }: { params: { id: string } }) {
   const { id } = params;
   const router = useRouter();
-  const toast = useToastStore();
+  const showToast = useToastStore((s) => s.show);
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const syncLiuyaoFromApi = useCaseStore((s) => s.syncLiuyaoFromApi);
 
   const records = useCaseStore((state) => state.records);
   const customers = useCustomerStore((state) => state.customers);
 
   const record = records.find((r) => r.id === id && r.module === "liuyao");
   const customer = record?.customerId ? customers.find((c) => c.id === record.customerId) : null;
+  const customerName = record?.customerName ?? customer?.name ?? null;
+
+  const [isLoadingRecord, setIsLoadingRecord] = useState(false);
 
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [inputText, setInputText] = useState("");
@@ -67,6 +73,17 @@ export default function Page({ params }: { params: { id: string } }) {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [history]);
 
+  useEffect(() => {
+    if (record) return;
+    if (!accessToken) return;
+    setIsLoadingRecord(true);
+    void syncLiuyaoFromApi(accessToken)
+      .catch(() => {
+        showToast("加载六爻记录失败，请稍后重试", "warning");
+      })
+      .finally(() => setIsLoadingRecord(false));
+  }, [accessToken, record, showToast, syncLiuyaoFromApi]);
+
   const handleSend = async () => {
     if (!inputText.trim() || !analysis) return;
     const userText = inputText;
@@ -88,11 +105,19 @@ export default function Page({ params }: { params: { id: string } }) {
       addMessage(id, { role: "model", text: text || "...", timestamp: Date.now() });
     } catch (e) {
       console.error(e);
-      toast.show("助手调用失败，请稍后重试", "error");
+      showToast("助手调用失败，请稍后重试", "error");
     } finally {
       setIsTyping(false);
     }
   };
+
+  if (!record && isLoadingRecord) {
+    return (
+      <div className="py-24 text-center">
+        <p className="text-[#2F2F2F]/20 chinese-font italic">正在加载卦例...</p>
+      </div>
+    );
+  }
 
   if (!record || !analysis) {
     return (
@@ -126,7 +151,7 @@ export default function Page({ params }: { params: { id: string } }) {
           </div>
           <h2 className="text-2xl font-bold text-[#2F2F2F] chinese-font">{analysis.subject}</h2>
           <p className="text-[10px] text-[#2F2F2F]/40 chinese-font tracking-widest uppercase">
-            {customer?.name ? `${customer.name} · ` : ""}
+            {customerName ? `${customerName} · ` : ""}
             {analysis.solarDate} · 月建{analysis.monthBranch} · 日辰{analysis.dayBranch}
           </p>
         </div>
@@ -207,7 +232,7 @@ export default function Page({ params }: { params: { id: string } }) {
                 <button
                   onClick={() => {
                     clearHistory(id);
-                    toast.show("已清空对话", "info");
+                    showToast("已清空对话", "info");
                   }}
                   className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#2F2F2F]/30 hover:text-[#A62121]"
                 >

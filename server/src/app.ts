@@ -9,6 +9,7 @@ import { getCorsOrigin, getJwtSecret } from "./config";
 import { createPrismaBundle } from "./prisma";
 import { authRoutes } from "./routes/auth";
 import { customerRoutes } from "./routes/customers";
+import { liuyaoRoutes } from "./routes/liuyao";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -65,6 +66,7 @@ export function buildApp(options?: { databaseUrl?: string; logger?: boolean }) {
 
   app.register(authRoutes, { prefix: "/api" });
   app.register(customerRoutes, { prefix: "/api" });
+  app.register(liuyaoRoutes, { prefix: "/api" });
 
   return app;
 }
