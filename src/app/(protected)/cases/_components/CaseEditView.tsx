@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Save, 
@@ -8,6 +8,7 @@ import {
   Plus, 
   UserPlus, 
   X,
+  Search,
   RefreshCw
 } from 'lucide-react';
 import { useCaseStore } from '@/stores/useCaseStore';
@@ -15,26 +16,10 @@ import { useCustomerStore } from '@/stores/useCustomerStore';
 import { useToastStore } from '@/stores/useToastStore';
 import { LineType, LiuYaoData, BaZiData } from '@/lib/types';
 import { LINE_SYMBOLS, BRANCHES, STEMS } from '@/lib/constants';
+import { loadLocationPickerSchema, findSelectionByNames, formatSelection } from '@/lib/locationData';
+import { filterCities, filterDistricts, filterProvinces, type LocationNode } from '@/lib/locationSearch';
 import { ChineseDatePicker } from '@/components/ChineseDatePicker';
 import { ChineseTimePicker } from '@/components/ChineseTimePicker';
-
-const PROVINCES = ['北京市', '上海市', '天津市', '广东省', '江苏省', '浙江省', '四川省'];
-const CITIES: Record<string, string[]> = {
-  '北京市': ['北京市'],
-  '上海市': ['上海市'],
-  '天津市': ['天津市'],
-  '广东省': ['广州市', '深圳市', '珠海市', '佛山市'],
-  '江苏省': ['南京市', '苏州市', '无锡市'],
-  '浙江省': ['杭州市', '宁波市', '温州市'],
-  '四川省': ['成都市', '绵阳市', '德阳市'],
-};
-const DISTRICTS: Record<string, string[]> = {
-  '广州市': ['越秀区', '荔湾区', '海珠区', '天河区', '白云区'],
-  '深圳市': ['罗湖区', '福田区', '南山区', '宝安区'],
-  '杭州市': ['西湖区', '上城区', '拱墅区'],
-  '南京市': ['玄武区', '鼓楼区', '秦淮区'],
-  '成都市': ['锦江区', '青羊区', '武侯区'],
-};
 
 const pad2 = (n: number) => n.toString().padStart(2, '0');
 
@@ -51,6 +36,123 @@ const setIsoTime = (iso: string, hhmm: string) => {
   return d.toISOString();
 };
 
+type PickerItem = string | number | LocationNode;
+
+const PickerColumn = ({
+  items,
+  value,
+  onChange,
+  label,
+  renderItem,
+  showDivider = true,
+}: {
+  items: PickerItem[];
+  value: string | number;
+  onChange: (val: string | number) => void;
+  label: string;
+  renderItem?: (label: string) => React.ReactNode;
+  showDivider?: boolean;
+}) => {
+  const scrollerRef = React.useRef<HTMLDivElement>(null);
+  const rafRef = React.useRef<number | null>(null);
+  const settleTimerRef = React.useRef<number | null>(null);
+  const lastEmittedRef = React.useRef<string>(String(value));
+
+  const commitClosestToCenter = React.useCallback(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+
+    const scrollerRect = scroller.getBoundingClientRect();
+    const centerY = scrollerRect.top + scrollerRect.height / 2;
+    const buttons = scroller.querySelectorAll<HTMLButtonElement>("button[data-picker-item='1']");
+
+    let best: { dist: number; value: string } | null = null;
+    for (const btn of buttons) {
+      const rect = btn.getBoundingClientRect();
+      const btnCenter = rect.top + rect.height / 2;
+      const dist = Math.abs(btnCenter - centerY);
+      const v = btn.dataset.pickerValue ?? "";
+      if (!best || dist < best.dist) best = { dist, value: v };
+    }
+
+    if (!best) return;
+    if (best.value === lastEmittedRef.current) return;
+    lastEmittedRef.current = best.value;
+    onChange(typeof value === "number" ? Number(best.value) : best.value);
+  }, [onChange, value]);
+
+  const handleScroll = React.useCallback(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      if (settleTimerRef.current) window.clearTimeout(settleTimerRef.current);
+      settleTimerRef.current = window.setTimeout(() => {
+        commitClosestToCenter();
+      }, 120);
+    });
+  }, [commitClosestToCenter]);
+
+  React.useEffect(() => {
+    lastEmittedRef.current = String(value);
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const selector = `button[data-picker-item='1'][data-picker-value='${CSS.escape(String(value))}']`;
+    const btn = scroller.querySelector<HTMLButtonElement>(selector);
+    btn?.scrollIntoView({ block: "center", behavior: "auto" });
+  }, [value]);
+
+  React.useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (settleTimerRef.current) window.clearTimeout(settleTimerRef.current);
+    };
+  }, []);
+
+  return (
+    <div
+      className={`flex flex-col items-center w-full relative ${
+        showDivider ? "border-r border-[#B37D56]/10" : ""
+      }`}
+    >
+      <span className="text-[10px] text-[#B37D56] font-bold mb-6 uppercase tracking-widest">
+        {label}
+      </span>
+      <div className="relative w-full h-44 flex items-center justify-center">
+        <div className="absolute inset-x-0 top-[calc(50%-20px)] h-[0.5px] bg-[#B37D56]/30 z-0" />
+        <div className="absolute inset-x-0 top-[calc(50%+20px)] h-[0.5px] bg-[#B37D56]/30 z-0" />
+        <div
+          ref={scrollerRef}
+          onScroll={handleScroll}
+          className="h-full overflow-y-auto no-scrollbar w-full snap-y snap-mandatory relative z-10"
+        >
+          <div className="py-20 flex flex-col items-center">
+            {items.map((item) => (
+              <button
+                key={typeof item === "object" ? item.id : item}
+                onClick={() => {
+                  const nextValue = typeof item === "object" ? item.id : String(item);
+                  onChange(typeof value === "number" ? Number(nextValue) : nextValue);
+                }}
+                data-picker-item="1"
+                data-picker-value={typeof item === "object" ? item.id : String(item)}
+                className={`w-full py-2 text-center transition-all duration-300 snap-center chinese-font outline-none ${
+                  (typeof item === "object" ? item.id : item.toString()) === value.toString()
+                    ? "text-[#2F2F2F] font-bold text-base"
+                    : "text-[#2F2F2F]/10 text-xs hover:text-[#2F2F2F]/30"
+                }`}
+              >
+                {(() => {
+                  const labelText = typeof item === "object" ? item.name : String(item);
+                  return renderItem ? renderItem(labelText) : labelText;
+                })()}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const LocationPickerModal = ({
   open,
   initial,
@@ -62,90 +164,197 @@ const LocationPickerModal = ({
   onClose: () => void;
   onConfirm: (loc: string) => void;
 }) => {
-  const [prov, setProv] = useState('北京市');
-  const [city, setCity] = useState('北京市');
-  const [dist, setDist] = useState('--');
+  const [regionType, setRegionType] = useState<"domestic" | "overseas">("domestic");
+  const [schema, setSchema] = useState<Awaited<ReturnType<typeof loadLocationPickerSchema>> | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [level1Id, setLevel1Id] = useState<string>("");
+  const [level2Id, setLevel2Id] = useState<string>("");
+  const [level3Id, setLevel3Id] = useState<string>("");
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     if (!open) return;
-    const [p, c, d] = (initial || '').split(' ').filter(Boolean);
-    if (p && PROVINCES.includes(p)) setProv(p);
-    if (c) setCity(c);
-    if (d) setDist(d);
-  }, [open, initial]);
+    setIsLoading(true);
+    loadLocationPickerSchema(regionType)
+      .then((s) => setSchema(s))
+      .finally(() => setIsLoading(false));
+  }, [open, regionType]);
 
   useEffect(() => {
-    const cities = CITIES[prov] || ['--'];
-    if (!cities.includes(city)) setCity(cities[0] || '--');
-  }, [prov, city]);
+    if (!open || !schema) return;
+    const [a, b, c] = (initial || "").split(" ").filter(Boolean);
+    const found = findSelectionByNames(schema, { level1: a, level2: b, level3: c });
+    if (found.level1Id) setLevel1Id(found.level1Id);
+    if (found.level2Id) setLevel2Id(found.level2Id);
+    if (found.level3Id) setLevel3Id(found.level3Id);
+  }, [open, initial, schema]);
 
   useEffect(() => {
-    const dists = DISTRICTS[city] || ['--'];
-    if (!dists.includes(dist)) setDist(dists[0] || '--');
-  }, [city, dist]);
+    if (!open) return;
+    setQuery("");
+  }, [open, regionType]);
+
+  const filteredLevel1 = useMemo(
+    () => (schema ? filterProvinces(schema.hierarchy, query) : []),
+    [schema, query],
+  );
+
+  const filteredLevel2 = useMemo(
+    () => (schema && level1Id ? filterCities(schema.hierarchy, level1Id, query) : []),
+    [schema, level1Id, query],
+  );
+
+  const filteredLevel3 = useMemo(
+    () => (schema && level2Id ? filterDistricts(schema.hierarchy, level2Id, query) : []),
+    [schema, level2Id, query],
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    if (filteredLevel1.length === 0) return;
+    if (!filteredLevel1.some((n) => n.id === level1Id)) setLevel1Id(filteredLevel1[0].id);
+  }, [filteredLevel1, level1Id, open]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (filteredLevel2.length === 0) return;
+    if (!filteredLevel2.some((n) => n.id === level2Id)) setLevel2Id(filteredLevel2[0].id);
+  }, [filteredLevel2, level2Id, open]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (filteredLevel3.length === 0) return;
+    if (!filteredLevel3.some((n) => n.id === level3Id)) setLevel3Id(filteredLevel3[0].id);
+  }, [filteredLevel3, level3Id, open]);
+
+  const highlight = useMemo(() => {
+    const q = query.trim();
+    if (!q) return undefined;
+
+    const qLower = q.toLowerCase();
+    function renderHighlightedText(labelText: string) {
+      const lower = labelText.toLowerCase();
+      const idx = lower.indexOf(qLower);
+      if (idx < 0) return labelText;
+
+      const before = labelText.slice(0, idx);
+      const match = labelText.slice(idx, idx + q.length);
+      const after = labelText.slice(idx + q.length);
+      return (
+        <>
+          {before}
+          <span className="text-[#B37D56]">{match}</span>
+          {after}
+        </>
+      );
+    }
+
+    return renderHighlightedText;
+  }, [query]);
 
   if (!open) return null;
-
-  const availableCities = CITIES[prov] || ['--'];
-  const availableDists = DISTRICTS[city] || ['--'];
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-sm rounded-[4px] border border-[#B37D56]/20 shadow-none overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="p-6 border-b border-[#B37D56]/10 flex justify-between items-center">
-          <p className="text-xs font-bold tracking-widest chinese-font text-[#2F2F2F]">选择地区</p>
-          <button onClick={onClose} className="text-[#2F2F2F]/20 hover:text-[#A62121]">
-            <X size={20} />
-          </button>
-        </div>
-        <div className="p-6 grid grid-cols-3 gap-3 border-b border-[#B37D56]/10">
-          <div className="space-y-2">
-            <p className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">省份</p>
-            <select
-              value={prov}
-              onChange={(e) => setProv(e.target.value)}
-              className="w-full bg-white border border-[#B37D56]/10 px-3 py-2 text-xs font-bold rounded-[2px]"
-            >
-              {PROVINCES.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
+        <div className="p-6 border-b border-[#B37D56]/10 flex flex-col gap-6">
+          <div className="flex justify-between items-center">
+            <div className="flex bg-[#FAF7F2] p-0.5 border border-[#B37D56]/10 rounded-[2px]">
+              <button
+                onClick={() => setRegionType("domestic")}
+                className={`px-6 py-1.5 text-[10px] chinese-font transition-all rounded-[1px] ${
+                  regionType === "domestic" ? "bg-[#B37D56] text-white" : "text-[#2F2F2F]/30"
+                }`}
+              >
+                国内
+              </button>
+              <button
+                onClick={() => setRegionType("overseas")}
+                className={`px-6 py-1.5 text-[10px] chinese-font transition-all rounded-[1px] ${
+                  regionType === "overseas" ? "bg-[#B37D56] text-white" : "text-[#2F2F2F]/30"
+                }`}
+              >
+                海外
+              </button>
+            </div>
+            <button onClick={onClose} className="text-[#2F2F2F]/20 hover:text-[#A62121]">
+              <X size={20} />
+            </button>
           </div>
-          <div className="space-y-2">
-            <p className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">城市</p>
-            <select
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              className="w-full bg-white border border-[#B37D56]/10 px-3 py-2 text-xs font-bold rounded-[2px]"
-            >
-              {availableCities.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-2">
-            <p className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">区县</p>
-            <select
-              value={dist}
-              onChange={(e) => setDist(e.target.value)}
-              className="w-full bg-white border border-[#B37D56]/10 px-3 py-2 text-xs font-bold rounded-[2px]"
-            >
-              {availableDists.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
+          <div className="relative">
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B37D56]/40"
+            />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="搜索全国城市及地区"
+              className="w-full bg-[#FAF7F2] border border-[#B37D56]/10 pl-9 pr-4 py-2 text-xs rounded-[4px] outline-none focus:border-[#B37D56] transition-all"
+            />
           </div>
         </div>
-        <div className="p-6">
+
+        <div className="p-8 flex justify-between min-h-[240px]">
+          {isLoading || !schema ? (
+            <div className="w-full py-16 text-center text-xs text-[#2F2F2F]/30 chinese-font">
+              加载中…
+            </div>
+          ) : (
+            <>
+              <PickerColumn
+                label={schema.labels.level1}
+                items={filteredLevel1}
+                value={level1Id}
+                onChange={(v) => {
+                  const nextLevel1Id = String(v);
+                  setLevel1Id(nextLevel1Id);
+                  const nextLevel2 = filterCities(schema.hierarchy, nextLevel1Id, query);
+                  const nextLevel2Id = nextLevel2[0]?.id ?? "";
+                  setLevel2Id(nextLevel2Id);
+                  const nextLevel3 = nextLevel2Id
+                    ? filterDistricts(schema.hierarchy, nextLevel2Id, query)
+                    : [];
+                  setLevel3Id(nextLevel3[0]?.id ?? "");
+                }}
+                renderItem={highlight}
+              />
+              <PickerColumn
+                label={schema.labels.level2}
+                items={filteredLevel2}
+                value={level2Id}
+                onChange={(v) => {
+                  const nextLevel2Id = String(v);
+                  setLevel2Id(nextLevel2Id);
+                  const nextLevel3 = filterDistricts(schema.hierarchy, nextLevel2Id, query);
+                  setLevel3Id(nextLevel3[0]?.id ?? "");
+                }}
+                renderItem={highlight}
+              />
+              <PickerColumn
+                label={schema.labels.level3}
+                items={filteredLevel3}
+                value={level3Id}
+                onChange={(v) => setLevel3Id(String(v))}
+                showDivider={false}
+                renderItem={highlight}
+              />
+            </>
+          )}
+        </div>
+
+        <div className="p-6 pt-0">
           <button
             onClick={() => {
-              onConfirm(`${prov} ${city} ${dist}`);
+              if (!schema) return;
+              onConfirm(
+                formatSelection(schema, {
+                  level1Id,
+                  level2Id,
+                  level3Id,
+                }),
+              );
               onClose();
             }}
             className="w-full h-12 bg-[#2F2F2F] text-white font-bold chinese-font tracking-[0.4em] rounded-[2px] hover:bg-black transition-all"
