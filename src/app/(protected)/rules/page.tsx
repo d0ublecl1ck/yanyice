@@ -3,13 +3,16 @@ import { redirect } from "next/navigation";
 import { coerceModuleType } from "@/lib/moduleParam";
 import { rulesHref } from "@/lib/caseLinks";
 
-export default function Page({
+type SearchParams = Record<string, string | string[] | undefined>;
+
+export default async function Page({
   searchParams,
 }: {
-  searchParams?: {
-    module?: string;
-  };
+  searchParams?: Promise<SearchParams>;
 }) {
-  const moduleType = coerceModuleType(searchParams?.module) ?? "liuyao";
+  const sp = (await searchParams) ?? {};
+  const moduleParam = sp.module;
+  const moduleValue = Array.isArray(moduleParam) ? moduleParam[0] : moduleParam;
+  const moduleType = coerceModuleType(moduleValue) ?? "liuyao";
   redirect(rulesHref(moduleType));
 }
