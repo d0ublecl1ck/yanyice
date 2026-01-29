@@ -6,7 +6,7 @@ import {
   Save, 
   Sparkles, 
   Plus, 
-  UserPlus, 
+  UserPlus,
   X,
   Search,
   RefreshCw

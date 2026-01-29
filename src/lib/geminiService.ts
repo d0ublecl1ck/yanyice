@@ -22,6 +22,26 @@ export const extractLiuYaoData = async (input: string | File) => {
   }
 };
 
+export type ChatMessage = { role: "user" | "model"; text: string };
+
+export const geminiChat = async (params: {
+  systemInstruction: string;
+  messages: ChatMessage[];
+}) => {
+  const response = await fetch("/api/gemini/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Gemini chat failed: ${response.status}`);
+  }
+
+  const data = (await response.json()) as { text?: string };
+  return data.text ?? "";
+};
+
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

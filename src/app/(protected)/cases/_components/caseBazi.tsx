@@ -2,13 +2,15 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Plus, Search, Calendar, ChevronRight, Hash } from "lucide-react";
 
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
-import { newCaseHref } from "@/lib/caseLinks";
+import { newCaseHref, recordAnalysisHref, recordEditHref } from "@/lib/caseLinks";
 
 export function CaseBazi() {
+  const router = useRouter();
   const allRecords = useCaseStore((state) => state.records);
   const customers = useCustomerStore((state) => state.customers);
   const [search, setSearch] = useState("");
@@ -67,10 +69,17 @@ export function CaseBazi() {
               .map((record) => {
                 const customer = customers.find((c) => c.id === record.customerId);
                 const b = record.baziData;
+                const editHref = recordEditHref("bazi", record.id);
+                const analysisHref = recordAnalysisHref("bazi", record.id);
                 return (
-                  <Link
+                  <div
                     key={record.id}
-                    href={`/bazi/edit/${encodeURIComponent(record.id)}`}
+                    role="link"
+                    tabIndex={0}
+                    onClick={() => router.push(editHref)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") router.push(editHref);
+                    }}
                     className="flex items-center group hover:bg-[#FAF7F2] transition-all p-6"
                   >
                     <div className="w-12 h-12 bg-[#B37D56]/5 flex items-center justify-center shrink-0">
@@ -102,17 +111,28 @@ export function CaseBazi() {
                         <Calendar size={12} />
                         {new Date(record.createdAt).toLocaleDateString()}
                       </div>
-                      <div className="text-right">
-                        <span className="text-[9px] px-2 py-0.5 border border-[#B37D56]/20 text-[#2F2F2F]/30 font-bold">
-                          查看详情
-                        </span>
+                      <div className="text-right flex items-center justify-end gap-2">
+                        <Link
+                          href={analysisHref}
+                          className="text-[9px] px-2 py-0.5 border border-black/10 text-[#2F2F2F]/60 font-bold hover:border-[#A62121]/30 hover:text-[#A62121]"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          排盘
+                        </Link>
+                        <Link
+                          href={editHref}
+                          className="text-[9px] px-2 py-0.5 border border-[#B37D56]/20 text-[#2F2F2F]/30 font-bold hover:border-[#A62121]/30 hover:text-[#A62121]"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          编辑
+                        </Link>
                       </div>
                     </div>
                     <ChevronRight
                       size={16}
                       className="ml-6 text-[#2F2F2F]/10 group-hover:text-[#A62121] transition-all"
                     />
-                  </Link>
+                  </div>
                 );
               })}
           </div>
