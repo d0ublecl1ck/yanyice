@@ -24,7 +24,7 @@ export default function Page() {
         <p className="text-slate-500 mt-1 chinese-font">管理您的账号安全与 AI 配置</p>
       </header>
 
-      <div className="max-w-2xl space-y-8">
+      <div className="max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8">
         <section className="bg-white p-8 border border-[#B37D56]/10 space-y-6">
           <div className="flex items-center gap-3 border-b border-[#B37D56]/10 pb-4">
             <div className="p-2 bg-[#A62121]/5 text-[#A62121] rounded-none border border-[#A62121]/10">
@@ -85,7 +85,7 @@ export default function Page() {
           </div>
         </section>
 
-        <section className="pt-8">
+        <section className="pt-8 lg:col-span-2">
           <button
             onClick={handleLogout}
             className="w-full flex items-center justify-center gap-3 px-8 py-4 bg-white border border-[#A62121]/20 text-[#A62121] font-bold tracking-[0.4em] hover:bg-[#A62121] hover:text-white transition-all chinese-font"
