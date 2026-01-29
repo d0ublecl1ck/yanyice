@@ -25,6 +25,9 @@ function CustomerViewPage({ id }: { id: string }) {
   const router = useRouter();
   const customers = useCustomerStore((state) => state.customers);
   const events = useCustomerStore((state) => state.events);
+  const refreshEvents = useCustomerStore((state) => state.refreshEvents);
+  const customerStatus = useCustomerStore((state) => state.status);
+  const customerHasHydrated = useCustomerStore((state) => state.hasHydrated);
   const records = useCaseStore((state) => state.records);
 
   useEffect(() => {
@@ -35,9 +38,23 @@ function CustomerViewPage({ id }: { id: string }) {
   const customer = customers.find((c) => c.id === id);
   const customerRecords = records.filter((r) => r.customerId === id);
 
+  useEffect(() => {
+    void refreshEvents(id);
+  }, [id, refreshEvents]);
+
   const fullTimeline = useMemo(() => {
     return buildCustomerTimeline({ customerId: id, events, records });
   }, [id, events, records]);
+
+  const isLoading = !customerHasHydrated || customerStatus === "loading" || customerStatus === "idle";
+
+  if (isLoading) {
+    return (
+      <div className="py-20 text-center">
+        <p className="text-[#2F2F2F]/30 chinese-font italic">加载中…</p>
+      </div>
+    );
+  }
 
   if (!customer) {
     return (

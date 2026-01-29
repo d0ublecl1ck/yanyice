@@ -143,7 +143,11 @@ export default function Page({ params }: { params: { id: string } }) {
   const toast = useToastStore();
 
   const records = useCaseStore((state) => state.records);
+  const recordStatus = useCaseStore((state) => state.status);
+  const recordHasHydrated = useCaseStore((state) => state.hasHydrated);
   const customers = useCustomerStore((state) => state.customers);
+  const customerStatus = useCustomerStore((state) => state.status);
+  const customerHasHydrated = useCustomerStore((state) => state.hasHydrated);
 
   const record = records.find((r) => r.id === id && r.module === "bazi");
   const customer = record?.customerId ? customers.find((c) => c.id === record.customerId) : null;
@@ -197,6 +201,22 @@ export default function Page({ params }: { params: { id: string } }) {
       setIsTyping(false);
     }
   };
+
+  const isLoading =
+    !recordHasHydrated ||
+    !customerHasHydrated ||
+    recordStatus === "loading" ||
+    customerStatus === "loading" ||
+    recordStatus === "idle" ||
+    customerStatus === "idle";
+
+  if (isLoading) {
+    return (
+      <div className="py-24 text-center">
+        <p className="text-[#2F2F2F]/30 chinese-font italic">加载中…</p>
+      </div>
+    );
+  }
 
   if (!record || !analysis) {
     return (

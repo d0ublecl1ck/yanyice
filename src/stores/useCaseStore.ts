@@ -1,20 +1,33 @@
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { ConsultationRecord } from '@/lib/types';
+import { ApiError, apiFetch } from "@/lib/apiClient";
 import {
   createLiuyaoRecord,
   deleteLiuyaoRecord,
   listLiuyaoRecords,
   updateLiuyaoRecord,
   type LiuyaoRecordPayload,
-} from '@/lib/liuyaoApi';
+} from "@/lib/liuyaoApi";
+import type { ConsultationRecord } from "@/lib/types";
+import { useAuthStore } from "@/stores/useAuthStore";
+
+type LoadStatus = "idle" | "loading" | "ready" | "error";
 
 interface CaseState {
   records: ConsultationRecord[];
-  addRecord: (record: Omit<ConsultationRecord, 'id' | 'createdAt'>) => string;
-  updateRecord: (id: string, updates: Partial<ConsultationRecord>) => void;
-  deleteRecord: (id: string) => void;
+  status: LoadStatus;
+  hasHydrated: boolean;
+  loadedForUserId: string | null;
+
+  setHasHydrated: (hasHydrated: boolean) => void;
+  bootstrap: () => Promise<void>;
+  refresh: () => Promise<void>;
+
+  addRecord: (record: Omit<ConsultationRecord, "id" | "createdAt">) => Promise<string>;
+  updateRecord: (id: string, updates: Partial<ConsultationRecord>) => Promise<void>;
+  deleteRecord: (id: string) => Promise<void>;
+
   syncLiuyaoFromApi: (accessToken: string) => Promise<void>;
   upsertLiuyaoRemote: (
     accessToken: string,
@@ -23,85 +36,111 @@ interface CaseState {
   deleteLiuyaoRemote: (accessToken: string, id: string) => Promise<void>;
 }
 
-const MOCK_ID = 'cust-001';
-const MOCK_RECORDS: ConsultationRecord[] = [
-  {
-    id: 'rec-1',
-    customerId: MOCK_ID,
-    module: 'bazi',
-    subject: '事业大运详批',
-    notes: '日主强旺，喜火木。2024年甲辰年，财星入墓，宜守不宜攻。',
-    tags: ['事业', '大运'],
-    baziData: {
-      yearStem: '乙',
-      yearBranch: '丑',
-      monthStem: '壬',
-      monthBranch: '午',
-      dayStem: '甲',
-      dayBranch: '寅',
-      hourStem: '己',
-      hourBranch: '巳',
-      calendarType: 'solar',
-      birthDate: '1985-06-15T10:30:00.000Z',
-      location: '北京市 北京市 --',
-      isTrueSolarTime: true,
-      isDst: false,
-    },
-    verifiedStatus: 'accurate',
-    verifiedNotes: '反馈2023年偏财运极佳。',
-    createdAt: Date.now() - 1000 * 60 * 60 * 24 * 10,
-  },
-  {
-    id: 'rec-2',
-    customerId: MOCK_ID,
-    module: 'bazi',
-    subject: '家庭与子女运势',
-    notes: '子女宫得生，未来两年多关注教育投入与亲子沟通。',
-    tags: ['家庭', '子女'],
-    baziData: {
-      yearStem: '辛',
-      yearBranch: '酉',
-      monthStem: '丁',
-      monthBranch: '卯',
-      dayStem: '癸',
-      dayBranch: '亥',
-      hourStem: '乙',
-      hourBranch: '巳',
-      calendarType: 'solar',
-      birthDate: '1992-03-21T09:10:00.000Z',
-      location: '上海市 上海市 --',
-      isTrueSolarTime: false,
-      isDst: false,
-    },
-    verifiedStatus: 'unverified',
-    verifiedNotes: '',
-    createdAt: Date.now() - 1000 * 60 * 60 * 24 * 2,
-  },
-];
+function getAuthContext() {
+  const { accessToken, user, status } = useAuthStore.getState();
+  if (status !== "authenticated" || !accessToken || !user) return null;
+  return { accessToken, userId: user.id };
+}
+
+function isUnauthorized(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 401;
+}
 
 export const useCaseStore = create<CaseState>()(
   persist(
-    (set) => ({
-      records: MOCK_RECORDS,
-      addRecord: (r) => {
-        const id = Math.random().toString(36).substr(2, 9);
-        set((state) => ({
-          records: [...state.records, { ...r, id, createdAt: Date.now() }]
-        }));
-        return id;
+    (set, get) => ({
+      records: [],
+      status: "idle",
+      hasHydrated: false,
+      loadedForUserId: null,
+
+      setHasHydrated: (hasHydrated) => set({ hasHydrated }),
+
+      bootstrap: async () => {
+        const auth = getAuthContext();
+        if (!auth) {
+          set({ records: [], status: "idle", loadedForUserId: null });
+          return;
+        }
+
+        if (get().loadedForUserId !== auth.userId) {
+          set({ records: [], loadedForUserId: auth.userId, status: "idle" });
+        }
+
+        await get().refresh();
       },
-      updateRecord: (id, updates) => set((state) => ({
-        records: state.records.map(r => r.id === id ? { ...r, ...updates } : r)
-      })),
-      deleteRecord: (id) => set((state) => ({
-        records: state.records.filter(r => r.id !== id)
-      })),
+
+      refresh: async () => {
+        const auth = getAuthContext();
+        if (!auth) return;
+
+        set({ status: "loading" });
+        try {
+          const { records } = await apiFetch<{ records: ConsultationRecord[] }>("/api/records", {
+            method: "GET",
+            accessToken: auth.accessToken,
+          });
+          set({ records, status: "ready" });
+        } catch (err) {
+          if (isUnauthorized(err)) {
+            set({ records: [], status: "idle", loadedForUserId: null });
+            return;
+          }
+          set({ status: "error" });
+        }
+      },
+
+      addRecord: async (record) => {
+        const auth = getAuthContext();
+        if (!auth) throw new Error("未登录");
+
+        const { record: created } = await apiFetch<{ record: ConsultationRecord }>("/api/records", {
+          method: "POST",
+          accessToken: auth.accessToken,
+          body: JSON.stringify(record),
+        });
+
+        set((state) => ({ records: [...state.records, created] }));
+        return created.id;
+      },
+
+      updateRecord: async (id, updates) => {
+        const auth = getAuthContext();
+        if (!auth) throw new Error("未登录");
+
+        const { record: updated } = await apiFetch<{ record: ConsultationRecord }>(
+          `/api/records/${encodeURIComponent(id)}`,
+          {
+            method: "PUT",
+            accessToken: auth.accessToken,
+            body: JSON.stringify(updates),
+          },
+        );
+
+        set((state) => ({
+          records: state.records.map((r) => (r.id === id ? updated : r)),
+        }));
+      },
+
+      deleteRecord: async (id) => {
+        const auth = getAuthContext();
+        if (!auth) throw new Error("未登录");
+
+        await apiFetch<null>(`/api/records/${encodeURIComponent(id)}`, {
+          method: "DELETE",
+          accessToken: auth.accessToken,
+        });
+
+        set((state) => ({ records: state.records.filter((r) => r.id !== id) }));
+      },
+
       syncLiuyaoFromApi: async (accessToken) => {
         const remote = await listLiuyaoRecords(accessToken);
         set((state) => ({
-          records: [...state.records.filter((r) => r.module !== 'liuyao'), ...remote],
+          records: [...state.records.filter((r) => r.module !== "liuyao"), ...remote],
         }));
       },
+
       upsertLiuyaoRemote: async (accessToken, args) => {
         const record = args.id
           ? await updateLiuyaoRecord(accessToken, args.id, args.payload)
@@ -113,11 +152,23 @@ export const useCaseStore = create<CaseState>()(
         });
         return record.id;
       },
+
       deleteLiuyaoRemote: async (accessToken, id) => {
         await deleteLiuyaoRecord(accessToken, id);
         set((state) => ({ records: state.records.filter((r) => r.id !== id) }));
       },
     }),
-    { name: 'yanyice-records' }
-  )
+    {
+      name: "yanyice-records",
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+        void state?.bootstrap();
+      },
+      partialize: (state) => ({
+        records: state.records,
+        loadedForUserId: state.loadedForUserId,
+      }),
+    },
+  ),
 );
+

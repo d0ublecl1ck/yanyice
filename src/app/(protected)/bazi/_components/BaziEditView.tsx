@@ -868,28 +868,32 @@ export function BaziEditView({ id }: { id?: string }) {
     toast.show("时间已更新", "info");
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const baziData = { ...(bazi as BaZiData), birthDate: recordDate, location };
-    if (id) {
-      updateRecord(id, { module: "bazi", subject, customerId, baziData });
-      toast.show("已保存", "success");
-    } else {
-      const fallbackTitle = customerId
-        ? `${customers.find((c) => c.id === customerId)?.name || "客户"}的命例`
-        : "未命名命例";
-      addRecord({
-        customerId,
-        module: "bazi",
-        subject: subject || fallbackTitle,
-        notes: "",
-        tags: [],
-        baziData,
-        verifiedStatus: "unverified",
-        verifiedNotes: "",
-      });
-      toast.show("录入成功", "success");
+    try {
+      if (id) {
+        await updateRecord(id, { module: "bazi", subject, customerId, baziData });
+        toast.show("已保存", "success");
+      } else {
+        const fallbackTitle = customerId
+          ? `${customers.find((c) => c.id === customerId)?.name || "客户"}的命例`
+          : "未命名命例";
+        await addRecord({
+          customerId,
+          module: "bazi",
+          subject: subject || fallbackTitle,
+          notes: "",
+          tags: [],
+          baziData,
+          verifiedStatus: "unverified",
+          verifiedNotes: "",
+        });
+        toast.show("录入成功", "success");
+      }
+      router.push("/bazi");
+    } catch {
+      toast.show("保存失败，请稍后重试", "error");
     }
-    router.push("/bazi");
   };
 
   const dateParts = useMemo(() => {
@@ -1076,7 +1080,7 @@ export function BaziEditView({ id }: { id?: string }) {
       </div>
 
       <button
-        onClick={handleSave}
+        onClick={() => void handleSave()}
         className="w-full h-16 bg-[#2F2F2F] text-white rounded-[2px] text-xl font-bold chinese-font tracking-[0.6em] hover:bg-black transition-all active:scale-[0.98] flex items-center justify-center shadow-lg"
       >
         立即排盘
