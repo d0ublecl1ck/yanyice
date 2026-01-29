@@ -18,7 +18,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       accessToken: null,
       status: 'loading',
@@ -26,7 +26,7 @@ export const useAuthStore = create<AuthState>()(
       setHasHydrated: (hasHydrated) => set({ hasHydrated }),
       bootstrap: async () => {
         set((s) => ({ status: s.accessToken ? 'loading' : 'unauthenticated' }));
-        const accessToken = useAuthStore.getState().accessToken;
+        const accessToken = get().accessToken;
         if (!accessToken) {
           set({ user: null, status: 'unauthenticated' });
           return;
