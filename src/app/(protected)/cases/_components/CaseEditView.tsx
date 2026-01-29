@@ -562,10 +562,10 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
       }
 
       if (id) {
-        updateRecord(id, { subject, customerId, notes, module, liuyaoData, baziData });
+        await updateRecord(id, { subject, customerId, notes, module, liuyaoData, baziData });
         showToast('卷宗已成功更新', 'success');
       } else {
-        addRecord({
+        await addRecord({
           customerId,
           module,
           subject,
@@ -643,29 +643,30 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
               </div>
 
               <button
-                onClick={async () => {
-                  const name = quickName.trim();
-                  if (!name) {
-                    showToast('请先填写客户姓名', 'warning');
-                    return;
-                  }
-
-                  try {
-                    const newId = await addCustomer({
-                      name,
-                      gender: quickGender,
-                      tags: [],
-                      notes: '',
-                      customFields: {},
-                    });
-                    setCustomerId(newId);
-                    setQuickName('');
-                    setQuickGender('male');
-                    setShowQuickCustomerModal(false);
-                    showToast('客户已创建并已自动选择', 'success');
-                  } catch {
-                    showToast('创建失败，请稍后重试', 'error');
-                  }
+                onClick={() => {
+                  void (async () => {
+                    const name = quickName.trim();
+                    if (!name) {
+                      showToast('请先填写客户姓名', 'warning');
+                      return;
+                    }
+                    try {
+                      const newId = await addCustomer({
+                        name,
+                        gender: quickGender,
+                        tags: [],
+                        notes: '',
+                        customFields: {},
+                      });
+                      setCustomerId(newId);
+                      setQuickName('');
+                      setQuickGender('male');
+                      setShowQuickCustomerModal(false);
+                      showToast('客户已创建并已自动选择', 'success');
+                    } catch {
+                      showToast('创建失败，请稍后重试', 'error');
+                    }
+                  })();
                 }}
                 className="w-full h-12 bg-[#2F2F2F] text-white font-bold chinese-font tracking-[0.4em] rounded-[2px] hover:bg-black transition-all"
               >

@@ -38,7 +38,11 @@ export default function Page({ params }: { params: { id: string } }) {
   const syncLiuyaoFromApi = useCaseStore((s) => s.syncLiuyaoFromApi);
 
   const records = useCaseStore((state) => state.records);
+  const recordStatus = useCaseStore((state) => state.status);
+  const recordHasHydrated = useCaseStore((state) => state.hasHydrated);
   const customers = useCustomerStore((state) => state.customers);
+  const customerStatus = useCustomerStore((state) => state.status);
+  const customerHasHydrated = useCustomerStore((state) => state.hasHydrated);
 
   const record = records.find((r) => r.id === id && r.module === "liuyao");
   const customer = record?.customerId ? customers.find((c) => c.id === record.customerId) : null;
@@ -111,10 +115,19 @@ export default function Page({ params }: { params: { id: string } }) {
     }
   };
 
-  if (!record && isLoadingRecord) {
+  const isLoading =
+    isLoadingRecord ||
+    !recordHasHydrated ||
+    !customerHasHydrated ||
+    recordStatus === "loading" ||
+    customerStatus === "loading" ||
+    recordStatus === "idle" ||
+    customerStatus === "idle";
+
+  if (isLoading) {
     return (
       <div className="py-24 text-center">
-        <p className="text-[#2F2F2F]/20 chinese-font italic">正在加载卦例...</p>
+        <p className="text-[#2F2F2F]/30 chinese-font italic">加载中…</p>
       </div>
     );
   }

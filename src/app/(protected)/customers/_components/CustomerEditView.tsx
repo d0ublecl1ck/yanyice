@@ -16,7 +16,7 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
   const {
     customers,
     events,
-    loadCustomerEvents,
+    refreshEvents,
     addCustomer,
     updateCustomer,
     deleteCustomer,
@@ -24,6 +24,7 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
     deleteEvent,
   } = useCustomerStore();
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [name, setName] = useState('');
   const [gender, setGender] = useState<'male' | 'female' | 'other'>('male');
@@ -54,8 +55,8 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
 
   useEffect(() => {
     if (!id) return;
-    void loadCustomerEvents(id);
-  }, [id, loadCustomerEvents]);
+    void refreshEvents(id);
+  }, [id, refreshEvents]);
 
   const handleSave = async () => {
     if (!name) {
@@ -72,7 +73,7 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
       tags, 
       customFields: {} 
     };
-
+    setIsSaving(true);
     try {
       if (id) {
         await updateCustomer(id, data);
@@ -84,6 +85,8 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
       router.push('/customers');
     } catch {
       toast.show('保存失败，请稍后重试', 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -93,7 +96,6 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
       return;
     }
     const displayDate = new Date(eventDate).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
-
     try {
       await addEvent({
         customerId: id,
@@ -147,15 +149,17 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
         confirmText="删除"
         cancelText="取消"
         onCancel={() => setIsDeleteOpen(false)}
-        onConfirm={async () => {
+        onConfirm={() => {
           if (!id) return;
-          try {
-            await deleteCustomer(id);
-            toast.show('客户资料已移除', 'info');
-            router.push('/customers');
-          } catch {
-            toast.show('删除失败，请稍后重试', 'error');
-          }
+          void (async () => {
+            try {
+              await deleteCustomer(id);
+              toast.show('客户资料已移除', 'info');
+              router.push('/customers');
+            } catch {
+              toast.show('删除失败，请稍后重试', 'error');
+            }
+          })();
         }}
       />
 
@@ -295,14 +299,16 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
                             <p className="mt-1 text-sm text-[#2F2F2F] chinese-font leading-relaxed">{event.description}</p>
                           </div>
                           <button 
-                            onClick={async () => {
-                              if (!id) return;
-                              try {
-                                await deleteEvent(id, event.id);
-                                toast.show('事件已删除', 'info');
-                              } catch {
-                                toast.show('删除失败，请稍后重试', 'error');
-                              }
+                            onClick={() => {
+                              void (async () => {
+                                try {
+                                  if (!id) return;
+                                  await deleteEvent(id, event.id);
+                                  toast.show('事件已删除', 'info');
+                                } catch {
+                                  toast.show('删除失败，请稍后重试', 'error');
+                                }
+                              })();
                             }}
                             className="opacity-0 group-hover:opacity-100 text-[#A62121]/30 hover:text-[#A62121] transition-all"
                           >
@@ -326,11 +332,12 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
       {/* Floating Save Button */}
       <div className="fixed bottom-10 right-28 z-40">
         <button 
-          onClick={handleSave}
+          onClick={() => void handleSave()}
+          disabled={isSaving}
           className="flex items-center gap-3 px-8 py-4 bg-[#2F2F2F] text-white font-bold tracking-[0.3em] hover:bg-black transition-all shadow-[0_12px_32px_rgba(0,0,0,0.15)] rounded-none group"
         >
           <Save size={18} className="group-hover:scale-110 transition-transform" />
-          <span className="chinese-font">保存资料</span>
+          <span className="chinese-font">{isSaving ? "保存中…" : "保存资料"}</span>
         </button>
       </div>
     </div>
