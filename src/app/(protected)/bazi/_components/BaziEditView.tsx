@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Hash,
   MapPin,
-  RefreshCw,
   Search,
   X,
 } from "lucide-react";
@@ -1013,11 +1012,7 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
           </div>
         </div>
 
-        <div
-          className={`w-full border border-[#B37D56]/15 rounded-[4px] transition-all flex flex-col md:flex-row md:items-stretch gap-4 ${
-            embedded ? "py-4 px-5" : "py-5 px-8"
-          }`}
-        >
+        <div className={`w-full flex flex-col md:flex-row md:items-stretch gap-4 ${embedded ? "" : ""}`}>
           <div
             role="button"
             tabIndex={0}
@@ -1025,7 +1020,9 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") setShowTimePicker(true);
             }}
-            className="flex items-center justify-between gap-4 flex-1 min-w-0 cursor-pointer bg-[#FAF7F2] hover:bg-white/80 rounded-[4px] transition-colors px-4 py-3"
+            className={`flex items-center gap-4 flex-1 min-w-0 cursor-pointer bg-[#FAF7F2] hover:bg-white/80 rounded-[4px] transition-colors ${
+              embedded ? "px-5 py-4" : "px-8 py-5"
+            }`}
           >
             <div className="flex items-center gap-5 flex-1 min-w-0">
               <div className="w-10 h-10 bg-white border border-[#B37D56]/20 flex items-center justify-center text-[#B37D56] shrink-0 rounded-[2px]">
@@ -1065,15 +1062,9 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
                 )}
               </div>
             </div>
-
-            <div className="flex items-center gap-4 shrink-0 border-l border-[#B37D56]/10 pl-4 h-8">
-              <div className="text-[#B37D56]/30 group-hover:text-[#B37D56] transition-all">
-                <RefreshCw size={14} />
-              </div>
-            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 md:w-[260px] md:shrink-0 md:border-l md:border-[#B37D56]/10 md:pl-4 items-center">
+          <div className="grid grid-cols-2 gap-3 md:w-[260px] md:shrink-0 items-center">
             <button
               type="button"
               onClick={() => setBazi({ ...bazi, isDst: !bazi.isDst })}
