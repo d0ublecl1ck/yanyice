@@ -2,20 +2,23 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Plus, Search, Calendar, ChevronRight, Hash } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Plus, Search, Calendar, ChevronRight, Hash, X } from "lucide-react";
 
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import { newCaseHref, recordAnalysisHref, recordEditHref } from "@/lib/caseLinks";
+import { BaziEditView } from "../../bazi/_components/BaziEditView";
 
 export function CaseBazi() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const allRecords = useCaseStore((state) => state.records);
   const customers = useCustomerStore((state) => state.customers);
   const [search, setSearch] = useState("");
 
   const records = useMemo(() => allRecords.filter((r) => r.module === "bazi"), [allRecords]);
+  const isCreateOpen = searchParams.get("new") === "1";
 
   const filteredRecords = records.filter((record) => {
     const customer = customers.find((c) => c.id === record.customerId);
@@ -26,6 +29,31 @@ export function CaseBazi() {
       (customer?.name.toLowerCase().includes(q) ?? false)
     );
   });
+
+  const closeCreate = React.useCallback(() => {
+    const qs = new URLSearchParams(searchParams.toString());
+    qs.delete("new");
+    qs.delete("customerId");
+    const query = qs.toString();
+    router.replace(query ? `/bazi?${query}` : "/bazi");
+  }, [router, searchParams]);
+
+  React.useEffect(() => {
+    if (!isCreateOpen) return;
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeCreate();
+    };
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isCreateOpen, closeCreate]);
 
   return (
     <div className="space-y-8">
@@ -148,6 +176,32 @@ export function CaseBazi() {
           </div>
         )}
       </div>
+
+      {isCreateOpen ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="新建八字"
+          className="fixed inset-0 z-[60] bg-black/40 p-6 flex items-center justify-center"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) closeCreate();
+          }}
+        >
+          <div className="w-full max-w-6xl max-h-[90vh] overflow-hidden bg-[#FAF7F2] border border-[#B37D56]/20 rounded-[4px] shadow-none relative">
+            <button
+              type="button"
+              onClick={closeCreate}
+              className="absolute top-4 right-4 w-10 h-10 border border-[#B37D56]/20 bg-white hover:bg-[#FAF7F2] transition-colors rounded-[2px] flex items-center justify-center"
+              aria-label="关闭"
+            >
+              <X size={18} className="text-[#2F2F2F]/60" />
+            </button>
+            <div className="overflow-y-auto max-h-[90vh] p-8 pt-10">
+              <BaziEditView />
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

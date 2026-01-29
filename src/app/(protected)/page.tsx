@@ -216,7 +216,7 @@ export default function Page() {
             </Link>
 
             <Link
-              href="/bazi/new"
+              href="/bazi?new=1"
               onClick={() => {
                 // TODO: 考虑通过 state 传递默认 module
               }}
@@ -237,7 +237,7 @@ export default function Page() {
             </Link>
 
             <Link
-              href="/customers/new"
+              href="/customers?new=1"
               className="block p-8 bg-white border border-[#B37D56]/20 group hover:border-[#A62121] transition-all rounded-none"
             >
               <p className="text-xl font-bold text-[#2F2F2F] group-hover:text-[#A62121] transition-colors chinese-font mb-1 tracking-widest">

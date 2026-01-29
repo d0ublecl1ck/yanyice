@@ -424,8 +424,9 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
     if (moduleParam === 'bazi') {
       setIsRedirecting(true);
       const qs = new URLSearchParams();
+      qs.set("new", "1");
       if (customerParam) qs.set('customerId', customerParam);
-      router.replace(qs.size ? `/bazi/new?${qs.toString()}` : '/bazi/new');
+      router.replace(`/bazi?${qs.toString()}`);
       return;
     }
 

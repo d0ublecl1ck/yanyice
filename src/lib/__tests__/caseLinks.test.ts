@@ -22,13 +22,13 @@ describe("caseLinks", () => {
 
   test("newCaseHref routes by module", () => {
     expect(newCaseHref("liuyao")).toBe("/cases?create=liuyao");
-    expect(newCaseHref("bazi")).toBe("/bazi/new");
+    expect(newCaseHref("bazi")).toBe("/bazi?new=1");
   });
 
   test("newCaseHref appends customerId when provided", () => {
     expect(newCaseHref("liuyao", { customerId: "123" })).toBe("/cases?create=liuyao&customerId=123");
     expect(newCaseHref("liuyao", { customerId: "   " })).toBe("/cases?create=liuyao");
-    expect(newCaseHref("bazi", { customerId: "a/b" })).toBe("/bazi/new?customerId=a%2Fb");
-    expect(newCaseHref("bazi", { customerId: "   " })).toBe("/bazi/new");
+    expect(newCaseHref("bazi", { customerId: "a/b" })).toBe("/bazi?new=1&customerId=a%2Fb");
+    expect(newCaseHref("bazi", { customerId: "   " })).toBe("/bazi?new=1");
   });
 });

@@ -1,17 +1,57 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { User, Calendar, ChevronRight, History, Search } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { User, Calendar, ChevronRight, History, Search, X } from "lucide-react";
 
 import { useCustomerStore } from "@/stores/useCustomerStore";
+import { useToastStore } from "@/stores/useToastStore";
+import { ApiError } from "@/lib/apiClient";
+import type { CustomerGender } from "@/lib/types";
 
 export default function Page() {
   const customers = useCustomerStore((state) => state.customers);
+  const addCustomer = useCustomerStore((state) => state.addCustomer);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const toast = useToastStore();
   const [search, setSearch] = useState("");
   const [genderFilter, setGenderFilter] = useState<"all" | "male" | "female">("all");
+
+  const isCreateOpen = searchParams.get("new") === "1";
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
+  const [createName, setCreateName] = useState("");
+  const [createGender, setCreateGender] = useState<CustomerGender>("other");
+  const [createPhone, setCreatePhone] = useState("");
+  const [createNotes, setCreateNotes] = useState("");
+  const [createTags, setCreateTags] = useState<string[]>([]);
+  const [createNewTag, setCreateNewTag] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+
+  const closeCreateModal = () => {
+    router.replace("/customers");
+  };
+
+  const openCreateModal = () => {
+    router.push("/customers?new=1");
+  };
+
+  useEffect(() => {
+    if (!isCreateOpen) return;
+    const t = setTimeout(() => nameInputRef.current?.focus(), 0);
+    return () => clearTimeout(t);
+  }, [isCreateOpen]);
+
+  useEffect(() => {
+    if (!isCreateOpen) return;
+    setCreateName("");
+    setCreateGender("other");
+    setCreatePhone("");
+    setCreateNotes("");
+    setCreateTags([]);
+    setCreateNewTag("");
+  }, [isCreateOpen]);
 
   const genderFilters = [
     { id: "all", label: "全部" },
@@ -19,14 +59,182 @@ export default function Page() {
     { id: "female", label: "坤造" },
   ] as const;
 
-  const filteredCustomers = customers.filter((c) => {
-    const matchesSearch = c.name.includes(search) || (c.phone && c.phone.includes(search));
-    const matchesGender = genderFilter === "all" || c.gender === genderFilter;
-    return matchesSearch && matchesGender;
-  });
+  const filteredCustomers = useMemo(() => {
+    return customers.filter((c) => {
+      const matchesSearch = c.name.includes(search) || (c.phone && c.phone.includes(search));
+      const matchesGender = genderFilter === "all" || c.gender === genderFilter;
+      return matchesSearch && matchesGender;
+    });
+  }, [customers, genderFilter, search]);
 
   return (
     <div className="space-y-8">
+      {isCreateOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[210] flex items-center justify-center p-4"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) closeCreateModal();
+          }}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="bg-white w-full max-w-md rounded-[4px] border border-[#B37D56]/20 shadow-none overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-[#B37D56]/10 flex justify-between items-center">
+              <p className="text-xs font-bold tracking-widest chinese-font text-[#2F2F2F]">
+                登记新客户
+              </p>
+              <button onClick={closeCreateModal} className="text-[#2F2F2F]/20 hover:text-[#A62121]">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div className="space-y-2">
+                <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">姓名（必填）</label>
+                <input
+                  ref={nameInputRef}
+                  value={createName}
+                  onChange={(e) => setCreateName(e.target.value)}
+                  placeholder="请输入客户姓名"
+                  className="w-full bg-white border border-[#B37D56]/10 px-3 py-2 text-xs font-bold rounded-[2px] outline-none focus:border-[#A62121] transition-colors chinese-font"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">性别（必填）</label>
+                <div className="flex gap-3">
+                  {(
+                    [
+                      { id: "male", label: "男" },
+                      { id: "female", label: "女" },
+                      { id: "other", label: "不详" },
+                    ] as const
+                  ).map((g) => (
+                    <button
+                      key={g.id}
+                      onClick={() => setCreateGender(g.id)}
+                      className={`px-4 py-2 text-xs border font-bold transition-all rounded-[2px] ${
+                        createGender === g.id
+                          ? "bg-[#2F2F2F] text-white border-[#2F2F2F]"
+                          : "border-[#B37D56]/20 text-[#2F2F2F]/50 hover:border-[#A62121]"
+                      }`}
+                    >
+                      {g.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">联系方式（可选）</label>
+                <input
+                  value={createPhone}
+                  onChange={(e) => setCreatePhone(e.target.value)}
+                  placeholder="手机号 / 微信 / 其他"
+                  className="w-full bg-white border border-[#B37D56]/10 px-3 py-2 text-xs rounded-[2px] outline-none focus:border-[#A62121] transition-colors"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">标签（可选）</label>
+                {createTags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {createTags.map((t) => (
+                      <span
+                        key={t}
+                        className="text-[10px] bg-[#FAF7F2] text-[#2F2F2F] px-2 py-1 border border-[#B37D56]/10 flex items-center gap-1"
+                      >
+                        {t}{" "}
+                        <button
+                          onClick={() => setCreateTags(createTags.filter((tag) => tag !== t))}
+                          className="text-[#A62121] hover:font-bold"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={createNewTag}
+                    onChange={(e) => setCreateNewTag(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter") return;
+                      const next = createNewTag.trim();
+                      if (!next || createTags.includes(next)) return;
+                      setCreateTags([...createTags, next]);
+                      setCreateNewTag("");
+                    }}
+                    placeholder="输入后回车添加"
+                    className="flex-1 bg-white border border-[#B37D56]/10 px-3 py-2 text-xs rounded-[2px] outline-none focus:border-[#A62121] transition-colors"
+                  />
+                  <button
+                    onClick={() => {
+                      const next = createNewTag.trim();
+                      if (!next || createTags.includes(next)) return;
+                      setCreateTags([...createTags, next]);
+                      setCreateNewTag("");
+                    }}
+                    className="px-4 py-2 text-xs border border-[#B37D56]/20 text-[#B37D56] font-bold rounded-[2px] hover:bg-[#FAF7F2] transition-all"
+                  >
+                    添加
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">备注（可选）</label>
+                <textarea
+                  rows={4}
+                  value={createNotes}
+                  onChange={(e) => setCreateNotes(e.target.value)}
+                  placeholder="补充说明..."
+                  className="w-full bg-[#FAF7F2]/50 p-4 border border-[#B37D56]/5 text-xs outline-none focus:border-[#A62121] italic rounded-[4px]"
+                />
+              </div>
+
+              <button
+                disabled={isCreating}
+                onClick={() => {
+                  void (async () => {
+                    const name = createName.trim();
+                    if (!name) {
+                      toast.show("请先填写客户姓名", "warning");
+                      return;
+                    }
+                    setIsCreating(true);
+                    try {
+                      await addCustomer({
+                        name,
+                        gender: createGender,
+                        phone: createPhone.trim() || undefined,
+                        notes: createNotes,
+                        tags: createTags,
+                      });
+                      toast.show("新客户已成功建档", "success");
+                      closeCreateModal();
+                    } catch (e) {
+                      if (e instanceof ApiError) {
+                        toast.show(e.message, "error");
+                        return;
+                      }
+                      toast.show("创建失败：接口不可用或网络异常（请确认服务已启动）", "error");
+                    } finally {
+                      setIsCreating(false);
+                    }
+                  })();
+                }}
+                className="w-full h-12 bg-[#A62121] text-white font-bold chinese-font tracking-[0.4em] rounded-[2px] hover:bg-[#8B1A1A] transition-all disabled:opacity-60 disabled:hover:bg-[#A62121]"
+              >
+                {isCreating ? "创建中..." : "创建"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="flex justify-between items-end border-b border-[#B37D56]/10 pb-6">
         <div>
           <h2 className="text-3xl font-bold text-[#2F2F2F] chinese-font tracking-widest">
@@ -36,12 +244,12 @@ export default function Page() {
             Inscribed Customers ({filteredCustomers.length})
           </p>
         </div>
-        <Link
-          href="/customers/new"
+        <button
+          onClick={openCreateModal}
           className="px-6 py-2 bg-[#A62121] text-white font-bold text-sm tracking-widest hover:bg-[#8B1A1A] transition-all rounded-[2px]"
         >
           登记新客户
-        </Link>
+        </button>
       </header>
 
       <div className="space-y-4">
