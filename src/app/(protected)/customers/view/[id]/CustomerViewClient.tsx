@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import { buildCustomerTimeline } from "@/lib/customerTimeline";
+import { newCaseHref } from "@/lib/caseLinks";
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
 
@@ -86,7 +87,7 @@ function CustomerViewPage({ id }: { id: string }) {
             编辑资料
           </Link>
           <Link
-            href={`/bazi/new?customerId=${encodeURIComponent(id)}`}
+            href={newCaseHref("bazi", { customerId: id })}
             className="px-5 py-2 bg-[#2F2F2F] text-white text-xs font-bold tracking-widest hover:bg-black transition-all rounded-[2px] flex items-center gap-2"
           >
             <Plus size={14} />

@@ -15,8 +15,15 @@ export const recordAnalysisHref = (module: ModuleType, id: string) => {
 };
 
 export const newCaseHref = (module: ModuleType, opts?: { customerId?: string }) => {
-  const base = module === "bazi" ? "/bazi/new" : "/liuyao/new";
   const customerId = opts?.customerId?.trim();
+
+  if (module === "bazi") {
+    const qs = new URLSearchParams({ new: "1" });
+    if (customerId) qs.set("customerId", customerId);
+    return `/bazi?${qs.toString()}`;
+  }
+
+  const base = "/liuyao/new";
   if (!customerId) return base;
   const qs = new URLSearchParams({ customerId });
   return `${base}?${qs.toString()}`;
