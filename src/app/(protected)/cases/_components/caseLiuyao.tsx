@@ -2,13 +2,15 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Plus, Search, Calendar, ChevronRight, FileText } from "lucide-react";
 
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
-import { newCaseHref, recordEditHref } from "@/lib/caseLinks";
+import { newCaseHref, recordAnalysisHref, recordEditHref } from "@/lib/caseLinks";
 
 export function CaseLiuyao() {
+  const router = useRouter();
   const allRecords = useCaseStore((state) => state.records);
   const customers = useCustomerStore((state) => state.customers);
   const [search, setSearch] = useState("");
@@ -66,11 +68,17 @@ export function CaseLiuyao() {
               .sort((a, b) => b.createdAt - a.createdAt)
               .map((record) => {
                 const customer = customers.find((c) => c.id === record.customerId);
-                const href = recordEditHref(record.module, record.id);
+                const editHref = recordEditHref(record.module, record.id);
+                const analysisHref = recordAnalysisHref("liuyao", record.id);
                 return (
-                  <Link
+                  <div
                     key={record.id}
-                    href={href}
+                    role="link"
+                    tabIndex={0}
+                    onClick={() => router.push(editHref)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") router.push(editHref);
+                    }}
                     className="flex items-center group hover:bg-[#FAF7F2] transition-all p-6"
                   >
                     <div className="w-12 h-12 bg-[#B37D56]/5 flex items-center justify-center shrink-0">
@@ -96,7 +104,7 @@ export function CaseLiuyao() {
                         <Calendar size={12} />
                         {new Date(record.createdAt).toLocaleDateString()}
                       </div>
-                      <div className="text-right">
+                      <div className="text-right flex items-center justify-end gap-2">
                         <span
                           className={`text-[9px] px-2 py-0.5 border font-bold ${
                             record.verifiedStatus === "accurate"
@@ -106,13 +114,27 @@ export function CaseLiuyao() {
                         >
                           {record.verifiedStatus === "accurate" ? "已反馈: 准确" : "未反馈"}
                         </span>
+                        <Link
+                          href={analysisHref}
+                          className="text-[9px] px-2 py-0.5 border border-black/10 text-[#2F2F2F]/60 font-bold hover:border-[#A62121]/30 hover:text-[#A62121]"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          排盘
+                        </Link>
+                        <Link
+                          href={editHref}
+                          className="text-[9px] px-2 py-0.5 border border-[#B37D56]/20 text-[#2F2F2F]/30 font-bold hover:border-[#A62121]/30 hover:text-[#A62121]"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          编辑
+                        </Link>
                       </div>
                     </div>
                     <ChevronRight
                       size={16}
                       className="ml-6 text-[#2F2F2F]/10 group-hover:text-[#A62121] transition-all transform group-hover:translate-x-1"
                     />
-                  </Link>
+                  </div>
                 );
               })}
           </div>
