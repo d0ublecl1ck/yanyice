@@ -145,7 +145,7 @@ export default function RulesPageClient({ module }: { module: ModuleType }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-6">
             <div className="space-y-2">
               <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
                 规则名称
@@ -166,7 +166,7 @@ export default function RulesPageClient({ module }: { module: ModuleType }) {
                 onChange={(e) => setNewMsg(e.target.value)}
                 placeholder="如：注意应期..."
                 rows={4}
-                className="w-full bg-transparent border border-[#2F2F2F]/10 rounded-[4px] px-3 py-2 outline-none focus:border-[#A62121] transition-colors chinese-font font-bold resize-y"
+                className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-2 outline-none focus:border-[#A62121] transition-colors chinese-font font-bold resize-y leading-relaxed min-h-[96px]"
               />
             </div>
           </div>
