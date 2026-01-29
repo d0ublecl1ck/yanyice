@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { buildCreateCustomerPayload, buildUpdateCustomerPayload } from "../customerFormPayload";
 
 describe("customer form payload", () => {
-  test("create payload omits gender and birth fields", () => {
+  test("create payload includes gender and omits birth fields", () => {
     const payload = buildCreateCustomerPayload({
       name: "张三",
       gender: "male",
@@ -14,7 +14,7 @@ describe("customer form payload", () => {
       tags: [],
     });
 
-    expect("gender" in payload).toBe(false);
+    expect(payload.gender).toBe("male");
     expect("birthDate" in payload).toBe(false);
     expect("birthTime" in payload).toBe(false);
   });
@@ -35,4 +35,3 @@ describe("customer form payload", () => {
     expect(payload.birthTime).toBe("10:00");
   });
 });
-

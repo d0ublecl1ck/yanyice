@@ -8,6 +8,7 @@ import { User, Calendar, ChevronRight, History, Search, X } from "lucide-react";
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useToastStore } from "@/stores/useToastStore";
 import { ApiError } from "@/lib/apiClient";
+import type { CustomerGender } from "@/lib/types";
 
 export default function Page() {
   const customers = useCustomerStore((state) => state.customers);
@@ -21,6 +22,7 @@ export default function Page() {
   const isCreateOpen = searchParams.get("new") === "1";
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const [createName, setCreateName] = useState("");
+  const [createGender, setCreateGender] = useState<CustomerGender>("other");
   const [createPhone, setCreatePhone] = useState("");
   const [createNotes, setCreateNotes] = useState("");
   const [createTags, setCreateTags] = useState<string[]>([]);
@@ -44,6 +46,7 @@ export default function Page() {
   useEffect(() => {
     if (!isCreateOpen) return;
     setCreateName("");
+    setCreateGender("other");
     setCreatePhone("");
     setCreateNotes("");
     setCreateTags([]);
@@ -95,6 +98,31 @@ export default function Page() {
                   placeholder="请输入客户姓名"
                   className="w-full bg-white border border-[#B37D56]/10 px-3 py-2 text-xs font-bold rounded-[2px] outline-none focus:border-[#A62121] transition-colors chinese-font"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">性别（必填）</label>
+                <div className="flex gap-3">
+                  {(
+                    [
+                      { id: "male", label: "男" },
+                      { id: "female", label: "女" },
+                      { id: "other", label: "不详" },
+                    ] as const
+                  ).map((g) => (
+                    <button
+                      key={g.id}
+                      onClick={() => setCreateGender(g.id)}
+                      className={`px-4 py-2 text-xs border font-bold transition-all rounded-[2px] ${
+                        createGender === g.id
+                          ? "bg-[#2F2F2F] text-white border-[#2F2F2F]"
+                          : "border-[#B37D56]/20 text-[#2F2F2F]/50 hover:border-[#A62121]"
+                      }`}
+                    >
+                      {g.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -180,6 +208,7 @@ export default function Page() {
                     try {
                       await addCustomer({
                         name,
+                        gender: createGender,
                         phone: createPhone.trim() || undefined,
                         notes: createNotes,
                         tags: createTags,

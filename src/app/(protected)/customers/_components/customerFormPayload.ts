@@ -13,6 +13,7 @@ export type CustomerFormState = {
 export function buildCreateCustomerPayload(state: CustomerFormState): CustomerCreateInput {
   return {
     name: state.name,
+    gender: state.gender,
     phone: state.phone,
     notes: state.notes,
     tags: state.tags,
@@ -32,4 +33,3 @@ export function buildUpdateCustomerPayload(state: CustomerFormState): CustomerCr
     customFields: {},
   };
 }
-

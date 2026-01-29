@@ -129,11 +129,12 @@ test("addCustomer appends to list", async () => {
   useAuthStore.setState({ accessToken: "token", status: "authenticated", hasHydrated: true, user: { id: "u1", email: "u@example.com" } });
   const id = await useCustomerStore.getState().addCustomer({
     name: "李四",
+    gender: "female",
   });
 
   expect(id).toBe("c2");
   expect(useCustomerStore.getState().customers.some((c) => c.id === "c2")).toBe(true);
-  expect(receivedBody).toEqual({ name: "李四" });
+  expect(receivedBody).toEqual({ name: "李四", gender: "female" });
 });
 
 test("loadCustomerEvents replaces events for customer", async () => {

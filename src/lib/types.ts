@@ -40,7 +40,7 @@ export type CustomerGender = "male" | "female" | "other";
 export type CustomerCreateInput = {
   id?: string;
   name: string;
-  gender?: CustomerGender;
+  gender: CustomerGender;
   birthDate?: string;
   birthTime?: string;
   phone?: string;
