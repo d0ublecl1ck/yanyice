@@ -6,6 +6,7 @@ import {
   BAZI_PICKER_YEAR_START,
   deriveBaziPickerFromSolarTime,
   getBaziPickerYearItems,
+  getBaziTimePickerOpenDefaults,
   getNowButtonResult,
 } from "../baziTimePicker";
 
@@ -21,6 +22,12 @@ describe("baziTimePicker helpers", () => {
     const result = getNowButtonResult(new Date(2024, 0, 2, 3, 4, 5));
     expect(result.shouldAutoConfirm).toBe(false);
     expect(result.shouldAutoClose).toBe(false);
+  });
+
+  test("getBaziTimePickerOpenDefaults uses solar tab and now time", () => {
+    const defaults = getBaziTimePickerOpenDefaults(new Date(2024, 0, 2, 3, 4, 5));
+    expect(defaults.tab).toBe("solar");
+    expect(defaults.derived.solar).toEqual({ y: 2024, m: 1, d: 2, h: 3, min: 4 });
   });
 
   test("getNowButtonResult uses provided local time for solar fields", () => {

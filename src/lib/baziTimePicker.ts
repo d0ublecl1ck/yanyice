@@ -110,3 +110,12 @@ export type NowButtonResult = {
 export const getNowButtonResult = (now: Date): NowButtonResult => {
   return { derived: deriveBaziPickerFromNow(now), shouldAutoConfirm: false, shouldAutoClose: false };
 };
+
+export type BaziTimePickerOpenDefaults = {
+  tab: "solar";
+  derived: BaziPickerDerived;
+};
+
+export const getBaziTimePickerOpenDefaults = (now: Date): BaziTimePickerOpenDefaults => {
+  return { tab: "solar", derived: deriveBaziPickerFromNow(now) };
+};

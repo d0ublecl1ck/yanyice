@@ -19,7 +19,12 @@ import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useToastStore } from "@/stores/useToastStore";
 import type { BaZiData } from "@/lib/types";
 import { BRANCHES, STEMS } from "@/lib/constants";
-import { deriveBaziPickerFromSolarTime, getBaziPickerYearItems, getNowButtonResult } from "@/lib/baziTimePicker";
+import {
+  deriveBaziPickerFromSolarTime,
+  getBaziPickerYearItems,
+  getBaziTimePickerOpenDefaults,
+  getNowButtonResult,
+} from "@/lib/baziTimePicker";
 
 const PROVINCES = ["北京市", "上海市", "天津市", "广东省", "江苏省", "浙江省", "四川省"];
 const CITIES: Record<string, string[]> = {
@@ -297,6 +302,21 @@ const BaziTimePickerModal = ({
 
   const [fourPillarsCandidates, setFourPillarsCandidates] = useState<SolarTime[]>([]);
   const [selectedCandidateIndex, setSelectedCandidateIndex] = useState(0);
+  const wasOpenRef = React.useRef(false);
+
+  useEffect(() => {
+    if (isOpen && !wasOpenRef.current) {
+      const defaults = getBaziTimePickerOpenDefaults(new Date());
+      setTab(defaults.tab);
+      setSolar(defaults.derived.solar);
+      setLunar(defaults.derived.lunar);
+      setFourPillars(defaults.derived.fourPillars);
+      setFourPillarsCandidates([]);
+      setSelectedCandidateIndex(0);
+      setPicking(null);
+    }
+    wasOpenRef.current = isOpen;
+  }, [isOpen]);
 
   const computeCandidates = React.useCallback((fp: typeof fourPillars) => {
     try {
