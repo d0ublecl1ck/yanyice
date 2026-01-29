@@ -34,6 +34,7 @@ const makeSidebarImageIcon = (src: string): SidebarIconComponent => {
     <Image src={src} width={size} height={size} alt="" aria-hidden className={className} />
   );
   SidebarImageIcon.displayName = `SidebarImageIcon(${src})`;
+  (SidebarImageIcon as { __isSidebarImageIcon?: true }).__isSidebarImageIcon = true;
   return SidebarImageIcon;
 };
 
@@ -57,6 +58,11 @@ const SidebarItem = ({
   collapsed: boolean,
   onClick?: () => void
 }) => {
+  const isSidebarImageIcon = (Icon as { __isSidebarImageIcon?: true }).__isSidebarImageIcon === true;
+  const iconClassName = isSidebarImageIcon
+    ? `shrink-0 ${active ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`
+    : 'shrink-0';
+
   const content = (
     <div 
       className={`flex items-center px-6 py-4 transition-all duration-300 relative group cursor-pointer select-none ${
@@ -66,7 +72,7 @@ const SidebarItem = ({
       }`}
       title={collapsed ? label : ''}
     >
-      <Icon size={18} strokeWidth={active ? 2.5 : 2} className="shrink-0" />
+      <Icon size={18} strokeWidth={active ? 2.5 : 2} className={iconClassName} />
       {!collapsed && (
         <>
           <span className={`text-[15px] whitespace-nowrap overflow-hidden transition-all duration-300 chinese-font ${active ? 'font-bold' : 'font-medium'}`}>
