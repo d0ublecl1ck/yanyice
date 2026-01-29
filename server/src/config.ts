@@ -1,4 +1,5 @@
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 export function getEnv(name: string): string | undefined {
   const value = process.env[name];
@@ -20,8 +21,9 @@ export function getPort(): number {
 }
 
 export function getDatabaseUrl(): string {
-  const repoRoot = path.resolve(import.meta.dir, "../..");
-  const defaultDbPath = path.resolve(import.meta.dir, "../prisma/dev.db");
+  const moduleDir = path.dirname(fileURLToPath(import.meta.url));
+  const repoRoot = path.resolve(moduleDir, "../..");
+  const defaultDbPath = path.resolve(moduleDir, "../prisma/dev.db");
   return normalizeDatabaseUrl(getEnv("DATABASE_URL") ?? `file:${defaultDbPath}`, repoRoot);
 }
 

@@ -938,8 +938,12 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
                         {p === 'year' ? '年' : p === 'month' ? '月' : p === 'day' ? '日' : '时'}
                       </div>
                       <div className="w-12 py-6 bg-[#FAF7F2] border border-[#B37D56]/10 flex flex-col items-center gap-2">
-                        <span className="text-2xl font-bold text-[#A62121] chinese-font">{bazi[`${p}Stem` as keyof BaZiData]}</span>
-                        <span className="text-2xl font-bold text-[#2F2F2F] chinese-font">{bazi[`${p}Branch` as keyof BaZiData]}</span>
+                        <span className="text-2xl font-bold text-[#A62121] chinese-font">
+                          {bazi[`${p}Stem` as keyof BaZiData] as string}
+                        </span>
+                        <span className="text-2xl font-bold text-[#2F2F2F] chinese-font">
+                          {bazi[`${p}Branch` as keyof BaZiData] as string}
+                        </span>
                       </div>
                    </div>
                  ))}
