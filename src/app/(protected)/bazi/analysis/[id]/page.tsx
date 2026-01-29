@@ -13,11 +13,11 @@ import { useChatStore, type Message } from "@/stores/useChatStore";
 import { useToastStore } from "@/stores/useToastStore";
 
 const ELEMENT_STYLES: Record<string, { color: string }> = {
-  wood: { color: "#516E41" },
-  fire: { color: "#A61B1B" },
-  earth: { color: "#8E623F" },
-  metal: { color: "#D4AF37" },
-  water: { color: "#2B4490" },
+  wood: { color: "#40de5a" },
+  fire: { color: "#ff2d51" },
+  earth: { color: "#312520" },
+  metal: { color: "#eacd76" },
+  water: { color: "#70f3ff" },
 };
 
 const getElByStem = (stem: string): keyof typeof ELEMENT_STYLES => {
