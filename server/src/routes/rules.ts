@@ -56,22 +56,6 @@ function toRuleDto(row: {
   };
 }
 
-async function ensureSeedRule(app: FastifyInstance, userId: string) {
-  await app.prisma.rule.upsert({
-    where: { userId_seedKey: { userId, seedKey: "builtin:default" } },
-    update: {},
-    create: {
-      userId,
-      seedKey: "builtin:default",
-      module: "liuyao",
-      name: "动爻克用神",
-      enabled: true,
-      condition: "动爻五行克制用神五行",
-      message: "注意：当前卦象中存在动爻克制用神的情况，请详察应期。",
-    },
-  });
-}
-
 export async function ruleRoutes(app: FastifyInstance) {
   app.get(
     "/rules",
@@ -86,7 +70,6 @@ export async function ruleRoutes(app: FastifyInstance) {
     },
     async (request) => {
       const userId = request.user.sub;
-      await ensureSeedRule(app, userId);
 
       const { module } = request.query as { module?: Static<typeof RuleDto>["module"] };
       const where = module ? { userId, module: normalizeModule(module) } : { userId };
@@ -195,4 +178,3 @@ export async function ruleRoutes(app: FastifyInstance) {
     },
   );
 }
-
