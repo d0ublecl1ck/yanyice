@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:api": "bun --watch server/src/index.ts",
-    "dev:a": "bun run prisma:generate && concurrently -n web,api -c cyan,magenta \"next dev\" \"bun --watch server/src/index.ts\"",
+    "dev:api": "PORT=3311 bun --watch server/src/index.ts",
+    "dev:a": "bun run prisma:generate && concurrently -n web,api -c cyan,magenta \"next dev\" \"PORT=3311 bun --watch server/src/index.ts\"",
     "build": "bun run prisma:generate && next build",
     "start": "next start",
     "lint": "eslint",

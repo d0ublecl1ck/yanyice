@@ -11,7 +11,7 @@ export function getRequiredEnv(name: string): string {
 }
 
 export function getPort(): number {
-  const raw = getEnv("PORT") ?? "3001";
+  const raw = getEnv("PORT") ?? "3311";
   const port = Number(raw);
   if (!Number.isFinite(port) || port <= 0) throw new Error(`Invalid PORT: ${raw}`);
   return port;
