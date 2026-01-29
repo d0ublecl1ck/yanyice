@@ -206,7 +206,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       </aside>
 
       <main className="flex-1 overflow-y-auto relative bg-[#FAF7F2] transition-all duration-300">
-        <div className="max-w-7xl mx-auto p-12 min-h-full pb-32 relative z-0">
+        <div className="max-w-[90vw] mx-auto p-12 min-h-full pb-32 relative z-0">
           {children}
         </div>
         
