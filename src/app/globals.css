@@ -41,3 +41,14 @@ body {
   border-radius: 2px;
 }
 
+/* Hide scrollbars for picker columns while keeping scroll behavior */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE/Edge legacy */
+  scrollbar-width: none; /* Firefox */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
