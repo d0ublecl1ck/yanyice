@@ -1,5 +1,8 @@
 import { defineConfig } from "prisma/config";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const repoRoot = path.dirname(fileURLToPath(import.meta.url));
 
 function normalizeDatabaseUrl(databaseUrl: string): string {
   if (!databaseUrl.startsWith("file:")) return databaseUrl;
@@ -14,7 +17,6 @@ function normalizeDatabaseUrl(databaseUrl: string): string {
   const isPosixAbs = path.isAbsolute(filePath);
   if (isWindowsAbs || isPosixAbs) return databaseUrl;
 
-  const repoRoot = import.meta.dir;
   const absolutePath = path.resolve(repoRoot, filePath);
   return `file:${absolutePath}${query ? `?${query}` : ""}`;
 }
@@ -23,7 +25,7 @@ export default defineConfig({
   schema: "server/prisma/schema.prisma",
   datasource: {
     url: normalizeDatabaseUrl(
-      process.env.DATABASE_URL ?? `file:${path.resolve(import.meta.dir, "server/prisma/dev.db")}`,
+      process.env.DATABASE_URL ?? `file:${path.resolve(repoRoot, "server/prisma/dev.db")}`,
     ),
   },
 });
