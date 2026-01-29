@@ -46,7 +46,6 @@ model Customer {
 
   user    User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   events  CustomerEvent[]
-  records ConsultationRecord[]
 
   @@index([userId])
 }
