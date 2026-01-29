@@ -12,6 +12,7 @@ import {
   Search,
   X,
 } from "lucide-react";
+import { SolarTime } from "tyme4ts";
 
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
@@ -38,6 +39,51 @@ const DISTRICTS: Record<string, string[]> = {
 };
 
 const pad2 = (n: number) => n.toString().padStart(2, "0");
+
+const lunarMonthNameFromNumber = (month: number) => {
+  if (month === 1) return "正月";
+  if (month === 11) return "冬月";
+  if (month === 12) return "腊月";
+  const map = ["", "正", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
+  if (month >= 2 && month <= 10) return `${map[month]}月`;
+  return `${month}月`;
+};
+
+const deriveNowFromTyme = (now: Date) => {
+  const solar = {
+    y: now.getFullYear(),
+    m: now.getMonth() + 1,
+    d: now.getDate(),
+    h: now.getHours(),
+    min: now.getMinutes(),
+  };
+
+  const solarTime = SolarTime.fromYmdHms(solar.y, solar.m, solar.d, solar.h, solar.min, 0);
+  const lunarDay = solarTime.getSolarDay().getLunarDay();
+  const lunarMonth = lunarDay.getLunarMonth();
+
+  const lunar = {
+    y: lunarMonth.getYear(),
+    m: lunarMonthNameFromNumber(lunarMonth.getMonth()),
+    d: lunarDay.getName(),
+    h: solar.h,
+    min: solar.min,
+  };
+
+  const eightChar = solarTime.getLunarHour().getEightChar();
+  const fourPillars = {
+    yS: eightChar.getYear().getHeavenStem().getName(),
+    yB: eightChar.getYear().getEarthBranch().getName(),
+    mS: eightChar.getMonth().getHeavenStem().getName(),
+    mB: eightChar.getMonth().getEarthBranch().getName(),
+    dS: eightChar.getDay().getHeavenStem().getName(),
+    dB: eightChar.getDay().getEarthBranch().getName(),
+    hS: eightChar.getHour().getHeavenStem().getName(),
+    hB: eightChar.getHour().getEarthBranch().getName(),
+  };
+
+  return { solar, lunar, fourPillars };
+};
 
 const PickerColumn = ({
   items,
@@ -295,18 +341,11 @@ const BaziTimePickerModal = ({
 
   const handleNow = () => {
     const now = new Date();
-    onConfirm({
-      tab: "solar",
-      solar: {
-        y: now.getFullYear(),
-        m: now.getMonth() + 1,
-        d: now.getDate(),
-        h: now.getHours(),
-        min: now.getMinutes(),
-      },
-      lunar,
-      fourPillars,
-    });
+    const derived = deriveNowFromTyme(now);
+    setSolar(derived.solar);
+    setLunar(derived.lunar);
+    setFourPillars(derived.fourPillars);
+    onConfirm({ tab, ...derived } as BaziTimePickerConfirmData);
     onClose();
   };
 
