@@ -2,13 +2,12 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { 
   Home, 
   Users, 
-  BookOpen, 
-  Hash,
-  ShieldCheck, 
+  BookOpen,
+  ShieldCheck,
   Search, 
   Download, 
   Settings, 
@@ -17,11 +16,15 @@ import {
   type LucideIcon,
   Plus,
   UserPlus,
-  FilePlus
+  FilePlus,
+  Hash,
+  Layers,
+  Gavel
 } from 'lucide-react';
 import { useUIStore } from '@/stores/useUIStore';
 import { GlobalSearch } from './GlobalSearch';
 import { ToastContainer } from './ToastContainer';
+import { coerceModuleType } from '@/lib/moduleParam';
 
 const SidebarItem = ({ 
   href, 
@@ -29,40 +32,31 @@ const SidebarItem = ({
   label, 
   active, 
   collapsed, 
-  onClick 
+  onClick
 }: { 
   href?: string, 
   icon: LucideIcon, 
   label: string, 
   active: boolean, 
   collapsed: boolean,
-  onClick?: () => void 
+  onClick?: () => void
 }) => {
   const content = (
     <div 
-      className={`flex items-center px-6 py-4 transition-all duration-300 relative group cursor-pointer ${
+      className={`flex items-center px-6 py-4 transition-all duration-300 relative group cursor-pointer select-none ${
         collapsed ? 'justify-center px-0' : 'space-x-4'
       } ${
-        active ? 'text-[#A62121] bg-[#A62121]/5' : 'text-[#2F2F2F] opacity-60 hover:opacity-100 hover:bg-black/5'
+        active ? 'text-[#2F2F2F] bg-black/5' : 'text-[#2F2F2F]/60 hover:text-[#2F2F2F] hover:bg-black/5'
       }`}
       title={collapsed ? label : ''}
     >
       <Icon size={18} strokeWidth={active ? 2.5 : 2} className="shrink-0" />
       {!collapsed && (
         <>
-          <span className={`text-[15px] whitespace-nowrap overflow-hidden transition-all duration-300 ${active ? 'font-bold' : 'font-medium'} chinese-font`}>
+          <span className={`text-[15px] whitespace-nowrap overflow-hidden transition-all duration-300 chinese-font ${active ? 'font-bold' : 'font-medium'}`}>
             {label}
           </span>
-          {active && (
-            <div className="absolute left-0 w-[3px] h-full bg-[#A62121]" />
-          )}
-          {!href && (
-            <span className="absolute right-4 text-[9px] opacity-20 group-hover:opacity-40 font-bold uppercase tracking-tighter transition-opacity">Cmd K</span>
-          )}
         </>
-      )}
-      {collapsed && active && (
-        <div className="absolute left-0 w-[4px] h-8 top-1/2 -translate-y-1/2 bg-[#A62121]" />
       )}
     </div>
   );
@@ -79,10 +73,19 @@ const SidebarItem = ({
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { isSidebarCollapsed, toggleSidebar } = useUIStore();
   const [isFabOpen, setIsFabOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const fabRef = useRef<HTMLDivElement>(null);
+
+  const rulesModule = (() => {
+    if (pathname !== '/rules') return null;
+    return coerceModuleType(searchParams.get('module')) ?? 'liuyao';
+  })();
+
+  const isBaziRulesActive = pathname === '/bazi/rules' || (pathname === '/rules' && rulesModule === 'bazi');
+  const isLiuyaoRulesActive = pathname === '/liuyao/rules' || (pathname === '/rules' && rulesModule === 'liuyao');
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -109,13 +112,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   return (
     <div className="flex h-screen overflow-hidden">
       <ToastContainer />
-      {/* Sidebar */}
       <aside 
         className={`bg-[#FAF7F2] border-r border-[#B37D56]/20 flex flex-col shrink-0 z-10 transition-all duration-300 ease-in-out ${
           isSidebarCollapsed ? 'w-20' : 'w-64'
         }`}
       >
-        <div className={`p-8 flex flex-col items-center relative ${isSidebarCollapsed ? 'p-6' : 'p-10'}`}>
+        <div className={`flex flex-col items-center relative ${isSidebarCollapsed ? 'p-6' : 'p-10'}`}>
           <div 
             onClick={toggleSidebar}
             className="absolute -right-3 top-10 w-6 h-6 bg-[#FAF7F2] border border-[#B37D56]/20 rounded-full flex items-center justify-center cursor-pointer hover:bg-[#A62121] hover:text-white transition-all shadow-sm z-20 group"
@@ -129,36 +131,75 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           
           {!isSidebarCollapsed && (
             <>
-              <h1 className="text-xl font-bold tracking-[0.2em] text-[#2F2F2F] chinese-font whitespace-nowrap animate-in fade-in duration-500">研易册</h1>
-              <div className="w-8 h-[0.5px] bg-[#B37D56]/40 mt-3" />
+              <h1 className="text-lg font-bold tracking-[0.3em] text-[#2F2F2F] chinese-font whitespace-nowrap animate-in fade-in duration-500">
+                研易册
+              </h1>
             </>
           )}
         </div>
 
         <nav className="flex-1 overflow-y-auto py-2">
-          <SidebarItem href="/" icon={Home} label="首页" active={pathname === '/'} collapsed={isSidebarCollapsed} />
-          <SidebarItem href="/customers" icon={Users} label="客户管理" active={pathname.startsWith('/customers')} collapsed={isSidebarCollapsed} />
-          <SidebarItem href="/bazi" icon={Hash} label="八字案卷" active={pathname.startsWith('/bazi')} collapsed={isSidebarCollapsed} />
-          <SidebarItem href="/cases" icon={BookOpen} label="咨询记录" active={pathname.startsWith('/cases')} collapsed={isSidebarCollapsed} />
-          <SidebarItem href="/rules" icon={ShieldCheck} label="规则系统" active={pathname.startsWith('/rules')} collapsed={isSidebarCollapsed} />
-          <SidebarItem icon={Search} label="全局搜索" active={isSearchOpen} collapsed={isSidebarCollapsed} onClick={() => setIsSearchOpen(true)} />
-          <SidebarItem href="/export" icon={Download} label="数据备份" active={pathname === '/export'} collapsed={isSidebarCollapsed} />
-          <SidebarItem href="/settings" icon={Settings} label="个人设置" active={pathname === '/settings'} collapsed={isSidebarCollapsed} />
+          <SidebarItem href="/" icon={Home} label="首页工作台" active={pathname === '/'} collapsed={isSidebarCollapsed} />
+          <SidebarItem href="/customers" icon={Users} label="客户档案" active={pathname.startsWith('/customers')} collapsed={isSidebarCollapsed} />
+          
+          <div className="mt-3 px-6 mb-1">
+            {!isSidebarCollapsed && <p className="text-[10px] font-bold text-[#B37D56] uppercase tracking-widest opacity-40">Bazi Module</p>}
+            {isSidebarCollapsed && <div className="h-[1px] bg-[#B37D56]/10 w-full" />}
+          </div>
+          <SidebarItem
+            href="/bazi"
+            icon={Hash}
+            label="八字案卷"
+            active={pathname === '/bazi' || pathname.startsWith('/bazi/edit') || pathname.startsWith('/bazi/new')}
+            collapsed={isSidebarCollapsed}
+          />
+          <SidebarItem
+            href="/bazi/rules"
+            icon={ShieldCheck}
+            label="八字断诀"
+            active={isBaziRulesActive}
+            collapsed={isSidebarCollapsed}
+          />
+
+          <div className="mt-3 px-6 mb-1">
+            {!isSidebarCollapsed && <p className="text-[10px] font-bold text-[#A62121] uppercase tracking-widest opacity-40">Liuyao Module</p>}
+            {isSidebarCollapsed && <div className="h-[1px] bg-[#A62121]/10 w-full" />}
+          </div>
+          <SidebarItem
+            href="/liuyao"
+            icon={Layers}
+            label="六爻卦例"
+            active={pathname === '/liuyao' || pathname.startsWith('/liuyao/edit') || pathname.startsWith('/liuyao/new')}
+            collapsed={isSidebarCollapsed}
+          />
+          <SidebarItem
+            href="/liuyao/rules"
+            icon={Gavel}
+            label="六爻断诀"
+            active={isLiuyaoRulesActive}
+            collapsed={isSidebarCollapsed}
+          />
+
+          <div className="mt-3">
+            <SidebarItem
+              icon={Search}
+              label="全局搜索 (Ctrl+K)"
+              active={isSearchOpen}
+              collapsed={isSidebarCollapsed}
+              onClick={() => setIsSearchOpen(true)}
+            />
+            <SidebarItem href="/export" icon={Download} label="数据同步" active={pathname === '/export'} collapsed={isSidebarCollapsed} />
+            <SidebarItem href="/settings" icon={Settings} label="个人设置" active={pathname === '/settings'} collapsed={isSidebarCollapsed} />
+          </div>
         </nav>
 
-        <div className="p-4 flex justify-center text-[10px] text-[#B37D56]/30 font-bold chinese-font tracking-tighter">
-          {!isSidebarCollapsed && <span>YAN YI CE v0.1</span>}
-        </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 overflow-y-auto relative bg-[#FAF7F2] transition-all duration-300">
-        <div className="absolute top-0 right-0 w-[40%] h-[40%] bg-[#8DA399]/5 rounded-full blur-[120px] pointer-events-none" />
-        <div className="max-w-5xl mx-auto p-12 min-h-full pb-32">
+        <div className="max-w-5xl mx-auto p-12 min-h-full pb-32 relative z-0">
           {children}
         </div>
         
-        {/* Floating Action Menu */}
         <div className="fixed bottom-10 right-10 z-50 flex flex-col items-end gap-4" ref={fabRef}>
           {isFabOpen && (
             <div className="flex flex-col gap-3 mb-2 animate-in fade-in slide-in-from-bottom-4 duration-200">
@@ -183,7 +224,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 </div>
               </Link>
               <Link 
-                href="/cases/new" 
+                href="/liuyao/new"
                 onClick={() => setIsFabOpen(false)}
                 className="flex items-center gap-3 bg-white border border-[#B37D56]/20 px-4 py-3 shadow-lg hover:border-[#A62121] transition-all group rounded-none"
               >
@@ -204,7 +245,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         </div>
       </main>
 
-      {/* Global Search Modal */}
       <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </div>
   );

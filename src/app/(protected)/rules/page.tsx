@@ -1,17 +1,27 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Plus, Shield, ToggleLeft, ToggleRight, Trash2, Layers } from "lucide-react";
 
 import { useRuleStore } from "@/stores/useRuleStore";
 import { ModuleType } from "@/lib/types";
+import { coerceModuleType } from "@/lib/moduleParam";
 
 export default function Page() {
+  const searchParams = useSearchParams();
+  const moduleParam = searchParams.get("module");
+  const initialTab = useMemo<ModuleType>(() => coerceModuleType(moduleParam) ?? "liuyao", [moduleParam]);
+
   const { rules, addRule, updateRule, deleteRule } = useRuleStore();
-  const [activeTab, setActiveTab] = useState<ModuleType>("liuyao");
+  const [activeTab, setActiveTab] = useState<ModuleType>(initialTab);
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [newMsg, setNewMsg] = useState("");
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   const filteredRules = rules.filter((r) => r.module === activeTab);
 

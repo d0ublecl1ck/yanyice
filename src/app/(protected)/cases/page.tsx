@@ -1,17 +1,27 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Plus, Search, Calendar, ChevronRight, FileText } from "lucide-react";
 
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
+import { coerceCaseFilter } from "@/lib/moduleParam";
 
 export default function Page() {
+  const searchParams = useSearchParams();
+  const moduleParam = searchParams.get("module");
+  const initialFilter = useMemo(() => coerceCaseFilter(moduleParam) ?? "all", [moduleParam]);
+
   const records = useCaseStore((state) => state.records);
   const customers = useCustomerStore((state) => state.customers);
-  const [filter, setFilter] = useState<"all" | "liuyao" | "bazi">("all");
+  const [filter, setFilter] = useState<"all" | "liuyao" | "bazi">(initialFilter);
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    setFilter(initialFilter);
+  }, [initialFilter]);
 
   const filteredRecords = records.filter((r) => {
     const matchesFilter = filter === "all" || r.module === filter;
