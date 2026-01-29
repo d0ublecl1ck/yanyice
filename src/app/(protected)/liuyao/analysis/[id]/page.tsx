@@ -5,9 +5,9 @@ import React, { use, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { ANIMALS, LINE_SYMBOLS, RELATIVES } from "@/lib/constants";
+import { ANIMALS } from "@/lib/constants";
 import { geminiChat, type ChatMessage } from "@/lib/geminiService";
-import type { LineType } from "@/lib/types";
+import { paipanLiuyao } from "@/lib/liuyao/paipan";
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -15,20 +15,6 @@ import { useChatStore, type Message } from "@/stores/useChatStore";
 import { useToastStore } from "@/stores/useToastStore";
 
 const EMPTY_HISTORY: Message[] = [];
-
-const defaultRelativeByLine = (lineIdxFromBottom: number) => {
-  return RELATIVES[lineIdxFromBottom % RELATIVES.length] || "父母";
-};
-
-const getLineDisplay = (line: LineType, idxFromBottom: number) => {
-  const meta = LINE_SYMBOLS[line] ?? LINE_SYMBOLS[0];
-  return {
-    relative: defaultRelativeByLine(idxFromBottom),
-    symbol: meta.base,
-    moveMark: meta.mark,
-    isMoving: meta.isMoving,
-  };
-};
 
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -71,6 +57,16 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       dayBranch: d.dayBranch,
       lines: d.lines,
     };
+  }, [record]);
+
+  const paipan = useMemo(() => {
+    if (!record?.liuyaoData) return null;
+    try {
+      return paipanLiuyao(record.liuyaoData);
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
   }, [record]);
 
   useEffect(() => {
@@ -148,7 +144,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     );
   }
 
-  const linesFromTop = [...analysis.lines].reverse();
+  const linesFromTop = paipan ? [...paipan.lines].reverse() : null;
 
   return (
     <div className="relative pb-20">
@@ -167,6 +163,15 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             {customerName ? `${customerName} · ` : ""}
             {analysis.solarDate} · 月建{analysis.monthBranch} · 日辰{analysis.dayBranch}
           </p>
+          {paipan?.base.name && (
+            <p className="text-[10px] text-[#B37D56]/70 chinese-font tracking-widest uppercase mt-1">
+              本卦{paipan.base.name}
+              {paipan.changed.name ? ` · 变卦${paipan.changed.name}` : ""}
+              {paipan.palace.name && paipan.palace.generation
+                ? ` · ${paipan.palace.name}宫${paipan.palace.generation}`
+                : ""}
+            </p>
+          )}
         </div>
         <div className="flex gap-3">
           <button
@@ -194,23 +199,34 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
               六爻
             </div>
 
-            {linesFromTop.map((line, idxFromTop) => {
-              const idxFromBottom = linesFromTop.length - 1 - idxFromTop;
-              const display = getLineDisplay(line, idxFromBottom);
+            {(linesFromTop ?? []).map((line, idxFromTop) => {
               return (
                 <React.Fragment key={idxFromTop}>
                   <div className="col-span-2 flex items-center justify-center text-[10px] text-[#2F2F2F]/40 font-bold py-3 border-t border-[#B37D56]/5">
-                    {ANIMALS[idxFromTop % 6]}
+                    {line.sixGod ?? ANIMALS[idxFromTop % 6]}
                   </div>
                   <div className="col-span-10 flex items-center justify-center gap-3 py-3 border-t border-[#B37D56]/5 relative">
                     <div className="flex flex-col items-end text-[10px] w-16 font-bold text-[#2F2F2F]/50">
-                      <span>{display.relative}</span>
+                      <span>{line.relative}</span>
+                      <span className="text-[9px] text-[#2F2F2F]/30">{line.najia.text}</span>
                     </div>
                     <div className="text-xl font-mono leading-none">
-                      {display.symbol.replace(/ /g, "　")}
+                      {line.symbol.replace(/ /g, "　")}
                     </div>
                     <div className="w-4 text-[10px] font-bold text-[#A62121]">
-                      {display.isMoving ? display.moveMark : ""}
+                      {line.isMoving ? line.moveMark : ""}
+                    </div>
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
+                      {line.isShi && (
+                        <span className="text-[10px] font-bold text-[#A62121] chinese-font tracking-widest">
+                          世
+                        </span>
+                      )}
+                      {line.isYing && (
+                        <span className="text-[10px] font-bold text-[#2F2F2F]/50 chinese-font tracking-widest">
+                          应
+                        </span>
+                      )}
                     </div>
                   </div>
                 </React.Fragment>
