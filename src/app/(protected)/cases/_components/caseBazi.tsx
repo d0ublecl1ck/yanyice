@@ -182,22 +182,29 @@ export function CaseBazi() {
           role="dialog"
           aria-modal="true"
           aria-label="新建八字"
-          className="fixed inset-0 z-[60] bg-black/40 p-6 flex items-center justify-center"
+          className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm p-4 flex items-center justify-center"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) closeCreate();
           }}
         >
-          <div className="w-full max-w-6xl max-h-[90vh] overflow-hidden bg-[#FAF7F2] border border-[#B37D56]/20 rounded-[4px] shadow-none relative">
-            <button
-              type="button"
-              onClick={closeCreate}
-              className="absolute top-4 right-4 w-10 h-10 border border-[#B37D56]/20 bg-white hover:bg-[#FAF7F2] transition-colors rounded-[2px] flex items-center justify-center"
-              aria-label="关闭"
-            >
-              <X size={18} className="text-[#2F2F2F]/60" />
-            </button>
-            <div className="overflow-y-auto max-h-[90vh] p-8 pt-10">
-              <BaziEditView />
+          <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-[4px] border border-[#B37D56]/20 shadow-none overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-[#B37D56]/10 flex justify-between items-center">
+              <p className="text-xs font-bold tracking-widest chinese-font text-[#2F2F2F] flex items-center gap-2">
+                <Hash size={16} />
+                新建八字
+              </p>
+              <button
+                type="button"
+                onClick={closeCreate}
+                className="text-[#2F2F2F]/20 hover:text-[#A62121] transition-colors"
+                aria-label="关闭"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto max-h-[90vh] p-4 md:p-6 bg-[#FAF7F2]">
+              <BaziEditView embedded />
             </div>
           </div>
         </div>

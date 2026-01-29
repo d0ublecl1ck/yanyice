@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Hash,
   MapPin,
-  RefreshCw,
   Search,
   X,
 } from "lucide-react";
@@ -799,7 +798,7 @@ const BaziTimePickerModal = ({
   );
 };
 
-export function BaziEditView({ id }: { id?: string }) {
+export function BaziEditView({ id, embedded = false }: { id?: string; embedded?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToastStore();
@@ -943,27 +942,37 @@ export function BaziEditView({ id }: { id?: string }) {
   }, [recordDate]);
 
   return (
-    <div className="w-full max-w-none space-y-8 animate-in fade-in duration-500 pb-20">
-      <header className="flex items-center gap-4">
-        <div className="w-10 h-10 bg-black text-white rounded-none flex items-center justify-center shrink-0 rotate-45">
-          <Hash size={18} className="-rotate-45" />
-        </div>
-        <div className="flex-1">
-          <h2 className="text-2xl font-bold text-[#2F2F2F] chinese-font tracking-tight">
-            八字推演
-          </h2>
-          <p className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest opacity-60">
-            Professional Bazi Engine
-          </p>
-        </div>
-      </header>
+    <div
+      className={`w-full max-w-none animate-in fade-in duration-500 ${
+        embedded ? "space-y-6 pb-6" : "space-y-8 pb-20"
+      }`}
+    >
+      {!embedded ? (
+        <header className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-black text-white rounded-none flex items-center justify-center shrink-0 rotate-45">
+            <Hash size={18} className="-rotate-45" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold text-[#2F2F2F] chinese-font tracking-tight">
+              八字推演
+            </h2>
+            <p className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest opacity-60">
+              Professional Bazi Engine
+            </p>
+          </div>
+        </header>
+      ) : null}
 
-      <div className="bg-white p-10 rounded-[4px] border border-[#B37D56]/20 shadow-none space-y-12 relative">
+      <div
+        className={`bg-white rounded-[4px] border border-[#B37D56]/20 shadow-none relative ${
+          embedded ? "p-6 md:p-8 space-y-8" : "p-10 space-y-12"
+        }`}
+      >
         <div className="absolute top-0 right-0 w-24 h-24 border-r border-t border-[#B37D56]/10 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-24 h-24 border-l border-b border-[#B37D56]/10 pointer-events-none" />
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 items-end">
-          <div className="md:col-span-3 space-y-2">
+        <div className={`grid grid-cols-1 md:grid-cols-2 items-end ${embedded ? "gap-6" : "gap-8"}`}>
+          <div className="space-y-2">
             <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest ml-1">
               姓名
             </label>
@@ -975,184 +984,215 @@ export function BaziEditView({ id }: { id?: string }) {
               className="w-full bg-transparent border-b border-[#B37D56]/10 py-2 outline-none focus:border-[#B37D56] transition-all chinese-font font-bold text-lg"
             />
           </div>
-          <div className="md:col-span-2 relative">
-            <select
-              value={customerId}
-              onChange={(e) => {
-                const cust = customers.find((c) => c.id === e.target.value);
-                if (cust) {
-                  setCustomerId(cust.id);
-                  setSubject(cust.name);
-                  setGender(cust.gender === "female" ? "female" : "male");
-                  setCreateCustomerAlso(false);
-                } else {
-                  setCustomerId("");
-                }
-              }}
-              className="w-full bg-[#FAF7F2] border border-[#B37D56]/10 px-4 py-3 rounded-[2px] outline-none text-xs chinese-font appearance-none cursor-pointer hover:bg-[#FAF7F2]/80 transition-colors"
-            >
-              <option value="">-- 关联已有档案 --</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-            <ChevronRight
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#B37D56]/30 rotate-90 pointer-events-none"
-              size={14}
-            />
-
-            {!id ? (
-              <button
-                type="button"
-                onClick={() => {
-                  if (customerId) return;
-                  setCreateCustomerAlso((v) => !v);
-                }}
-                className={`mt-2 w-full flex items-center gap-2 text-[10px] font-bold chinese-font tracking-widest transition-colors ${
-                  customerId
-                    ? "text-[#2F2F2F]/20 cursor-not-allowed"
-                    : "text-[#2F2F2F]/40 hover:text-[#2F2F2F]"
-                }`}
-              >
-                <div
-                  className={`w-4 h-4 rounded-[1px] border flex items-center justify-center transition-all ${
-                    createCustomerAlso
-                      ? "bg-[#B37D56] border-[#B37D56]"
-                      : customerId
-                        ? "border-[#B37D56]/10"
-                        : "border-[#B37D56]/20"
+          <div className="space-y-2">
+            <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest ml-1">
+              性别
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {(
+                [
+                  { id: "male", l: "乾造" },
+                  { id: "female", l: "坤造" },
+                ] as const
+              ).map((g) => (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => setGender(g.id)}
+                  className={`w-full py-2.5 rounded-[2px] text-xs chinese-font border transition-all font-bold ${
+                    gender === g.id
+                      ? "bg-[#2F2F2F] text-white border-[#2F2F2F]"
+                      : "bg-white border-[#B37D56]/20 text-[#2F2F2F]/40 hover:border-[#B37D56]/40"
                   }`}
                 >
-                  {createCustomerAlso ? <Check size={10} className="text-white" /> : null}
-                </div>
-                同时创建客户档案
-              </button>
-            ) : null}
+                  {g.l}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          <div className="flex gap-4">
-            {(
-              [
-                { id: "male", l: "乾造" },
-                { id: "female", l: "坤造" },
-              ] as const
-            ).map((g) => (
-              <button
-                key={g.id}
-                onClick={() => setGender(g.id)}
-                className={`px-8 py-2.5 rounded-[2px] text-xs chinese-font border transition-all ${
-                  gender === g.id
-                    ? "bg-[#2F2F2F] text-white border-[#2F2F2F]"
-                    : "border-[#B37D56]/20 text-[#2F2F2F]/40 hover:border-[#B37D56]/40"
+        <div className={`w-full flex flex-col md:flex-row md:items-stretch gap-4 ${embedded ? "" : ""}`}>
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => setShowTimePicker(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") setShowTimePicker(true);
+            }}
+            className={`flex items-center gap-4 flex-1 min-w-0 cursor-pointer bg-[#FAF7F2] hover:bg-white/80 rounded-[4px] transition-colors ${
+              embedded ? "px-5 py-4" : "px-8 py-5"
+            }`}
+          >
+            <div className="flex items-center gap-5 flex-1 min-w-0">
+              <div className="w-10 h-10 bg-white border border-[#B37D56]/20 flex items-center justify-center text-[#B37D56] shrink-0 rounded-[2px]">
+                <CalendarDays size={18} />
+              </div>
+              <div className="flex items-center gap-4 flex-nowrap whitespace-nowrap overflow-hidden">
+                {bazi.calendarType === "fourPillars" ? (
+                  <div className="flex gap-3 items-center">
+                    {[
+                      { s: bazi.yearStem, b: bazi.yearBranch },
+                      { s: bazi.monthStem, b: bazi.monthBranch },
+                      { s: bazi.dayStem, b: bazi.dayBranch },
+                      { s: bazi.hourStem, b: bazi.hourBranch },
+                    ].map((p, i) => (
+                      <span
+                        key={i}
+                        className={`font-bold text-[#2F2F2F] chinese-font ${embedded ? "text-lg" : "text-xl"}`}
+                      >
+                        {p.s}
+                        {p.b}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    <span
+                      className={`font-bold text-[#2F2F2F] chinese-font tracking-tight shrink-0 ${
+                        embedded ? "text-xl" : "text-2xl"
+                      }`}
+                    >
+                      {dateParts.date}
+                    </span>
+                    <span className="text-base font-bold text-[#B37D56] chinese-font opacity-60 shrink-0">
+                      {dateParts.time}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 md:w-[260px] md:shrink-0 items-center">
+            <button
+              type="button"
+              onClick={() => setBazi({ ...bazi, isDst: !bazi.isDst })}
+              className="w-full flex items-center gap-2 text-[10px] font-bold chinese-font tracking-widest text-[#2F2F2F]/40 hover:text-[#2F2F2F] transition-colors"
+            >
+              <div
+                className={`w-4 h-4 rounded-[1px] border flex items-center justify-center transition-all ${
+                  bazi.isDst ? "bg-[#B37D56] border-[#B37D56]" : "border-[#B37D56]/20"
                 }`}
               >
-                {g.l}
-              </button>
-            ))}
-          </div>
-          <div
-            className="flex items-center gap-3 cursor-pointer group"
-            onClick={() => setShowLocPicker(true)}
-          >
-            <MapPin
-              size={16}
-              className="text-[#B37D56]/40 group-hover:text-[#B37D56] transition-colors shrink-0"
-            />
-            <span
-              className={`flex-1 border-b border-[#B37D56]/10 py-2 text-xs chinese-font transition-all ${
-                location === "请选择地区" ? "text-[#2F2F2F]/20" : "text-[#2F2F2F]"
-              }`}
+                {bazi.isDst ? <Check size={10} className="text-white" /> : null}
+              </div>
+              夏令时
+            </button>
+            <button
+              type="button"
+              onClick={() => setBazi({ ...bazi, isTrueSolarTime: !bazi.isTrueSolarTime })}
+              className="w-full flex items-center gap-2 text-[10px] font-bold chinese-font tracking-widest text-[#2F2F2F]/40 hover:text-[#2F2F2F] transition-colors"
             >
-              {location === "请选择地区" ? "请选择出生地" : location}
-            </span>
+              <div
+                className={`w-4 h-4 rounded-[1px] border flex items-center justify-center transition-all ${
+                  bazi.isTrueSolarTime ? "bg-[#B37D56] border-[#B37D56]" : "border-[#B37D56]/20"
+                }`}
+              >
+                {bazi.isTrueSolarTime ? <Check size={10} className="text-white" /> : null}
+              </div>
+              真太阳时
+            </button>
           </div>
         </div>
 
         <div
-          onClick={() => setShowTimePicker(true)}
-          className="w-full bg-[#FAF7F2] hover:bg-white border border-[#B37D56]/15 py-5 px-8 rounded-[4px] cursor-pointer group transition-all flex items-center justify-between gap-4"
+          className="flex items-center gap-3 cursor-pointer group"
+          onClick={() => setShowLocPicker(true)}
         >
-          <div className="flex items-center gap-5 flex-1 min-w-0">
-            <div className="w-10 h-10 bg-white border border-[#B37D56]/20 flex items-center justify-center text-[#B37D56] shrink-0 rounded-[2px]">
-              <CalendarDays size={18} />
-            </div>
-            <div className="flex items-center gap-4 flex-nowrap whitespace-nowrap overflow-hidden">
-              {bazi.calendarType === "fourPillars" ? (
-                <div className="flex gap-3 items-center">
-                  {[
-                    { s: bazi.yearStem, b: bazi.yearBranch },
-                    { s: bazi.monthStem, b: bazi.monthBranch },
-                    { s: bazi.dayStem, b: bazi.dayBranch },
-                    { s: bazi.hourStem, b: bazi.hourBranch },
-                  ].map((p, i) => (
-                    <span key={i} className="text-xl font-bold text-[#2F2F2F] chinese-font">
-                      {p.s}
-                      {p.b}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <>
-                  <span className="text-2xl font-bold text-[#2F2F2F] chinese-font tracking-tight shrink-0">
-                    {dateParts.date}
-                  </span>
-                  <span className="text-base font-bold text-[#B37D56] chinese-font opacity-60 shrink-0">
-                    {dateParts.time}
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-5 shrink-0 border-l border-[#B37D56]/10 pl-5 h-8">
-            <div className="text-[#B37D56]/30 group-hover:text-[#B37D56] group-hover:rotate-180 transition-all duration-700">
-              <RefreshCw size={14} />
-            </div>
-          </div>
+          <MapPin
+            size={16}
+            className="text-[#B37D56]/40 group-hover:text-[#B37D56] transition-colors shrink-0"
+          />
+          <span
+            className={`flex-1 border-b border-[#B37D56]/10 py-2 text-xs chinese-font transition-all ${
+              location === "请选择地区" ? "text-[#2F2F2F]/20" : "text-[#2F2F2F]"
+            }`}
+          >
+            {location === "请选择地区" ? "请选择出生地" : location}
+          </span>
         </div>
 
-        <div className="flex justify-center gap-10 pt-2">
-          <button
-            type="button"
-            onClick={() => setBazi({ ...bazi, isDst: !bazi.isDst })}
-            className="flex items-center gap-2 text-[10px] font-bold chinese-font tracking-widest text-[#2F2F2F]/40 hover:text-[#2F2F2F] transition-colors"
-          >
-            <div
-              className={`w-4 h-4 rounded-[1px] border flex items-center justify-center transition-all ${
-                bazi.isDst ? "bg-[#B37D56] border-[#B37D56]" : "border-[#B37D56]/20"
-              }`}
-            >
-              {bazi.isDst ? <Check size={10} className="text-white" /> : null}
+        <div className={`pt-6 ${embedded ? "mt-2" : "pt-8"} border-t border-[#B37D56]/10`}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+            <div className={`grid gap-3 ${id ? "grid-cols-1" : "grid-cols-2"} items-center`}>
+              <div className="relative w-full">
+                <select
+                  value={customerId}
+                  disabled={!id && createCustomerAlso}
+                  onChange={(e) => {
+                    const nextId = e.target.value;
+                    const cust = customers.find((c) => c.id === nextId);
+                    if (cust) {
+                      setCustomerId(cust.id);
+                      setSubject(cust.name);
+                      setGender(cust.gender === "female" ? "female" : "male");
+                      setCreateCustomerAlso(false);
+                    } else {
+                      setCustomerId("");
+                    }
+                  }}
+                  className={`w-full border border-[#B37D56]/10 px-4 py-3 rounded-[2px] outline-none text-xs chinese-font appearance-none transition-colors ${
+                    !id && createCustomerAlso
+                      ? "bg-[#FAF7F2]/40 text-[#2F2F2F]/30 cursor-not-allowed"
+                      : "bg-[#FAF7F2] cursor-pointer hover:bg-[#FAF7F2]/80"
+                  }`}
+                >
+                  <option value="">-- 关联已有档案 --</option>
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronRight
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#B37D56]/30 rotate-90 pointer-events-none"
+                  size={14}
+                />
+              </div>
+
+              {!id ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (customerId) return;
+                    setCreateCustomerAlso((v) => {
+                      const next = !v;
+                      if (next) setCustomerId("");
+                      return next;
+                    });
+                  }}
+                  className={`w-full h-[44px] border px-3 rounded-[2px] flex items-center gap-2 text-[10px] font-bold chinese-font tracking-widest transition-colors ${
+                    customerId
+                      ? "bg-[#FAF7F2]/40 border-[#B37D56]/10 text-[#2F2F2F]/20 cursor-not-allowed"
+                      : "bg-white border-[#B37D56]/20 text-[#2F2F2F]/40 hover:border-[#A62121] hover:text-[#2F2F2F]"
+                  }`}
+                >
+                  <div
+                    className={`w-4 h-4 rounded-[1px] border flex items-center justify-center transition-all ${
+                      createCustomerAlso
+                        ? "bg-[#B37D56] border-[#B37D56]"
+                        : customerId
+                          ? "border-[#B37D56]/10"
+                          : "border-[#B37D56]/20"
+                    }`}
+                  >
+                    {createCustomerAlso ? <Check size={10} className="text-white" /> : null}
+                  </div>
+                  同时创建客户档案
+                </button>
+              ) : null}
             </div>
-            夏令时
-          </button>
-          <button
-            type="button"
-            onClick={() => setBazi({ ...bazi, isTrueSolarTime: !bazi.isTrueSolarTime })}
-            className="flex items-center gap-2 text-[10px] font-bold chinese-font tracking-widest text-[#2F2F2F]/40 hover:text-[#2F2F2F] transition-colors"
-          >
-            <div
-              className={`w-4 h-4 rounded-[1px] border flex items-center justify-center transition-all ${
-                bazi.isTrueSolarTime ? "bg-[#B37D56] border-[#B37D56]" : "border-[#B37D56]/20"
-              }`}
+
+            <button
+              onClick={() => void handleSave()}
+              className="w-full h-12 md:h-[52px] bg-[#2F2F2F] text-white rounded-[2px] text-lg font-bold chinese-font tracking-[0.6em] hover:bg-black transition-all active:scale-[0.98] flex items-center justify-center shadow-none"
             >
-              {bazi.isTrueSolarTime ? <Check size={10} className="text-white" /> : null}
-            </div>
-            真太阳时
-          </button>
+              立即排盘
+            </button>
+          </div>
         </div>
       </div>
-
-      <button
-        onClick={() => void handleSave()}
-        className="w-full h-16 bg-[#2F2F2F] text-white rounded-[2px] text-xl font-bold chinese-font tracking-[0.6em] hover:bg-black transition-all active:scale-[0.98] flex items-center justify-center shadow-lg"
-      >
-        立即排盘
-      </button>
 
       <BaziTimePickerModal
         isOpen={showTimePicker}
