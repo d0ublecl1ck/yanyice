@@ -46,8 +46,7 @@ export function LiuyaoLineSvg({
     <svg
       className={className}
       viewBox="0 0 120 24"
-      width={120}
-      height={24}
+      preserveAspectRatio="xMidYMid meet"
       role="img"
       aria-label="爻"
     >
@@ -67,4 +66,3 @@ export function LiuyaoLineSvg({
     </svg>
   );
 }
-

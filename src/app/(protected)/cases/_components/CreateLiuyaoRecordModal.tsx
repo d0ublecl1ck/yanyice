@@ -242,15 +242,15 @@ export function CreateLiuyaoRecordModal({
                 {lines.map((line, idx) => (
                   <div
                     key={idx}
-                    className="grid grid-cols-[3rem_1fr_7rem] items-center gap-3 py-2 px-3 border border-transparent hover:bg-black/[0.01]"
+                    className="grid grid-cols-[3rem_minmax(0,1fr)_7rem] items-center gap-3 py-2 px-3 border border-transparent hover:bg-black/[0.01]"
                   >
                     <span className="text-[9px] font-bold text-[#2F2F2F]/20 chinese-font">
                       爻{idx + 1}
                     </span>
-                    <div className="flex justify-center">
+                    <div className="flex justify-center min-w-0">
                       <LiuyaoLineSvg
                         line={line}
-                        className="h-6 w-[160px]"
+                        className="h-6 w-full max-w-[160px]"
                         lineColor="#2F2F2F"
                         markColor="#A62121"
                       />
