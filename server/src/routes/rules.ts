@@ -3,8 +3,6 @@ import { Type, type Static } from "@sinclair/typebox";
 
 import type { ModuleType } from "@prisma/client";
 
-import { BUILTIN_RULE_SEEDS } from "../rules/builtinRuleSeeds";
-
 const ErrorResponse = Type.Object({
   code: Type.String(),
   message: Type.String(),
@@ -58,16 +56,6 @@ function toRuleDto(row: {
   };
 }
 
-async function ensureSeedRules(app: FastifyInstance, userId: string) {
-  for (const seed of BUILTIN_RULE_SEEDS) {
-    await app.prisma.rule.upsert({
-      where: { userId_seedKey: { userId, seedKey: seed.seedKey } },
-      update: {},
-      create: { userId, ...seed },
-    });
-  }
-}
-
 export async function ruleRoutes(app: FastifyInstance) {
   app.get(
     "/rules",
@@ -82,7 +70,6 @@ export async function ruleRoutes(app: FastifyInstance) {
     },
     async (request) => {
       const userId = request.user.sub;
-      await ensureSeedRules(app, userId);
 
       const { module } = request.query as { module?: Static<typeof RuleDto>["module"] };
       const where = module ? { userId, module: normalizeModule(module) } : { userId };

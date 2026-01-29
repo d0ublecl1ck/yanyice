@@ -3,7 +3,6 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { buildApp } from "../src/app";
-import { BUILTIN_RULE_SEEDS } from "../src/rules/builtinRuleSeeds";
 
 function runPrismaMigrateDeploy(databaseUrl: string) {
   const result = Bun.spawnSync(
@@ -51,11 +50,9 @@ describe("rule module", () => {
     expect(res.statusCode).toBe(401);
   });
 
-  it("creates a seed rule and supports CRUD", async () => {
+  it("supports CRUD", async () => {
     const email = `u${Date.now()}@example.com`;
     const password = "password123";
-    const defaultSeed = BUILTIN_RULE_SEEDS.find((s) => s.seedKey === "builtin:default");
-    expect(defaultSeed).toBeDefined();
 
     const registerRes = await app.inject({
       method: "POST",
@@ -74,12 +71,7 @@ describe("rule module", () => {
     const listBody = listRes.json() as {
       rules: Array<{ id: string; name: string; module: string; condition: string; message: string }>;
     };
-    expect(listBody.rules.length).toBeGreaterThanOrEqual(1);
-    expect(
-      listBody.rules.some(
-        (r) => r.name === defaultSeed!.name && r.module === defaultSeed!.module && r.message === defaultSeed!.message,
-      ),
-    ).toBe(true);
+    expect(listBody.rules).toHaveLength(0);
 
     const createRes = await app.inject({
       method: "POST",
