@@ -808,9 +808,11 @@ export function BaziEditView({ id }: { id?: string }) {
   const addRecord = useCaseStore((state) => state.addRecord);
   const updateRecord = useCaseStore((state) => state.updateRecord);
   const customers = useCustomerStore((state) => state.customers);
+  const addCustomer = useCustomerStore((state) => state.addCustomer);
 
   const [subject, setSubject] = useState("");
   const [customerId, setCustomerId] = useState("");
+  const [createCustomerAlso, setCreateCustomerAlso] = useState(false);
   const [recordDate, setRecordDate] = useState(() => nowBjIso());
   const [gender, setGender] = useState<"male" | "female">("male");
   const [location, setLocation] = useState("请选择地区");
@@ -840,6 +842,7 @@ export function BaziEditView({ id }: { id?: string }) {
     setCustomerId(cust.id);
     setSubject(cust.name);
     setGender(cust.gender === "female" ? "female" : "male");
+    setCreateCustomerAlso(false);
   }, [id, searchParams, customers]);
 
   useEffect(() => {
@@ -880,11 +883,35 @@ export function BaziEditView({ id }: { id?: string }) {
         await updateRecord(id, { module: "bazi", subject, customerId, baziData });
         toast.show("已保存", "success");
       } else {
-        const fallbackTitle = customerId
-          ? `${customers.find((c) => c.id === customerId)?.name || "客户"}的命例`
+        let resolvedCustomerId = customerId;
+        if (createCustomerAlso && !resolvedCustomerId) {
+          const name = subject.trim();
+          if (!name) {
+            toast.show("请输入姓名", "error");
+            return;
+          }
+
+          const m = recordDate.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+          const birthDate = m ? `${m[1]}-${m[2]}-${m[3]}` : undefined;
+          const birthTime = m ? `${m[4]}:${m[5]}` : undefined;
+
+          resolvedCustomerId = await addCustomer({
+            name,
+            gender,
+            birthDate,
+            birthTime,
+            tags: [],
+            notes: "",
+            customFields: {},
+          });
+          setCustomerId(resolvedCustomerId);
+        }
+
+        const fallbackTitle = resolvedCustomerId
+          ? `${customers.find((c) => c.id === resolvedCustomerId)?.name || "客户"}的命例`
           : "未命名命例";
         await addRecord({
-          customerId,
+          customerId: resolvedCustomerId,
           module: "bazi",
           subject: subject || fallbackTitle,
           notes: "",
@@ -957,6 +984,7 @@ export function BaziEditView({ id }: { id?: string }) {
                   setCustomerId(cust.id);
                   setSubject(cust.name);
                   setGender(cust.gender === "female" ? "female" : "male");
+                  setCreateCustomerAlso(false);
                 } else {
                   setCustomerId("");
                 }
@@ -974,6 +1002,34 @@ export function BaziEditView({ id }: { id?: string }) {
               className="absolute right-4 top-1/2 -translate-y-1/2 text-[#B37D56]/30 rotate-90 pointer-events-none"
               size={14}
             />
+
+            {!id ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (customerId) return;
+                  setCreateCustomerAlso((v) => !v);
+                }}
+                className={`mt-2 w-full flex items-center gap-2 text-[10px] font-bold chinese-font tracking-widest transition-colors ${
+                  customerId
+                    ? "text-[#2F2F2F]/20 cursor-not-allowed"
+                    : "text-[#2F2F2F]/40 hover:text-[#2F2F2F]"
+                }`}
+              >
+                <div
+                  className={`w-4 h-4 rounded-[1px] border flex items-center justify-center transition-all ${
+                    createCustomerAlso
+                      ? "bg-[#B37D56] border-[#B37D56]"
+                      : customerId
+                        ? "border-[#B37D56]/10"
+                        : "border-[#B37D56]/20"
+                  }`}
+                >
+                  {createCustomerAlso ? <Check size={10} className="text-white" /> : null}
+                </div>
+                同时创建客户档案
+              </button>
+            ) : null}
           </div>
         </div>
 
