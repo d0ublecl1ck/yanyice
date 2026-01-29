@@ -5,11 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "dev:api": "bun --watch server/src/index.ts",
-    "dev:a": "concurrently -n web,api -c cyan,magenta \"next dev\" \"bun --watch server/src/index.ts\"",
+    "dev:a": "bun run prisma:generate && concurrently -n web,api -c cyan,magenta \"next dev\" \"bun --watch server/src/index.ts\"",
     "build": "bun run prisma:generate && next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "bun test",
+    "test": "bun run prisma:generate && bun test",
     "prisma:generate": "bunx prisma generate --config prisma.config.ts",
     "prisma:migrate": "bunx prisma migrate dev --config prisma.config.ts",
     "prisma:deploy": "bunx prisma migrate deploy --config prisma.config.ts"
