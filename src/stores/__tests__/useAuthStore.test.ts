@@ -1,4 +1,4 @@
-import { beforeAll, afterAll, test, expect } from "bun:test";
+import { afterAll, beforeAll, afterEach, beforeEach, test, expect } from "bun:test";
 
 type LocalStorageLike = {
   getItem(key: string): string | null;
@@ -27,18 +27,29 @@ function createMemoryLocalStorage(): LocalStorageLike {
 
 const originalLocalStorage = (globalThis as unknown as { localStorage?: unknown }).localStorage;
 const memoryLocalStorage = createMemoryLocalStorage();
+const originalFetch = globalThis.fetch;
 
 beforeAll(() => {
   (globalThis as unknown as { localStorage: LocalStorageLike }).localStorage = memoryLocalStorage;
 });
 
 afterAll(() => {
+  globalThis.fetch = originalFetch;
   if (originalLocalStorage === undefined) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (globalThis as any).localStorage;
     return;
   }
   (globalThis as unknown as { localStorage: unknown }).localStorage = originalLocalStorage;
+});
+
+beforeEach(() => {
+  memoryLocalStorage.clear();
+});
+
+afterEach(() => {
+  globalThis.fetch = originalFetch;
+  delete process.env.NEXT_PUBLIC_API_BASE_URL;
 });
 
 test("useAuthStore bootstraps during rehydrate without TDZ self-reference", async () => {
@@ -52,3 +63,21 @@ test("useAuthStore bootstraps during rehydrate without TDZ self-reference", asyn
   expect(useAuthStore.getState().status).toBe("unauthenticated");
 });
 
+test("login failure reverts status from loading", async () => {
+  process.env.NEXT_PUBLIC_API_BASE_URL = "http://example.test";
+
+  globalThis.fetch = async () => {
+    return new Response(JSON.stringify({ code: "INVALID_CREDENTIALS", message: "账号或密码错误" }), {
+      status: 401,
+      headers: { "content-type": "application/json" },
+    });
+  };
+
+  const { useAuthStore } = await import("../useAuthStore");
+  useAuthStore.setState({ user: null, accessToken: null, status: "unauthenticated", hasHydrated: true });
+
+  const promise = useAuthStore.getState().login("u@example.com", "wrong").catch(() => undefined);
+  expect(useAuthStore.getState().status).toBe("loading");
+  await promise;
+  expect(useAuthStore.getState().status).toBe("unauthenticated");
+});

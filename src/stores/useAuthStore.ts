@@ -44,20 +44,32 @@ export const useAuthStore = create<AuthState>()(
         }
       },
       register: async (email, password) => {
+        const prev = get();
         set({ status: 'loading' });
-        const { user, accessToken } = await apiFetch<{ user: User; accessToken: string }>('/api/auth/register', {
-          method: 'POST',
-          body: JSON.stringify({ email, password }),
-        });
-        set({ user, accessToken, status: 'authenticated' });
+        try {
+          const { user, accessToken } = await apiFetch<{ user: User; accessToken: string }>('/api/auth/register', {
+            method: 'POST',
+            body: JSON.stringify({ email, password }),
+          });
+          set({ user, accessToken, status: 'authenticated' });
+        } catch (err) {
+          set({ user: prev.user, accessToken: prev.accessToken, status: prev.status });
+          throw err;
+        }
       },
       login: async (email, password) => {
+        const prev = get();
         set({ status: 'loading' });
-        const { user, accessToken } = await apiFetch<{ user: User; accessToken: string }>('/api/auth/login', {
-          method: 'POST',
-          body: JSON.stringify({ email, password }),
-        });
-        set({ user, accessToken, status: 'authenticated' });
+        try {
+          const { user, accessToken } = await apiFetch<{ user: User; accessToken: string }>('/api/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ email, password }),
+          });
+          set({ user, accessToken, status: 'authenticated' });
+        } catch (err) {
+          set({ user: prev.user, accessToken: prev.accessToken, status: prev.status });
+          throw err;
+        }
       },
       logout: () => set({ user: null, accessToken: null, status: 'unauthenticated' }),
     }),
