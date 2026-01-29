@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { geminiChat } from "@/lib/geminiService";
+import { geminiChat, type ChatMessage } from "@/lib/geminiService";
 import type { BaZiData } from "@/lib/types";
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
@@ -179,12 +179,14 @@ export default function Page({ params }: { params: { id: string } }) {
     try {
       const systemInstruction = `你是一位专业命理师。当前案卷：${analysis.subject}。四柱：年${analysis.pillars[0].stem}${analysis.pillars[0].branch}、月${analysis.pillars[1].stem}${analysis.pillars[1].branch}、日${analysis.pillars[2].stem}${analysis.pillars[2].branch}、时${analysis.pillars[3].stem}${analysis.pillars[3].branch}。请根据排盘回答用户追问。语气雅致、简洁、扁平。不使用Emoji。`;
 
+      const messages: ChatMessage[] = [
+        ...history.map((m): ChatMessage => ({ role: m.role, text: m.text })),
+        { role: "user", text: userText },
+      ];
+
       const text = await geminiChat({
         systemInstruction,
-        messages: [...history, { role: "user", text: userText }].map((m) => ({
-          role: m.role,
-          text: m.text,
-        })),
+        messages,
       });
 
       addMessage(id, { role: "model", text: text || "...", timestamp: Date.now() });

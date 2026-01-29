@@ -374,7 +374,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
   const records = useCaseStore(state => state.records);
   const addRecord = useCaseStore(state => state.addRecord);
   const updateRecord = useCaseStore(state => state.updateRecord);
-  const { customers } = useCustomerStore();
+  const { customers, addCustomer } = useCustomerStore();
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   const [module, setModule] = useState<'liuyao' | 'bazi'>('liuyao');
@@ -406,6 +406,9 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
 
   const [showAiModal, setShowAiModal] = useState(false);
   const [aiInput, setAiInput] = useState('');
+  const [showQuickCustomerModal, setShowQuickCustomerModal] = useState(false);
+  const [quickName, setQuickName] = useState('');
+  const [quickGender, setQuickGender] = useState<'male' | 'female'>('male');
 
   useEffect(() => {
     if (id) return;

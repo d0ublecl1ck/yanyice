@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { ANIMALS, LINE_SYMBOLS, RELATIVES } from "@/lib/constants";
-import { geminiChat } from "@/lib/geminiService";
+import { geminiChat, type ChatMessage } from "@/lib/geminiService";
 import type { LineType } from "@/lib/types";
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
@@ -75,12 +75,15 @@ export default function Page({ params }: { params: { id: string } }) {
     setIsTyping(true);
     try {
       const systemInstruction = `你是一位专业六爻师。当前卦例：${analysis.subject}。月建：${analysis.monthBranch}，日辰：${analysis.dayBranch}。请根据排盘与问事语境回答追问，语气扁平文字化，不使用Emoji。`;
+
+      const messages: ChatMessage[] = [
+        ...history.map((m): ChatMessage => ({ role: m.role, text: m.text })),
+        { role: "user", text: userText },
+      ];
+
       const text = await geminiChat({
         systemInstruction,
-        messages: [...history, { role: "user", text: userText }].map((m) => ({
-          role: m.role,
-          text: m.text,
-        })),
+        messages,
       });
       addMessage(id, { role: "model", text: text || "...", timestamp: Date.now() });
     } catch (e) {
@@ -263,4 +266,3 @@ export default function Page({ params }: { params: { id: string } }) {
     </div>
   );
 }
-
