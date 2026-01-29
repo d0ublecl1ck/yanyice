@@ -92,4 +92,23 @@ describe("auth module", () => {
     const body = res.json() as { paths?: Record<string, unknown> };
     expect(body.paths?.["/api/auth/login"]).toBeDefined();
   });
+
+  it("supports CORS preflight for auth endpoints", async () => {
+    const origin = "http://localhost:3000";
+    const res = await app.inject({
+      method: "OPTIONS",
+      url: "/api/auth/login",
+      headers: {
+        origin,
+        "access-control-request-method": "POST",
+        "access-control-request-headers": "content-type, authorization",
+      },
+    });
+
+    expect([200, 204]).toContain(res.statusCode);
+    expect(res.headers["access-control-allow-origin"]).toBe(origin);
+    expect(res.headers["access-control-allow-methods"]).toContain("POST");
+    expect(res.headers["access-control-allow-headers"]).toContain("authorization");
+    expect(res.headers["access-control-allow-headers"]).toContain("content-type");
+  });
 });

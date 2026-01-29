@@ -25,9 +25,19 @@ export function getJwtSecret(): string {
   return getEnv("JWT_SECRET") ?? "dev-only-change-me";
 }
 
-export function getCorsOrigin(): string | true {
-  const origin = getEnv("CORS_ORIGIN");
-  if (!origin) return true;
-  return origin;
-}
+export function getCorsOrigin(): string | string[] | true {
+  const raw = getEnv("CORS_ORIGIN");
+  if (!raw) return true;
 
+  const normalized = raw.trim();
+  if (!normalized) return true;
+  if (normalized === "*" || normalized.toLowerCase() === "true") return true;
+
+  const origins = normalized
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (origins.length <= 1) return origins[0] ?? true;
+  return origins;
+}

@@ -18,7 +18,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       accessToken: null,
       status: 'loading',
@@ -26,7 +26,7 @@ export const useAuthStore = create<AuthState>()(
       setHasHydrated: (hasHydrated) => set({ hasHydrated }),
       bootstrap: async () => {
         set((s) => ({ status: s.accessToken ? 'loading' : 'unauthenticated' }));
-        const accessToken = useAuthStore.getState().accessToken;
+        const accessToken = get().accessToken;
         if (!accessToken) {
           set({ user: null, status: 'unauthenticated' });
           return;
@@ -44,20 +44,32 @@ export const useAuthStore = create<AuthState>()(
         }
       },
       register: async (email, password) => {
+        const prev = get();
         set({ status: 'loading' });
-        const { user, accessToken } = await apiFetch<{ user: User; accessToken: string }>('/api/auth/register', {
-          method: 'POST',
-          body: JSON.stringify({ email, password }),
-        });
-        set({ user, accessToken, status: 'authenticated' });
+        try {
+          const { user, accessToken } = await apiFetch<{ user: User; accessToken: string }>('/api/auth/register', {
+            method: 'POST',
+            body: JSON.stringify({ email, password }),
+          });
+          set({ user, accessToken, status: 'authenticated' });
+        } catch (err) {
+          set({ user: prev.user, accessToken: prev.accessToken, status: prev.status });
+          throw err;
+        }
       },
       login: async (email, password) => {
+        const prev = get();
         set({ status: 'loading' });
-        const { user, accessToken } = await apiFetch<{ user: User; accessToken: string }>('/api/auth/login', {
-          method: 'POST',
-          body: JSON.stringify({ email, password }),
-        });
-        set({ user, accessToken, status: 'authenticated' });
+        try {
+          const { user, accessToken } = await apiFetch<{ user: User; accessToken: string }>('/api/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ email, password }),
+          });
+          set({ user, accessToken, status: 'authenticated' });
+        } catch (err) {
+          set({ user: prev.user, accessToken: prev.accessToken, status: prev.status });
+          throw err;
+        }
       },
       logout: () => set({ user: null, accessToken: null, status: 'unauthenticated' }),
     }),

@@ -33,7 +33,11 @@ export function buildApp(options?: { databaseUrl?: string; logger?: boolean }) {
     await prismaBundle.close();
   });
 
-  app.register(cors, { origin: getCorsOrigin() });
+  app.register(cors, {
+    origin: getCorsOrigin(),
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["content-type", "authorization"],
+  });
 
   app.register(jwt, { secret: getJwtSecret() });
 
