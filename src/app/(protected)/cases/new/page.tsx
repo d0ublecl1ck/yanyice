@@ -10,8 +10,8 @@ export default async function Page({
 }) {
   const sp = (await searchParams) ?? {};
   const moduleParam = sp.module;
-  const module = Array.isArray(moduleParam) ? moduleParam[0] : moduleParam;
-  if (module === "bazi") {
+  const moduleValue = Array.isArray(moduleParam) ? moduleParam[0] : moduleParam;
+  if (moduleValue === "bazi") {
     const customerIdParam = sp.customerId;
     const customerId = Array.isArray(customerIdParam) ? customerIdParam[0] : customerIdParam;
     redirect(customerId ? `/bazi/new?customerId=${encodeURIComponent(customerId)}` : "/bazi/new");

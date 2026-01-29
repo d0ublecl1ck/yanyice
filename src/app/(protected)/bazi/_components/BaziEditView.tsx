@@ -12,7 +12,7 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { SolarTime } from "tyme4ts";
+import { EightChar, SixtyCycle, SolarTime } from "tyme4ts";
 
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
@@ -59,9 +59,23 @@ const deriveNowFromTyme = (now: Date) => {
   };
 
   const solarTime = SolarTime.fromYmdHms(solar.y, solar.m, solar.d, solar.h, solar.min, 0);
-  const lunarDay = solarTime.getSolarDay().getLunarDay();
-  const lunarMonth = lunarDay.getLunarMonth();
+  return deriveFromSolarTime(solarTime);
+};
 
+const deriveFromSolarTime = (solarTime: SolarTime) => {
+  const sd = solarTime.getSolarDay();
+  const ymd = sd.toString().match(/(\d+)年(\d+)月(\d+)日/);
+  const time = solarTime.toString().match(/(\d+):(\d+):(\d+)/);
+  const solar = {
+    y: ymd ? Number(ymd[1]) : new Date().getFullYear(),
+    m: ymd ? Number(ymd[2]) : 1,
+    d: ymd ? Number(ymd[3]) : 1,
+    h: time ? Number(time[1]) : 0,
+    min: time ? Number(time[2]) : 0,
+  };
+
+  const lunarDay = sd.getLunarDay();
+  const lunarMonth = lunarDay.getLunarMonth();
   const lunar = {
     y: lunarMonth.getYear(),
     m: lunarMonthNameFromNumber(lunarMonth.getMonth()),
@@ -339,6 +353,32 @@ const BaziTimePickerModal = ({
   );
   const pillarsOrder = useMemo(() => ["y", "m", "d", "h"] as const, []);
 
+  const [fourPillarsCandidates, setFourPillarsCandidates] = useState<SolarTime[]>([]);
+  const [selectedCandidateIndex, setSelectedCandidateIndex] = useState(0);
+
+  const computeCandidates = React.useCallback((fp: typeof fourPillars) => {
+    try {
+      const ec = new EightChar(
+        SixtyCycle.fromName(`${fp.yS}${fp.yB}`),
+        SixtyCycle.fromName(`${fp.mS}${fp.mB}`),
+        SixtyCycle.fromName(`${fp.dS}${fp.dB}`),
+        SixtyCycle.fromName(`${fp.hS}${fp.hB}`),
+      );
+      const list = ec.getSolarTimes(1900, 2100) as SolarTime[];
+      setFourPillarsCandidates(list);
+      setSelectedCandidateIndex(0);
+    } catch {
+      setFourPillarsCandidates([]);
+      setSelectedCandidateIndex(0);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (tab !== "fourPillars") return;
+    computeCandidates(fourPillars);
+  }, [computeCandidates, fourPillars, isOpen, tab]);
+
   const handleNow = () => {
     const now = new Date();
     const derived = deriveNowFromTyme(now);
@@ -566,13 +606,68 @@ const BaziTimePickerModal = ({
                   ))}
                 </div>
               )}
+
+              <div className="bg-[#FAF7F2] p-4 border border-[#B37D56]/20">
+                <p className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest mb-3">
+                  反推匹配公历时间
+                </p>
+                {fourPillarsCandidates.length > 0 ? (
+                  <div className="space-y-2">
+                    {fourPillarsCandidates.slice(0, 6).map((st, idx) => {
+                      const derived = deriveFromSolarTime(st);
+                      const label = `${derived.solar.y} / ${pad2(derived.solar.m)} / ${pad2(derived.solar.d)}  ${pad2(derived.solar.h)}:${pad2(derived.solar.min)}`;
+                      return (
+                        <button
+                          key={st.toString()}
+                          type="button"
+                          onClick={() => setSelectedCandidateIndex(idx)}
+                          className={`w-full flex items-center justify-between px-4 py-3 bg-white border transition-all rounded-[2px] ${
+                            selectedCandidateIndex === idx
+                              ? "border-[#B37D56] text-[#2F2F2F]"
+                              : "border-[#B37D56]/10 text-[#2F2F2F]/60 hover:border-[#B37D56]/30"
+                          }`}
+                        >
+                          <span className="text-xs font-bold chinese-font">{label}</span>
+                          <span
+                            className={`w-4 h-4 border rounded-[1px] flex items-center justify-center ${
+                              selectedCandidateIndex === idx
+                                ? "bg-[#B37D56] border-[#B37D56]"
+                                : "border-[#B37D56]/20"
+                            }`}
+                          >
+                            {selectedCandidateIndex === idx ? (
+                              <Check size={10} className="text-white" />
+                            ) : null}
+                          </span>
+                        </button>
+                      );
+                    })}
+                    {fourPillarsCandidates.length > 6 ? (
+                      <p className="text-[10px] text-[#2F2F2F]/30 chinese-font pt-2">
+                        仅展示前 6 个匹配（共 {fourPillarsCandidates.length} 个）。
+                      </p>
+                    ) : null}
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-[#2F2F2F]/30 chinese-font italic">
+                    未找到可反推的公历时间，请调整四柱。
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </div>
         <div className="p-8 pt-0">
           <button
             onClick={() => {
-              onConfirm({ tab, solar, lunar, fourPillars } as BaziTimePickerConfirmData);
+              if (tab === "fourPillars") {
+                const picked = fourPillarsCandidates[selectedCandidateIndex];
+                if (!picked) return;
+                const derived = deriveFromSolarTime(picked);
+                onConfirm({ tab, ...derived } as BaziTimePickerConfirmData);
+              } else {
+                onConfirm({ tab, solar, lunar, fourPillars } as BaziTimePickerConfirmData);
+              }
               onClose();
             }}
             className="w-full h-12 bg-[#2F2F2F] text-white font-bold chinese-font tracking-[0.4em] rounded-[2px] hover:bg-black transition-all"
@@ -656,6 +751,8 @@ export function BaziEditView({ id }: { id?: string }) {
         hourBranch: data.fourPillars.hB,
         calendarType: "fourPillars",
       }));
+      const dateStr = `${data.solar.y}-${pad2(data.solar.m)}-${pad2(data.solar.d)}T${pad2(data.solar.h)}:${pad2(data.solar.min)}:00`;
+      setRecordDate(new Date(dateStr).toISOString());
     } else {
       const dateStr = `${data.solar.y}-${pad2(data.solar.m)}-${pad2(data.solar.d)}T${pad2(data.solar.h)}:${pad2(data.solar.min)}:00`;
       setRecordDate(new Date(dateStr).toISOString());
