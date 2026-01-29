@@ -1,20 +1,35 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Search, Calendar, ChevronRight, FileText } from "lucide-react";
 
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import type { CaseFilter } from "@/lib/moduleParam";
 import { recordEditHref } from "@/lib/caseLinks";
+import { CreateLiuyaoRecordModal } from "./CreateLiuyaoRecordModal";
 
 export function CaseAll({ initialFilter }: { initialFilter: CaseFilter }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const records = useCaseStore((state) => state.records);
   const customers = useCustomerStore((state) => state.customers);
 
   const [filter, setFilter] = useState<CaseFilter>(initialFilter);
   const [search, setSearch] = useState("");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  const initialCustomerId = useMemo(() => {
+    const raw = searchParams.get("customerId") ?? "";
+    return raw.trim() ? raw.trim() : undefined;
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (searchParams.get("create") !== "liuyao") return;
+    setIsCreateOpen(true);
+  }, [searchParams]);
 
   const filteredRecords = records.filter((record) => {
     const matchesFilter = filter === "all" || record.module === filter;
@@ -30,6 +45,14 @@ export function CaseAll({ initialFilter }: { initialFilter: CaseFilter }) {
 
   return (
     <div className="space-y-8">
+      <CreateLiuyaoRecordModal
+        open={isCreateOpen}
+        initialCustomerId={initialCustomerId}
+        onClose={() => {
+          setIsCreateOpen(false);
+          if (searchParams.get("create") === "liuyao") router.replace("/cases");
+        }}
+      />
       <header className="flex justify-between items-end border-b border-[#B37D56]/10 pb-6">
         <div>
           <h2 className="text-3xl font-bold text-[#2F2F2F] chinese-font tracking-widest">
@@ -39,13 +62,14 @@ export function CaseAll({ initialFilter }: { initialFilter: CaseFilter }) {
             Consultation Archives ({filteredRecords.length})
           </p>
         </div>
-        <Link
-          href="/cases/new"
+        <button
+          onClick={() => setIsCreateOpen(true)}
           className="flex items-center gap-2 px-6 py-2 bg-[#A62121] text-white font-bold text-sm tracking-widest hover:bg-[#8B1A1A] transition-all rounded-[2px]"
+          type="button"
         >
           <Plus size={16} />
           新建记录
-        </Link>
+        </button>
       </header>
 
       <div className="flex flex-col md:flex-row gap-6 items-center">

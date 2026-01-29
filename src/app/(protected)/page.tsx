@@ -17,6 +17,7 @@ import { useCaseStore } from "@/stores/useCaseStore";
 import { useRuleStore } from "@/stores/useRuleStore";
 import { formatGanzhiYearMonth } from "@/lib/lunarGanzhi";
 import { getDashboardCounts } from "@/lib/dashboardMetrics";
+import { newCaseHref } from "@/lib/caseLinks";
 
 export default function Page() {
   const customers = useCustomerStore((state) => state.customers);
@@ -196,7 +197,7 @@ export default function Page() {
 
           <div className="space-y-4">
             <Link
-              href="/cases/new"
+              href={newCaseHref("liuyao")}
               className="block p-8 bg-[#A62121] text-white relative group overflow-hidden rounded-none shadow-sm"
             >
               <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/brush-strokes.png')] pointer-events-none" />

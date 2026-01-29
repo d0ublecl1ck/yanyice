@@ -21,6 +21,7 @@ import {
 import { useUIStore } from '@/stores/useUIStore';
 import { GlobalSearch } from './GlobalSearch';
 import { coerceModuleType } from '@/lib/moduleParam';
+import { newCaseHref } from '@/lib/caseLinks';
 
 type SidebarIconComponent = React.ComponentType<{
   size?: number;
@@ -254,7 +255,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 </div>
               </Link>
               <Link 
-                href="/liuyao/new"
+                href={newCaseHref("liuyao")}
                 onClick={() => setIsFabOpen(false)}
                 className="flex items-center gap-3 bg-white border border-[#B37D56]/20 px-4 py-3 shadow-lg hover:border-[#A62121] transition-all group rounded-none"
               >
