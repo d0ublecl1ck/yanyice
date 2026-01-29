@@ -12,4 +12,43 @@ model User {
   passwordHash String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  customers      Customer[]
+  customerEvents CustomerEvent[]
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  gender    String
+  birthDate String?
+  birthTime String?
+  phone     String?
+  tags      Json
+  notes     String
+  customFields Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events CustomerEvent[]
+
+  @@index([userId])
+}
+
+model CustomerEvent {
+  id          String   @id @default(cuid())
+  userId      String
+  customerId  String
+  occurredAt  DateTime
+  description String
+  tags        Json
+  createdAt   DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([customerId])
 }
