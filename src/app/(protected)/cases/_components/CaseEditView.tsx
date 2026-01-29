@@ -170,6 +170,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
   const addRecord = useCaseStore(state => state.addRecord);
   const updateRecord = useCaseStore(state => state.updateRecord);
   const { customers, addCustomer } = useCustomerStore();
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const [module, setModule] = useState<'liuyao' | 'bazi'>('liuyao');
   const [subject, setSubject] = useState('');
@@ -208,15 +209,29 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
   useEffect(() => {
     if (id) return;
     const moduleParam = searchParams.get('module');
-    if (moduleParam === 'liuyao' || moduleParam === 'bazi') setModule(moduleParam);
     const customerParam = searchParams.get('customerId');
+
+    if (moduleParam === 'bazi') {
+      setIsRedirecting(true);
+      const qs = new URLSearchParams();
+      if (customerParam) qs.set('customerId', customerParam);
+      router.replace(qs.size ? `/bazi/new?${qs.toString()}` : '/bazi/new');
+      return;
+    }
+
+    if (moduleParam === 'liuyao' || moduleParam === 'bazi') setModule(moduleParam);
     if (customerParam) setCustomerId(customerParam);
-  }, [id, searchParams]);
+  }, [id, router, searchParams]);
 
   useEffect(() => {
     if (id) {
       const record = records.find(r => r.id === id);
       if (record) {
+        if (record.module === 'bazi') {
+          setIsRedirecting(true);
+          router.replace(`/bazi/edit/${id}`);
+          return;
+        }
         setModule(record.module);
         setSubject(record.subject);
         setCustomerId(record.customerId);
@@ -233,7 +248,9 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
         }
       }
     }
-  }, [id, records]);
+  }, [id, records, router]);
+
+  if (isRedirecting) return null;
 
   const handleLineToggle = (index: number) => {
     const newLines = [...lines];

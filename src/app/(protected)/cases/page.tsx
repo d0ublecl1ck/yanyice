@@ -80,10 +80,11 @@ export default function Page() {
               .sort((a, b) => b.createdAt - a.createdAt)
               .map((record) => {
                 const customer = customers.find((c) => c.id === record.customerId);
+                const href = record.module === "bazi" ? `/bazi/edit/${record.id}` : `/cases/edit/${record.id}`;
                 return (
                   <Link
                     key={record.id}
-                    href={`/cases/edit/${record.id}`}
+                    href={href}
                     className="flex items-center group hover:bg-[#FAF7F2] transition-all p-6"
                   >
                     <div className="w-12 h-12 bg-[#B37D56]/5 flex items-center justify-center shrink-0">

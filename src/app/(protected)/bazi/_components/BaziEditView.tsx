@@ -589,15 +589,22 @@ export function BaziEditView({ id }: { id?: string }) {
     router.push("/bazi");
   };
 
+  const dateParts = useMemo(() => {
+    const d = new Date(recordDate);
+    const date = `${d.getFullYear()} / ${pad2(d.getMonth() + 1)} / ${pad2(d.getDate())}`;
+    const time = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+    return { date, time };
+  }, [recordDate]);
+
   return (
     <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
       <header className="flex items-center gap-4">
-        <div className="w-10 h-10 bg-black text-white rounded-none flex items-center justify-center shrink-0">
-          <Hash size={20} />
+        <div className="w-10 h-10 bg-black text-white rounded-none flex items-center justify-center shrink-0 rotate-45">
+          <Hash size={18} className="-rotate-45" />
         </div>
         <div className="flex-1">
           <h2 className="text-2xl font-bold text-[#2F2F2F] chinese-font tracking-tight">
-            {id ? "编辑案卷" : "新建八字"}
+            八字推演
           </h2>
           <p className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest opacity-60">
             Professional Bazi Engine
@@ -612,13 +619,13 @@ export function BaziEditView({ id }: { id?: string }) {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-8 items-end">
           <div className="md:col-span-3 space-y-2">
             <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest ml-1">
-              命主姓名 / 案卷标题
+              命主姓名 / 卷首语
             </label>
             <input
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="请输入姓名或标题"
+              placeholder="输入姓名或事由"
               className="w-full bg-transparent border-b border-[#B37D56]/10 py-2 outline-none focus:border-[#B37D56] transition-all chinese-font font-bold text-lg"
             />
           </div>
@@ -637,7 +644,7 @@ export function BaziEditView({ id }: { id?: string }) {
               }}
               className="w-full bg-[#FAF7F2] border border-[#B37D56]/10 px-4 py-3 rounded-[2px] outline-none text-xs chinese-font appearance-none cursor-pointer hover:bg-[#FAF7F2]/80 transition-colors"
             >
-              <option value="">-- 关联已有客户 --</option>
+              <option value="">-- 关联已有档案 --</option>
               {customers.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -685,7 +692,7 @@ export function BaziEditView({ id }: { id?: string }) {
                 location === "请选择地区" ? "text-[#2F2F2F]/20" : "text-[#2F2F2F]"
               }`}
             >
-              {location}
+              {location === "请选择地区" ? "请选择出生地" : location}
             </span>
           </div>
         </div>
@@ -716,16 +723,10 @@ export function BaziEditView({ id }: { id?: string }) {
               ) : (
                 <>
                   <span className="text-2xl font-bold text-[#2F2F2F] chinese-font tracking-tight shrink-0">
-                    {new Date(recordDate)
-                      .toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" })
-                      .replace(/\//g, " / ")}
+                    {dateParts.date}
                   </span>
                   <span className="text-base font-bold text-[#B37D56] chinese-font opacity-60 shrink-0">
-                    {new Date(recordDate).toLocaleTimeString("zh-CN", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: false,
-                    })}
+                    {dateParts.time}
                   </span>
                 </>
               )}
@@ -733,54 +734,41 @@ export function BaziEditView({ id }: { id?: string }) {
           </div>
 
           <div className="flex items-center gap-5 shrink-0 border-l border-[#B37D56]/10 pl-5 h-8">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setBazi({ ...bazi, isDst: !bazi.isDst });
-              }}
-              className="flex items-center gap-1.5 group/btn"
-            >
-              <div
-                className={`w-4 h-4 rounded-[1px] border flex items-center justify-center transition-all ${
-                  bazi.isDst ? "bg-[#B37D56] border-[#B37D56]" : "border-[#B37D56]/30"
-                }`}
-              >
-                {bazi.isDst ? <Check size={10} className="text-white" /> : null}
-              </div>
-              <span
-                className={`text-[10px] font-bold chinese-font ${
-                  bazi.isDst ? "text-[#2F2F2F]" : "text-[#2F2F2F]/25"
-                }`}
-              >
-                夏令时
-              </span>
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setBazi({ ...bazi, isTrueSolarTime: !bazi.isTrueSolarTime });
-              }}
-              className="flex items-center gap-1.5 group/btn"
-            >
-              <div
-                className={`w-4 h-4 rounded-[1px] border flex items-center justify-center transition-all ${
-                  bazi.isTrueSolarTime ? "bg-[#B37D56] border-[#B37D56]" : "border-[#B37D56]/30"
-                }`}
-              >
-                {bazi.isTrueSolarTime ? <Check size={10} className="text-white" /> : null}
-              </div>
-              <span
-                className={`text-[10px] font-bold chinese-font ${
-                  bazi.isTrueSolarTime ? "text-[#2F2F2F]" : "text-[#2F2F2F]/25"
-                }`}
-              >
-                真太阳时
-              </span>
-            </button>
             <div className="text-[#B37D56]/30 group-hover:text-[#B37D56] group-hover:rotate-180 transition-all duration-700">
               <RefreshCw size={14} />
             </div>
           </div>
+        </div>
+
+        <div className="flex justify-center gap-10 pt-2">
+          <button
+            type="button"
+            onClick={() => setBazi({ ...bazi, isDst: !bazi.isDst })}
+            className="flex items-center gap-2 text-[10px] font-bold chinese-font tracking-widest text-[#2F2F2F]/40 hover:text-[#2F2F2F] transition-colors"
+          >
+            <div
+              className={`w-4 h-4 rounded-[1px] border flex items-center justify-center transition-all ${
+                bazi.isDst ? "bg-[#B37D56] border-[#B37D56]" : "border-[#B37D56]/20"
+              }`}
+            >
+              {bazi.isDst ? <Check size={10} className="text-white" /> : null}
+            </div>
+            夏令时
+          </button>
+          <button
+            type="button"
+            onClick={() => setBazi({ ...bazi, isTrueSolarTime: !bazi.isTrueSolarTime })}
+            className="flex items-center gap-2 text-[10px] font-bold chinese-font tracking-widest text-[#2F2F2F]/40 hover:text-[#2F2F2F] transition-colors"
+          >
+            <div
+              className={`w-4 h-4 rounded-[1px] border flex items-center justify-center transition-all ${
+                bazi.isTrueSolarTime ? "bg-[#B37D56] border-[#B37D56]" : "border-[#B37D56]/20"
+              }`}
+            >
+              {bazi.isTrueSolarTime ? <Check size={10} className="text-white" /> : null}
+            </div>
+            真太阳时
+          </button>
         </div>
       </div>
 
@@ -788,7 +776,7 @@ export function BaziEditView({ id }: { id?: string }) {
         onClick={handleSave}
         className="w-full h-16 bg-[#2F2F2F] text-white rounded-[2px] text-xl font-bold chinese-font tracking-[0.6em] hover:bg-black transition-all active:scale-[0.98] flex items-center justify-center shadow-lg"
       >
-        确定排盘
+        立即排盘
       </button>
 
       <BaziTimePickerModal
@@ -804,4 +792,3 @@ export function BaziEditView({ id }: { id?: string }) {
     </div>
   );
 }
-
