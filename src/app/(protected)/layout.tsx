@@ -10,16 +10,16 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const pathname = usePathname();
 
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const status = useAuthStore((s) => s.status);
   const hasHydrated = useAuthStore((s) => s.hasHydrated);
 
   useEffect(() => {
     if (!hasHydrated) return;
-    if (!isAuthenticated) router.replace("/login");
-  }, [hasHydrated, isAuthenticated, router]);
+    if (status === "unauthenticated") router.replace("/login");
+  }, [hasHydrated, status, router]);
 
   if (!hasHydrated) return null;
-  if (!isAuthenticated) return null;
+  if (status !== "authenticated") return null;
 
   return <Layout key={pathname}>{children}</Layout>;
 }

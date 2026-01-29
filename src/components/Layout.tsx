@@ -23,7 +23,6 @@ import {
 } from 'lucide-react';
 import { useUIStore } from '@/stores/useUIStore';
 import { GlobalSearch } from './GlobalSearch';
-import { ToastContainer } from './ToastContainer';
 import { coerceModuleType } from '@/lib/moduleParam';
 
 const SidebarItem = ({ 
@@ -111,7 +110,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <ToastContainer />
       <aside 
         className={`bg-[#FAF7F2] border-r border-[#B37D56]/20 flex flex-col shrink-0 z-10 transition-all duration-300 ease-in-out ${
           isSidebarCollapsed ? 'w-20' : 'w-64'
