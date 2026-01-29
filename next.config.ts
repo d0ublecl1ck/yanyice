@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   async rewrites() {
     if (process.env.NODE_ENV !== "development") return [];
 
-    const apiPort = process.env.API_PORT ?? process.env.PORT ?? "3311";
+    const apiPort = process.env.API_PORT ?? "3311";
     return [
       {
         source: "/api/:path*",
