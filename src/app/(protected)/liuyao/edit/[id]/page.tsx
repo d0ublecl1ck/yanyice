@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 
-export default function Page({ params }: { params: { id: string } }) {
-  redirect(`/cases/edit/${encodeURIComponent(params.id)}?module=liuyao`);
-}
+type PageProps = { params: Promise<{ id: string }> | { id: string } };
 
+export default async function Page({ params }: PageProps) {
+  const { id } = await params;
+  redirect(`/cases/edit/${encodeURIComponent(id)}?module=liuyao`);
+}

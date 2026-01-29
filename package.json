@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@google/genai": "^1.38.0",
+    "china-area-data": "^5.0.1",
+    "country-state-city": "^3.2.1",
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
     "react": "19.2.3",
