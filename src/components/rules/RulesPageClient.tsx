@@ -161,11 +161,12 @@ export default function RulesPageClient({ module }: { module: ModuleType }) {
               <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
                 断诀内容
               </label>
-              <input
+              <textarea
                 value={newMsg}
                 onChange={(e) => setNewMsg(e.target.value)}
                 placeholder="如：注意应期..."
-                className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-2 outline-none focus:border-[#A62121] transition-colors chinese-font font-bold"
+                rows={4}
+                className="w-full bg-transparent border border-[#2F2F2F]/10 rounded-[4px] px-3 py-2 outline-none focus:border-[#A62121] transition-colors chinese-font font-bold resize-y"
               />
             </div>
           </div>
@@ -176,55 +177,64 @@ export default function RulesPageClient({ module }: { module: ModuleType }) {
         {filteredRules.length > 0 ? (
           <div className="divide-y divide-[#B37D56]/5">
             {filteredRules.map((rule) => (
-              <div key={rule.id} className="p-6 flex items-start justify-between gap-6">
-                <div className="space-y-2 flex-1">
-                  <div className="flex items-center justify-between">
-                    <p className="font-bold text-[#2F2F2F] chinese-font">{rule.name}</p>
-                    <button
-                      onClick={async () => {
-                        if (togglingId) return;
-                        setTogglingId(rule.id);
-                        try {
-                          await updateRule(rule.id, { enabled: !rule.enabled });
-                        } catch {
-                          showToast("更新失败，请稍后重试", "error");
-                        } finally {
-                          setTogglingId(null);
-                        }
-                      }}
-                      disabled={togglingId === rule.id}
-                      className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest ${
-                        rule.enabled ? "text-[#8DA399]" : "text-[#2F2F2F]/30"
-                      } disabled:opacity-60 disabled:cursor-not-allowed`}
-                    >
-                      {rule.enabled ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
-                      {rule.enabled ? "启用" : "停用"}
-                    </button>
-                  </div>
-                  <p className="text-[10px] text-[#2F2F2F]/40">{rule.condition}</p>
-                  <p className="text-xs text-[#B37D56] chinese-font leading-relaxed italic">
+              <div key={rule.id} className="px-6 py-4 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4 min-w-0 flex-1">
+                  <p className="font-bold text-[#2F2F2F] chinese-font truncate max-w-[10rem]">
+                    {rule.name}
+                  </p>
+                  <p className="text-[10px] text-[#2F2F2F]/40 truncate max-w-[12rem] hidden md:block">
+                    {rule.condition}
+                  </p>
+                  <p
+                    className="text-xs text-[#B37D56] chinese-font italic truncate min-w-0"
+                    title={rule.message}
+                  >
                     {rule.message}
                   </p>
                 </div>
-                <button
-                  onClick={async () => {
-                    if (deletingId) return;
-                    setDeletingId(rule.id);
-                    try {
-                      await deleteRule(rule.id);
-                      showToast("规则已删除", "info");
-                    } catch {
-                      showToast("删除失败，请稍后重试", "error");
-                    } finally {
-                      setDeletingId(null);
-                    }
-                  }}
-                  disabled={deletingId === rule.id}
-                  className="text-[#A62121]/50 hover:text-[#A62121] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                  title="删除规则"
-                >
-                  <Trash2 size={18} />
-                </button>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={async () => {
+                      if (togglingId) return;
+                      setTogglingId(rule.id);
+                      try {
+                        await updateRule(rule.id, { enabled: !rule.enabled });
+                      } catch {
+                        showToast("更新失败，请稍后重试", "error");
+                      } finally {
+                        setTogglingId(null);
+                      }
+                    }}
+                    disabled={togglingId === rule.id}
+                    className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest ${
+                      rule.enabled ? "text-[#8DA399]" : "text-[#2F2F2F]/30"
+                    } disabled:opacity-60 disabled:cursor-not-allowed`}
+                    title={rule.enabled ? "启用" : "停用"}
+                  >
+                    {rule.enabled ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+                    <span className="hidden lg:inline">{rule.enabled ? "启用" : "停用"}</span>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (deletingId) return;
+                      setDeletingId(rule.id);
+                      try {
+                        await deleteRule(rule.id);
+                        showToast("规则已删除", "info");
+                      } catch {
+                        showToast("删除失败，请稍后重试", "error");
+                      } finally {
+                        setDeletingId(null);
+                      }
+                    }}
+                    disabled={deletingId === rule.id}
+                    className="text-[#A62121]/50 hover:text-[#A62121] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    title="删除规则"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
