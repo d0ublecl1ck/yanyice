@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { use, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -274,8 +274,8 @@ const EXTRA_ROWS = [
 
 const EMPTY_HISTORY: Message[] = [];
 
-export default function Page({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
   const toast = useToastStore();
 
