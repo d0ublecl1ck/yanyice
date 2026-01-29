@@ -76,9 +76,9 @@ export function CaseBazi() {
                     key={record.id}
                     role="link"
                     tabIndex={0}
-                    onClick={() => router.push(editHref)}
+                    onClick={() => router.push(analysisHref)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") router.push(editHref);
+                      if (e.key === "Enter" || e.key === " ") router.push(analysisHref);
                     }}
                     className="bg-white flex items-start gap-4 group hover:bg-[#FAF7F2] transition-all p-6"
                   >
