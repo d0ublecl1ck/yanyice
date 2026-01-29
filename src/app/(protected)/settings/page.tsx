@@ -26,11 +26,22 @@ export default function Page() {
 
       <div className="max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8">
         <section className="bg-white p-8 border border-[#B37D56]/10 space-y-6">
-          <div className="flex items-center gap-3 border-b border-[#B37D56]/10 pb-4">
-            <div className="p-2 bg-[#A62121]/5 text-[#A62121] rounded-none border border-[#A62121]/10">
-              <User size={20} />
+          <div className="flex items-center justify-between gap-3 border-b border-[#B37D56]/10 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-[#A62121]/5 text-[#A62121] rounded-none border border-[#A62121]/10">
+                <User size={20} />
+              </div>
+              <h3 className="font-bold text-lg text-[#2F2F2F] chinese-font">账号信息</h3>
             </div>
-            <h3 className="font-bold text-lg text-[#2F2F2F] chinese-font">账号信息</h3>
+
+            <button
+              onClick={handleLogout}
+              className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-[#A62121]/20 text-[#A62121] font-bold text-xs tracking-widest hover:bg-[#A62121] hover:text-white transition-all chinese-font rounded-[2px]"
+              title="退出当前账号"
+            >
+              <LogOut size={14} />
+              退出
+            </button>
           </div>
 
           <div className="flex items-center justify-between p-4 bg-[#FAF7F2] border border-[#B37D56]/5">
@@ -86,13 +97,6 @@ export default function Page() {
         </section>
 
         <section className="pt-8 lg:col-span-2">
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-3 px-8 py-4 bg-white border border-[#A62121]/20 text-[#A62121] font-bold tracking-[0.4em] hover:bg-[#A62121] hover:text-white transition-all chinese-font"
-          >
-            <LogOut size={18} />
-            退出当前账号
-          </button>
           <p className="text-center text-[10px] text-[#2F2F2F]/20 mt-4 uppercase tracking-[0.2em]">
             Yan Yi Ce - Professional Astrology Workspace
           </p>
