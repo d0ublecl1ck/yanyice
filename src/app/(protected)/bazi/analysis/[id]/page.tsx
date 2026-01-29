@@ -15,9 +15,9 @@ import { useToastStore } from "@/stores/useToastStore";
 const ELEMENT_STYLES: Record<string, { color: string }> = {
   wood: { color: "#40de5a" },
   fire: { color: "#ff2d51" },
-  earth: { color: "#312520" },
+  earth: { color: "#5d513c" },
   metal: { color: "#eacd76" },
-  water: { color: "#70f3ff" },
+  water: { color: "#065279" },
 };
 
 const getElByStem = (stem: string): keyof typeof ELEMENT_STYLES => {
