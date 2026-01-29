@@ -900,7 +900,7 @@ export function BaziEditView({ id }: { id?: string }) {
   }, [recordDate]);
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
+    <div className="w-full max-w-none space-y-8 animate-in fade-in duration-500 pb-20">
       <header className="flex items-center gap-4">
         <div className="w-10 h-10 bg-black text-white rounded-none flex items-center justify-center shrink-0 rotate-45">
           <Hash size={18} className="-rotate-45" />
