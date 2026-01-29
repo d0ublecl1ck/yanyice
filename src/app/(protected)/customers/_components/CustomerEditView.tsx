@@ -13,7 +13,16 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
   const router = useRouter();
   const toast = useToastStore();
-  const { customers, events, addCustomer, updateCustomer, deleteCustomer, addEvent, deleteEvent } = useCustomerStore();
+  const {
+    customers,
+    events,
+    loadCustomerEvents,
+    addCustomer,
+    updateCustomer,
+    deleteCustomer,
+    addEvent,
+    deleteEvent,
+  } = useCustomerStore();
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const [name, setName] = useState('');
@@ -43,7 +52,12 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
     }
   }, [id, customers]);
 
-  const handleSave = () => {
+  useEffect(() => {
+    if (!id) return;
+    void loadCustomerEvents(id);
+  }, [id, loadCustomerEvents]);
+
+  const handleSave = async () => {
     if (!name) {
       toast.show('请填写客户姓名', 'error');
       return;
@@ -58,32 +72,42 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
       tags, 
       customFields: {} 
     };
-    if (id) {
-      updateCustomer(id, data);
-      toast.show('客户资料已更新', 'success');
-    } else {
-      addCustomer(data);
-      toast.show('新客户已成功建档', 'success');
+
+    try {
+      if (id) {
+        await updateCustomer(id, data);
+        toast.show('客户资料已更新', 'success');
+      } else {
+        await addCustomer(data);
+        toast.show('新客户已成功建档', 'success');
+      }
+      router.push('/customers');
+    } catch {
+      toast.show('保存失败，请稍后重试', 'error');
     }
-    router.push('/customers');
   };
 
-  const handleAddEvent = () => {
+  const handleAddEvent = async () => {
     if (!id || !eventDate || !eventDesc) {
       toast.show('请填写完整的事件日期与描述', 'warning');
       return;
     }
     const displayDate = new Date(eventDate).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
-    addEvent({
-      customerId: id,
-      time: displayDate,
-      timestamp: new Date(eventDate).getTime(),
-      description: eventDesc,
-      tags: [],
-    });
-    setEventDate('');
-    setEventDesc('');
-    toast.show('大事记已记录', 'info');
+
+    try {
+      await addEvent({
+        customerId: id,
+        time: displayDate,
+        timestamp: new Date(eventDate).getTime(),
+        description: eventDesc,
+        tags: [],
+      });
+      setEventDate('');
+      setEventDesc('');
+      toast.show('大事记已记录', 'info');
+    } catch {
+      toast.show('记录失败，请稍后重试', 'error');
+    }
   };
 
   const customerEvents = events.filter(e => e.customerId === id);
@@ -123,11 +147,15 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
         confirmText="删除"
         cancelText="取消"
         onCancel={() => setIsDeleteOpen(false)}
-        onConfirm={() => {
+        onConfirm={async () => {
           if (!id) return;
-          deleteCustomer(id);
-          toast.show('客户资料已移除', 'info');
-          router.push('/customers');
+          try {
+            await deleteCustomer(id);
+            toast.show('客户资料已移除', 'info');
+            router.push('/customers');
+          } catch {
+            toast.show('删除失败，请稍后重试', 'error');
+          }
         }}
       />
 
@@ -255,19 +283,27 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
                   </button>
                 </div>
 
-                {/* Timeline Display */}
-                <div className="relative pl-8 space-y-12 before:content-[''] before:absolute before:left-[11px] before:top-0 before:w-[0.5px] before:h-full before:bg-[#B37D56]/20">
-                  {customerEvents.length > 0 ? (
-                    customerEvents.sort((a,b) => b.time.localeCompare(a.time)).map(event => (
-                      <div key={event.id} className="relative group">
-                        <div className="absolute left-[-21px] top-1.5 w-2 h-2 rounded-full bg-[#B37D56] border-2 border-[#FAF7F2] z-10 group-hover:scale-150 transition-transform"></div>
-                        <div className="flex justify-between items-start">
+	                {/* Timeline Display */}
+	                <div className="relative pl-8 space-y-12 before:content-[''] before:absolute before:left-[11px] before:top-0 before:w-[0.5px] before:h-full before:bg-[#B37D56]/20">
+	                  {customerEvents.length > 0 ? (
+	                    customerEvents.sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0)).map(event => (
+	                      <div key={event.id} className="relative group">
+	                        <div className="absolute left-[-21px] top-1.5 w-2 h-2 rounded-full bg-[#B37D56] border-2 border-[#FAF7F2] z-10 group-hover:scale-150 transition-transform"></div>
+	                        <div className="flex justify-between items-start">
                           <div>
                             <span className="text-[10px] font-bold text-[#A62121] uppercase tracking-[0.2em]">{event.time}</span>
                             <p className="mt-1 text-sm text-[#2F2F2F] chinese-font leading-relaxed">{event.description}</p>
                           </div>
                           <button 
-                            onClick={() => { deleteEvent(event.id); toast.show('事件已删除', 'info'); }}
+                            onClick={async () => {
+                              if (!id) return;
+                              try {
+                                await deleteEvent(id, event.id);
+                                toast.show('事件已删除', 'info');
+                              } catch {
+                                toast.show('删除失败，请稍后重试', 'error');
+                              }
+                            }}
                             className="opacity-0 group-hover:opacity-100 text-[#A62121]/30 hover:text-[#A62121] transition-all"
                           >
                             <Trash2 size={14} />

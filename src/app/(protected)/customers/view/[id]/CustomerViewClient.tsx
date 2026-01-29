@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -26,6 +26,11 @@ function CustomerViewPage({ id }: { id: string }) {
   const customers = useCustomerStore((state) => state.customers);
   const events = useCustomerStore((state) => state.events);
   const records = useCaseStore((state) => state.records);
+
+  useEffect(() => {
+    void useCustomerStore.getState().bootstrap();
+    void useCustomerStore.getState().loadCustomerEvents(id);
+  }, [id]);
 
   const customer = customers.find((c) => c.id === id);
   const customerRecords = records.filter((r) => r.customerId === id);

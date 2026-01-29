@@ -8,6 +8,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { getCorsOrigin, getJwtSecret } from "./config";
 import { createPrismaBundle } from "./prisma";
 import { authRoutes } from "./routes/auth";
+import { customerRoutes } from "./routes/customers";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -63,6 +64,7 @@ export function buildApp(options?: { databaseUrl?: string; logger?: boolean }) {
   app.get("/health", async () => ({ ok: true }));
 
   app.register(authRoutes, { prefix: "/api" });
+  app.register(customerRoutes, { prefix: "/api" });
 
   return app;
 }

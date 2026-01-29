@@ -600,25 +600,29 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
               </div>
 
               <button
-                onClick={() => {
+                onClick={async () => {
                   const name = quickName.trim();
                   if (!name) {
                     toast.show('请先填写客户姓名', 'warning');
                     return;
                   }
-                  const newId = addCustomer({
-                    id: `cust-${Math.random().toString(36).slice(2, 9)}`,
-                    name,
-                    gender: quickGender,
-                    tags: [],
-                    notes: '',
-                    customFields: {},
-                  });
-                  setCustomerId(newId);
-                  setQuickName('');
-                  setQuickGender('male');
-                  setShowQuickCustomerModal(false);
-                  toast.show('客户已创建并已自动选择', 'success');
+
+                  try {
+                    const newId = await addCustomer({
+                      name,
+                      gender: quickGender,
+                      tags: [],
+                      notes: '',
+                      customFields: {},
+                    });
+                    setCustomerId(newId);
+                    setQuickName('');
+                    setQuickGender('male');
+                    setShowQuickCustomerModal(false);
+                    toast.show('客户已创建并已自动选择', 'success');
+                  } catch {
+                    toast.show('创建失败，请稍后重试', 'error');
+                  }
                 }}
                 className="w-full h-12 bg-[#2F2F2F] text-white font-bold chinese-font tracking-[0.4em] rounded-[2px] hover:bg-black transition-all"
               >
