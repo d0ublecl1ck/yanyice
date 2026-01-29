@@ -1,7 +1,11 @@
 import { buildApp } from "./app";
-import { getPort } from "./config";
+import { getDatabaseUrl, getPort } from "./config";
+import { ensureDatabaseSchema } from "./db/ensureDatabaseSchema";
 
-const app = buildApp();
+const databaseUrl = getDatabaseUrl();
+await ensureDatabaseSchema(databaseUrl);
+
+const app = buildApp({ databaseUrl });
 const port = getPort();
 
 await app.listen({ port, host: "0.0.0.0" });

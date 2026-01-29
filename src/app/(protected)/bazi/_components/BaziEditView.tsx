@@ -32,6 +32,18 @@ import {
 
 const pad2 = (n: number) => n.toString().padStart(2, "0");
 
+const toBjIsoFromSolar = (solar: { y: number; m: number; d: number; h: number; min: number }) => {
+  return `${solar.y}-${pad2(solar.m)}-${pad2(solar.d)}T${pad2(solar.h)}:${pad2(solar.min)}:00+08:00`;
+};
+
+const nowBjIso = () => {
+  const now = new Date();
+  const bj = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+  return `${bj.getUTCFullYear()}-${pad2(bj.getUTCMonth() + 1)}-${pad2(bj.getUTCDate())}T${pad2(
+    bj.getUTCHours(),
+  )}:${pad2(bj.getUTCMinutes())}:00+08:00`;
+};
+
 type PickerItem = string | number | LocationNode;
 
 const PickerColumn = ({
@@ -799,7 +811,7 @@ export function BaziEditView({ id }: { id?: string }) {
 
   const [subject, setSubject] = useState("");
   const [customerId, setCustomerId] = useState("");
-  const [recordDate, setRecordDate] = useState(new Date().toISOString());
+  const [recordDate, setRecordDate] = useState(() => nowBjIso());
   const [gender, setGender] = useState<"male" | "female">("male");
   const [location, setLocation] = useState("请选择地区");
   const [bazi, setBazi] = useState<Partial<BaZiData>>({
@@ -845,26 +857,19 @@ export function BaziEditView({ id }: { id?: string }) {
   }, [id, records, customers]);
 
   const handleTimePickerConfirm = (data: BaziTimePickerConfirmData) => {
-    if (data.tab === "fourPillars") {
-      setBazi((prev) => ({
-        ...prev,
-        yearStem: data.fourPillars.yS,
-        yearBranch: data.fourPillars.yB,
-        monthStem: data.fourPillars.mS,
-        monthBranch: data.fourPillars.mB,
-        dayStem: data.fourPillars.dS,
-        dayBranch: data.fourPillars.dB,
-        hourStem: data.fourPillars.hS,
-        hourBranch: data.fourPillars.hB,
-        calendarType: "fourPillars",
-      }));
-      const dateStr = `${data.solar.y}-${pad2(data.solar.m)}-${pad2(data.solar.d)}T${pad2(data.solar.h)}:${pad2(data.solar.min)}:00`;
-      setRecordDate(new Date(dateStr).toISOString());
-    } else {
-      const dateStr = `${data.solar.y}-${pad2(data.solar.m)}-${pad2(data.solar.d)}T${pad2(data.solar.h)}:${pad2(data.solar.min)}:00`;
-      setRecordDate(new Date(dateStr).toISOString());
-      setBazi((prev) => ({ ...prev, calendarType: data.tab }));
-    }
+    setBazi((prev) => ({
+      ...prev,
+      yearStem: data.fourPillars.yS,
+      yearBranch: data.fourPillars.yB,
+      monthStem: data.fourPillars.mS,
+      monthBranch: data.fourPillars.mB,
+      dayStem: data.fourPillars.dS,
+      dayBranch: data.fourPillars.dB,
+      hourStem: data.fourPillars.hS,
+      hourBranch: data.fourPillars.hB,
+      calendarType: data.tab,
+    }));
+    setRecordDate(toBjIsoFromSolar(data.solar));
     toast.show("时间已更新", "info");
   };
 
@@ -897,6 +902,13 @@ export function BaziEditView({ id }: { id?: string }) {
   };
 
   const dateParts = useMemo(() => {
+    const m = recordDate.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+    if (m) {
+      const date = `${m[1]} / ${m[2]} / ${m[3]}`;
+      const time = `${m[4]}:${m[5]}`;
+      return { date, time };
+    }
+
     const d = new Date(recordDate);
     const date = `${d.getFullYear()} / ${pad2(d.getMonth() + 1)} / ${pad2(d.getDate())}`;
     const time = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
