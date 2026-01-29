@@ -11,6 +11,7 @@ import { authRoutes } from "./routes/auth";
 import { customerRoutes } from "./routes/customers";
 import { liuyaoRoutes } from "./routes/liuyao";
 import { recordRoutes } from "./routes/records";
+import { ruleRoutes } from "./routes/rules";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -69,6 +70,7 @@ export function buildApp(options?: { databaseUrl?: string; logger?: boolean }) {
   app.register(customerRoutes, { prefix: "/api" });
   app.register(liuyaoRoutes, { prefix: "/api" });
   app.register(recordRoutes, { prefix: "/api" });
+  app.register(ruleRoutes, { prefix: "/api" });
 
   return app;
 }

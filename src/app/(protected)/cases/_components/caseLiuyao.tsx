@@ -107,15 +107,6 @@ export function CaseLiuyao() {
                         {new Date(record.createdAt).toLocaleDateString()}
                       </div>
                       <div className="text-right flex items-center justify-end gap-2">
-                        <span
-                          className={`text-[9px] px-2 py-0.5 border font-bold ${
-                            record.verifiedStatus === "accurate"
-                              ? "border-[#8DA399] text-[#8DA399]"
-                              : "border-[#B37D56]/20 text-[#2F2F2F]/30"
-                          }`}
-                        >
-                          {record.verifiedStatus === "accurate" ? "已反馈: 准确" : "未反馈"}
-                        </span>
                         <Link
                           href={analysisHref}
                           className="text-[9px] px-2 py-0.5 border border-black/10 text-[#2F2F2F]/60 font-bold hover:border-[#A62121]/30 hover:text-[#A62121]"

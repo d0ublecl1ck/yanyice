@@ -7,6 +7,7 @@ import { Layers, Plus, Shield, ToggleLeft, ToggleRight, Trash2 } from "lucide-re
 import type { ModuleType } from "@/lib/types";
 import { rulesHref } from "@/lib/caseLinks";
 import { useRuleStore } from "@/stores/useRuleStore";
+import { useToastStore } from "@/stores/useToastStore";
 
 const moduleLabel: Record<ModuleType, string> = {
   liuyao: "六爻",
@@ -14,26 +15,51 @@ const moduleLabel: Record<ModuleType, string> = {
 };
 
 export default function RulesPageClient({ module }: { module: ModuleType }) {
-  const { rules, addRule, updateRule, deleteRule } = useRuleStore();
+  const rules = useRuleStore((s) => s.rules);
+  const status = useRuleStore((s) => s.status);
+  const addRule = useRuleStore((s) => s.addRule);
+  const updateRule = useRuleStore((s) => s.updateRule);
+  const deleteRule = useRuleStore((s) => s.deleteRule);
+  const showToast = useToastStore((s) => s.show);
 
   const [isAdding, setIsAdding] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
   const [newMsg, setNewMsg] = useState("");
 
   const filteredRules = useMemo(() => rules.filter((r) => r.module === module), [rules, module]);
 
-  const handleAdd = () => {
-    if (!newName || !newMsg) return;
-    addRule({
-      module,
-      name: newName,
-      enabled: true,
-      condition: "自定义条件",
-      message: newMsg,
-    });
-    setNewName("");
-    setNewMsg("");
-    setIsAdding(false);
+  const handleAdd = async () => {
+    if (isSaving) return;
+    if (!newName.trim()) {
+      showToast("请填写规则名称", "warning");
+      return;
+    }
+    if (!newMsg.trim()) {
+      showToast("请填写断诀内容", "warning");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await addRule({
+        module,
+        name: newName,
+        enabled: true,
+        condition: "自定义条件",
+        message: newMsg,
+      });
+      setNewName("");
+      setNewMsg("");
+      setIsAdding(false);
+      showToast("规则已保存", "success");
+    } catch {
+      showToast("保存失败，请稍后重试", "error");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -119,7 +145,8 @@ export default function RulesPageClient({ module }: { module: ModuleType }) {
             </button>
             <button
               onClick={handleAdd}
-              className="px-6 py-2 text-xs font-bold tracking-widest bg-[#A62121] text-white hover:bg-[#8B1A1A] transition-colors"
+              disabled={isSaving}
+              className="px-6 py-2 text-xs font-bold tracking-widest bg-[#A62121] text-white hover:bg-[#8B1A1A] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               保存
             </button>
@@ -136,10 +163,21 @@ export default function RulesPageClient({ module }: { module: ModuleType }) {
                   <div className="flex items-center justify-between">
                     <p className="font-bold text-[#2F2F2F] chinese-font">{rule.name}</p>
                     <button
-                      onClick={() => updateRule(rule.id, { enabled: !rule.enabled })}
+                      onClick={async () => {
+                        if (togglingId) return;
+                        setTogglingId(rule.id);
+                        try {
+                          await updateRule(rule.id, { enabled: !rule.enabled });
+                        } catch {
+                          showToast("更新失败，请稍后重试", "error");
+                        } finally {
+                          setTogglingId(null);
+                        }
+                      }}
+                      disabled={togglingId === rule.id}
                       className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest ${
                         rule.enabled ? "text-[#8DA399]" : "text-[#2F2F2F]/30"
-                      }`}
+                      } disabled:opacity-60 disabled:cursor-not-allowed`}
                     >
                       {rule.enabled ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
                       {rule.enabled ? "启用" : "停用"}
@@ -151,8 +189,20 @@ export default function RulesPageClient({ module }: { module: ModuleType }) {
                   </p>
                 </div>
                 <button
-                  onClick={() => deleteRule(rule.id)}
-                  className="text-[#A62121]/50 hover:text-[#A62121] transition-colors"
+                  onClick={async () => {
+                    if (deletingId) return;
+                    setDeletingId(rule.id);
+                    try {
+                      await deleteRule(rule.id);
+                      showToast("规则已删除", "info");
+                    } catch {
+                      showToast("删除失败，请稍后重试", "error");
+                    } finally {
+                      setDeletingId(null);
+                    }
+                  }}
+                  disabled={deletingId === rule.id}
+                  className="text-[#A62121]/50 hover:text-[#A62121] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                   title="删除规则"
                 >
                   <Trash2 size={18} />
@@ -162,7 +212,9 @@ export default function RulesPageClient({ module }: { module: ModuleType }) {
           </div>
         ) : (
           <div className="py-24 text-center">
-            <p className="text-[#2F2F2F]/20 chinese-font italic">当前模块暂无规则</p>
+            <p className="text-[#2F2F2F]/20 chinese-font italic">
+              {status === "loading" ? "正在加载规则..." : "当前模块暂无规则"}
+            </p>
           </div>
         )}
       </div>

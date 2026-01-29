@@ -7,6 +7,7 @@ import { Layout } from "@/components/Layout";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
+import { useRuleStore } from "@/stores/useRuleStore";
 import { useToastStore } from "@/stores/useToastStore";
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
@@ -20,6 +21,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const showToast = useToastStore((s) => s.show);
   const caseHasHydrated = useCaseStore((s) => s.hasHydrated);
   const customerHasHydrated = useCustomerStore((s) => s.hasHydrated);
+  const ruleHasHydrated = useRuleStore((s) => s.hasHydrated);
 
   useEffect(() => {
     if (!hasHydrated) return;
@@ -29,9 +31,10 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     if (!hasHydrated) return;
     if (status !== "authenticated") return;
-    if (!caseHasHydrated || !customerHasHydrated) return;
+    if (!caseHasHydrated || !customerHasHydrated || !ruleHasHydrated) return;
     void useCaseStore.getState().bootstrap();
     void useCustomerStore.getState().bootstrap();
+    void useRuleStore.getState().bootstrap();
     if (!accessToken) return;
     void syncLiuyaoFromApi(accessToken).catch(() => {
       showToast("六爻记录同步失败（可稍后重试）", "warning");
@@ -40,7 +43,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     void syncLiuyaoFromApi(accessToken).catch(() => {
       showToast("六爻记录同步失败（可稍后重试）", "warning");
     });
-  }, [accessToken, hasHydrated, status, caseHasHydrated, customerHasHydrated, showToast, syncLiuyaoFromApi]);
+  }, [accessToken, hasHydrated, status, caseHasHydrated, customerHasHydrated, ruleHasHydrated, showToast, syncLiuyaoFromApi]);
 
   if (!hasHydrated) return null;
   if (status !== "authenticated") return null;
