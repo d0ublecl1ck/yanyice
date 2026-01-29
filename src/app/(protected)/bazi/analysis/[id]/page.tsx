@@ -38,15 +38,152 @@ const getElByBranch = (branch: string): keyof typeof ELEMENT_STYLES => {
   return "earth";
 };
 
+const formatBjIsoToZhText = (iso: string) => {
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (!m) return iso;
+  const sec = m[6] ? `:${m[6]}` : "";
+  return `${m[1]}年${m[2]}月${m[3]}日 ${m[4]}:${m[5]}${sec}`;
+};
+
+function toStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((v): v is string => typeof v === "string");
+}
+
+type DerivedHiddenStem = { stem: string; tenGod: string };
+type DerivedPillarDetail = {
+  stem?: { name?: string; tenGod?: string | null };
+  branch?: {
+    name?: string;
+    hiddenStems?: {
+      main?: DerivedHiddenStem;
+      middle?: DerivedHiddenStem;
+      residual?: DerivedHiddenStem;
+    };
+  };
+  starLuck?: string;
+  selfSeat?: string;
+  kongWang?: string;
+  nayin?: string;
+};
+
+type DerivedBazi = {
+  dayMaster?: string;
+  baziText?: string;
+  zodiac?: string;
+  pillarsDetail?: {
+    year?: DerivedPillarDetail;
+    month?: DerivedPillarDetail;
+    day?: DerivedPillarDetail;
+    hour?: DerivedPillarDetail;
+  };
+  shenSha?: { year?: unknown; month?: unknown; day?: unknown; hour?: unknown };
+  decadeFortune?: { startDate?: string };
+};
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return Boolean(v) && typeof v === "object" && !Array.isArray(v);
+}
+
+function isDerivedPillarDetail(v: unknown): v is DerivedPillarDetail {
+  return isRecord(v);
+}
+
+function parseDerivedBazi(v: unknown): DerivedBazi | null {
+  if (!isRecord(v)) return null;
+  return v as DerivedBazi;
+}
+
 const transformToFullAnalysis = (params: {
   recordSubject: string;
   customerGender?: "male" | "female" | "other";
   baziData: BaZiData;
 }) => {
   const d = params.baziData;
+  const derived = parseDerivedBazi(d.derived ?? null);
+
+  const hasDerivedPillars = Boolean(
+    derived?.pillarsDetail?.year && derived?.pillarsDetail?.month && derived?.pillarsDetail?.day && derived?.pillarsDetail?.hour,
+  );
+
+  if (hasDerivedPillars) {
+    const pd = derived?.pillarsDetail ?? {};
+    const shenSha = derived?.shenSha ?? {};
+
+    const fromPillar = (label: string, p: unknown, sha: unknown, isDay?: boolean) => {
+      if (!isDerivedPillarDetail(p)) {
+        return {
+          label,
+          mainStar: isDay ? "日主" : "",
+          stem: "",
+          stemEl: "earth" as const,
+          branch: "",
+          branchEl: "earth" as const,
+          hiddenStems: [] as Array<{ s: string; g: string; e: keyof typeof ELEMENT_STYLES }>,
+          luck: "",
+          sitting: "",
+          void: "",
+          nayyin: "",
+          sha: toStringArray(sha),
+        };
+      }
+
+      const hidden = [
+        p.branch?.hiddenStems?.main,
+        p.branch?.hiddenStems?.middle,
+        p.branch?.hiddenStems?.residual,
+      ]
+        .filter(Boolean)
+        .map((hs) => ({
+          s: String((hs as DerivedHiddenStem).stem ?? ""),
+          g: String((hs as DerivedHiddenStem).tenGod ?? ""),
+          e: getElByStem(String((hs as DerivedHiddenStem).stem ?? "")),
+        }))
+        .filter((hs) => hs.s);
+
+      const shaList = toStringArray(sha);
+      const stem = String(p.stem?.name ?? "");
+      const branch = String(p.branch?.name ?? "");
+
+      return {
+        label,
+        mainStar: isDay ? "日主" : String(p.stem?.tenGod ?? ""),
+        stem,
+        stemEl: getElByStem(stem),
+        branch,
+        branchEl: getElByBranch(branch),
+        hiddenStems: hidden,
+        luck: String(p.starLuck ?? ""),
+        sitting: String(p.selfSeat ?? ""),
+        void: String(p.kongWang ?? ""),
+        nayyin: String(p.nayin ?? ""),
+        sha: shaList,
+      };
+    };
+
+    return {
+      subject: params.recordSubject,
+      solarDate: formatBjIsoToZhText(d.birthDate),
+      gender:
+        params.customerGender === "female"
+          ? "坤造"
+          : params.customerGender === "male"
+            ? "乾造"
+            : "命造",
+      pillars: [
+        fromPillar("年柱", pd.year, shenSha.year),
+        fromPillar("月柱", pd.month, shenSha.month),
+        fromPillar("日柱", pd.day, shenSha.day, true),
+        fromPillar("时柱", pd.hour, shenSha.hour),
+      ],
+      tgNotes: `日主：${String(derived?.dayMaster ?? "")}；八字：${String(derived?.baziText ?? "")}`,
+      dzNotes: `生肖：${String(derived?.zodiac ?? "")}；起运：${String(derived?.decadeFortune?.startDate ?? "")}`,
+    };
+  }
+
   return {
     subject: params.recordSubject,
-    solarDate: new Date(d.birthDate).toLocaleString("zh-CN"),
+    solarDate: formatBjIsoToZhText(d.birthDate),
     gender:
       params.customerGender === "female"
         ? "坤造"
