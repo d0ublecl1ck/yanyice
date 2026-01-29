@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently -n web,api -c cyan,magenta \"next dev\" \"bun --watch server/src/index.ts\"",
+    "dev": "next dev",
     "dev:api": "bun --watch server/src/index.ts",
+    "dev:a": "concurrently -n web,api -c cyan,magenta \"next dev\" \"bun --watch server/src/index.ts\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
