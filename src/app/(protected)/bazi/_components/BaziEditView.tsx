@@ -19,6 +19,7 @@ import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useToastStore } from "@/stores/useToastStore";
 import type { BaZiData } from "@/lib/types";
 import { BRANCHES, STEMS } from "@/lib/constants";
+import { deriveBaziPickerFromSolarTime, getNowButtonResult } from "@/lib/baziTimePicker";
 
 const PROVINCES = ["北京市", "上海市", "天津市", "广东省", "江苏省", "浙江省", "四川省"];
 const CITIES: Record<string, string[]> = {
@@ -39,65 +40,6 @@ const DISTRICTS: Record<string, string[]> = {
 };
 
 const pad2 = (n: number) => n.toString().padStart(2, "0");
-
-const lunarMonthNameFromNumber = (month: number) => {
-  if (month === 1) return "正月";
-  if (month === 11) return "冬月";
-  if (month === 12) return "腊月";
-  const map = ["", "正", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
-  if (month >= 2 && month <= 10) return `${map[month]}月`;
-  return `${month}月`;
-};
-
-const deriveNowFromTyme = (now: Date) => {
-  const solar = {
-    y: now.getFullYear(),
-    m: now.getMonth() + 1,
-    d: now.getDate(),
-    h: now.getHours(),
-    min: now.getMinutes(),
-  };
-
-  const solarTime = SolarTime.fromYmdHms(solar.y, solar.m, solar.d, solar.h, solar.min, 0);
-  return deriveFromSolarTime(solarTime);
-};
-
-const deriveFromSolarTime = (solarTime: SolarTime) => {
-  const sd = solarTime.getSolarDay();
-  const ymd = sd.toString().match(/(\d+)年(\d+)月(\d+)日/);
-  const time = solarTime.toString().match(/(\d+):(\d+):(\d+)/);
-  const solar = {
-    y: ymd ? Number(ymd[1]) : new Date().getFullYear(),
-    m: ymd ? Number(ymd[2]) : 1,
-    d: ymd ? Number(ymd[3]) : 1,
-    h: time ? Number(time[1]) : 0,
-    min: time ? Number(time[2]) : 0,
-  };
-
-  const lunarDay = sd.getLunarDay();
-  const lunarMonth = lunarDay.getLunarMonth();
-  const lunar = {
-    y: lunarMonth.getYear(),
-    m: lunarMonthNameFromNumber(lunarMonth.getMonth()),
-    d: lunarDay.getName(),
-    h: solar.h,
-    min: solar.min,
-  };
-
-  const eightChar = solarTime.getLunarHour().getEightChar();
-  const fourPillars = {
-    yS: eightChar.getYear().getHeavenStem().getName(),
-    yB: eightChar.getYear().getEarthBranch().getName(),
-    mS: eightChar.getMonth().getHeavenStem().getName(),
-    mB: eightChar.getMonth().getEarthBranch().getName(),
-    dS: eightChar.getDay().getHeavenStem().getName(),
-    dB: eightChar.getDay().getEarthBranch().getName(),
-    hS: eightChar.getHour().getHeavenStem().getName(),
-    hB: eightChar.getHour().getEarthBranch().getName(),
-  };
-
-  return { solar, lunar, fourPillars };
-};
 
 const PickerColumn = ({
   items,
@@ -380,13 +322,12 @@ const BaziTimePickerModal = ({
   }, [computeCandidates, fourPillars, isOpen, tab]);
 
   const handleNow = () => {
-    const now = new Date();
-    const derived = deriveNowFromTyme(now);
+    const { derived, shouldAutoConfirm, shouldAutoClose } = getNowButtonResult(new Date());
     setSolar(derived.solar);
     setLunar(derived.lunar);
     setFourPillars(derived.fourPillars);
-    onConfirm({ tab, ...derived } as BaziTimePickerConfirmData);
-    onClose();
+    if (shouldAutoConfirm) onConfirm({ tab, ...derived } as BaziTimePickerConfirmData);
+    if (shouldAutoClose) onClose();
   };
 
   if (!isOpen) return null;
@@ -614,7 +555,7 @@ const BaziTimePickerModal = ({
                 {fourPillarsCandidates.length > 0 ? (
                   <div className="space-y-2">
                     {fourPillarsCandidates.slice(0, 6).map((st, idx) => {
-                      const derived = deriveFromSolarTime(st);
+                      const derived = deriveBaziPickerFromSolarTime(st);
                       const label = `${derived.solar.y} / ${pad2(derived.solar.m)} / ${pad2(derived.solar.d)}  ${pad2(derived.solar.h)}:${pad2(derived.solar.min)}`;
                       return (
                         <button
@@ -663,7 +604,7 @@ const BaziTimePickerModal = ({
               if (tab === "fourPillars") {
                 const picked = fourPillarsCandidates[selectedCandidateIndex];
                 if (!picked) return;
-                const derived = deriveFromSolarTime(picked);
+                const derived = deriveBaziPickerFromSolarTime(picked);
                 onConfirm({ tab, ...derived } as BaziTimePickerConfirmData);
               } else {
                 onConfirm({ tab, solar, lunar, fourPillars } as BaziTimePickerConfirmData);
