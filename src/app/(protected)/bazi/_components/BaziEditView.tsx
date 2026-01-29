@@ -52,6 +52,60 @@ const PickerColumn = ({
   label: string;
   showDivider?: boolean;
 }) => {
+  const scrollerRef = React.useRef<HTMLDivElement>(null);
+  const rafRef = React.useRef<number | null>(null);
+  const settleTimerRef = React.useRef<number | null>(null);
+  const lastEmittedRef = React.useRef<string>(String(value));
+
+  const commitClosestToCenter = React.useCallback(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+
+    const scrollerRect = scroller.getBoundingClientRect();
+    const centerY = scrollerRect.top + scrollerRect.height / 2;
+    const buttons = scroller.querySelectorAll<HTMLButtonElement>("button[data-picker-item='1']");
+
+    let best: { dist: number; value: string } | null = null;
+    for (const btn of buttons) {
+      const rect = btn.getBoundingClientRect();
+      const btnCenter = rect.top + rect.height / 2;
+      const dist = Math.abs(btnCenter - centerY);
+      const v = btn.dataset.pickerValue ?? "";
+      if (!best || dist < best.dist) best = { dist, value: v };
+    }
+
+    if (!best) return;
+    if (best.value === lastEmittedRef.current) return;
+    lastEmittedRef.current = best.value;
+    onChange(typeof value === "number" ? Number(best.value) : best.value);
+  }, [onChange, value]);
+
+  const handleScroll = React.useCallback(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      if (settleTimerRef.current) window.clearTimeout(settleTimerRef.current);
+      settleTimerRef.current = window.setTimeout(() => {
+        commitClosestToCenter();
+      }, 120);
+    });
+  }, [commitClosestToCenter]);
+
+  React.useEffect(() => {
+    lastEmittedRef.current = String(value);
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const selector = `button[data-picker-item='1'][data-picker-value='${CSS.escape(String(value))}']`;
+    const btn = scroller.querySelector<HTMLButtonElement>(selector);
+    btn?.scrollIntoView({ block: "center", behavior: "auto" });
+  }, [value]);
+
+  React.useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (settleTimerRef.current) window.clearTimeout(settleTimerRef.current);
+    };
+  }, []);
+
   return (
     <div
       className={`flex flex-col items-center w-full relative ${
@@ -64,12 +118,18 @@ const PickerColumn = ({
       <div className="relative w-full h-44 flex items-center justify-center">
         <div className="absolute inset-x-0 top-[calc(50%-20px)] h-[0.5px] bg-[#B37D56]/30 z-0" />
         <div className="absolute inset-x-0 top-[calc(50%+20px)] h-[0.5px] bg-[#B37D56]/30 z-0" />
-        <div className="h-full overflow-y-auto no-scrollbar w-full snap-y snap-mandatory relative z-10">
+        <div
+          ref={scrollerRef}
+          onScroll={handleScroll}
+          className="h-full overflow-y-auto no-scrollbar w-full snap-y snap-mandatory relative z-10"
+        >
           <div className="py-20 flex flex-col items-center">
             {items.map((item) => (
               <button
                 key={item}
                 onClick={() => onChange(item)}
+                data-picker-item="1"
+                data-picker-value={String(item)}
                 className={`w-full py-2 text-center transition-all duration-300 snap-center chinese-font outline-none ${
                   item.toString() === value.toString()
                     ? "text-[#2F2F2F] font-bold text-base"
