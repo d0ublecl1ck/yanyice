@@ -2,6 +2,7 @@ import { GoogleGenAI, type GenerateContentResponse } from "@google/genai";
 import { NextResponse } from "next/server";
 
 import { parseChatRequestBody } from "@/server/gemini/chatRequest";
+import { DEFAULT_GEMINI_MODEL } from "@/server/gemini/defaults";
 
 export async function POST(req: Request) {
   const apiKey = process.env.API_KEY;
@@ -29,7 +30,7 @@ export async function POST(req: Request) {
 
   try {
     const response: GenerateContentResponse = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
+      model: parsed.model ?? DEFAULT_GEMINI_MODEL,
       contents,
       config: { systemInstruction: parsed.systemInstruction },
     });
@@ -40,4 +41,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Gemini chat failed" }, { status: 500 });
   }
 }
-

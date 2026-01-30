@@ -13,6 +13,7 @@ import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useChatStore, type Message } from "@/stores/useChatStore";
 import { useToastStore } from "@/stores/useToastStore";
+import { useAiConfigStore } from "@/stores/useAiConfigStore";
 
 const EMPTY_HISTORY: Message[] = [];
 
@@ -21,6 +22,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const showToast = useToastStore((s) => s.show);
   const accessToken = useAuthStore((s) => s.accessToken);
+  const aiModel = useAiConfigStore((s) => s.model);
   const syncLiuyaoFromApi = useCaseStore((s) => s.syncLiuyaoFromApi);
 
   const records = useCaseStore((state) => state.records);
@@ -101,6 +103,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       const text = await geminiChat({
         systemInstruction,
         messages,
+        model: aiModel,
       });
       addMessage(id, { role: "model", text: text || "...", timestamp: Date.now() });
     } catch (e) {

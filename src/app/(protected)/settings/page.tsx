@@ -1,18 +1,75 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Shield, Info, User, LogOut } from "lucide-react";
+import { Shield, Info, User, LogOut, Sparkles } from "lucide-react";
 
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useToastStore } from "@/stores/useToastStore";
+import { useAiConfigStore } from "@/stores/useAiConfigStore";
+import {
+  getDefaultAiConfig,
+  sanitizeAiModel,
+  sanitizeAiVendor,
+} from "@/lib/aiConfig";
 
 export default function Page() {
   const { user, logout } = useAuthStore();
   const router = useRouter();
+  const toast = useToastStore((s) => s.show);
+
+  const aiVendor = useAiConfigStore((s) => s.vendor);
+  const aiModel = useAiConfigStore((s) => s.model);
+  const aiHasHydrated = useAiConfigStore((s) => s.hasHydrated);
+  const setAiVendor = useAiConfigStore((s) => s.setVendor);
+  const setAiModel = useAiConfigStore((s) => s.setModel);
+  const resetAiConfig = useAiConfigStore((s) => s.reset);
+
+  const defaultAiConfig = useMemo(() => getDefaultAiConfig(), []);
+
+  const [vendorDraft, setVendorDraft] = useState(aiVendor);
+  const [modelDraft, setModelDraft] = useState(aiModel);
+  const [isDirty, setIsDirty] = useState(false);
+  const didInitRef = useRef(false);
+
+  useEffect(() => {
+    if (!aiHasHydrated) return;
+    if (didInitRef.current && isDirty) return;
+    didInitRef.current = true;
+    setVendorDraft(aiVendor);
+    setModelDraft(aiModel);
+  }, [aiHasHydrated, aiVendor, aiModel, isDirty]);
 
   const handleLogout = () => {
     logout();
     router.replace("/login");
+  };
+
+  const handleSaveAiConfig = () => {
+    const nextVendor = sanitizeAiVendor(vendorDraft);
+    if (!nextVendor) {
+      toast("厂家不能为空，且最多 48 字", "warning");
+      return;
+    }
+
+    const nextModel = sanitizeAiModel(modelDraft);
+    if (!nextModel) {
+      toast("模型不能为空，且最多 80 字", "warning");
+      return;
+    }
+
+    setAiVendor(nextVendor);
+    setAiModel(nextModel);
+    setIsDirty(false);
+    toast("AI 配置已保存", "success");
+  };
+
+  const handleResetAiConfig = () => {
+    resetAiConfig();
+    setVendorDraft(defaultAiConfig.vendor);
+    setModelDraft(defaultAiConfig.model);
+    setIsDirty(false);
+    toast("已恢复默认 AI 配置", "info");
   };
 
   return (
@@ -53,6 +110,92 @@ export default function Page() {
             </div>
             <div className="w-10 h-10 bg-[#2F2F2F] text-white flex items-center justify-center font-bold text-xl chinese-font">
               {user?.email?.charAt(0).toUpperCase()}
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-white p-8 border border-[#B37D56]/10 space-y-6">
+          <div className="flex items-center justify-between gap-3 border-b border-[#B37D56]/10 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-[#B37D56]/10 text-[#B37D56] rounded-none border border-[#B37D56]/20">
+                <Sparkles size={20} />
+              </div>
+              <h3 className="font-bold text-lg text-[#2F2F2F] chinese-font">AI 配置</h3>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleResetAiConfig}
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-[#B37D56]/20 text-[#2F2F2F] font-bold text-xs tracking-widest hover:bg-[#FAF7F2] transition-all chinese-font rounded-[2px]"
+                title="恢复默认 AI 配置"
+              >
+                恢复默认
+              </button>
+              <button
+                onClick={handleSaveAiConfig}
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#A62121] border border-[#A62121] text-white font-bold text-xs tracking-widest hover:bg-[#8B1A1A] transition-all chinese-font rounded-[2px]"
+                title="保存 AI 配置"
+              >
+                保存
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="bg-[#FAF7F2] p-4 rounded-none border border-[#B37D56]/5">
+              <p className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest mb-1">
+                提示
+              </p>
+              <p className="text-xs text-[#2F2F2F]/60 chinese-font">
+                这里用于配置「厂家」与「模型」的默认值，为后期接入 AI 对话与多厂家适配做准备。
+                当前仅会影响 Gemini 路由的模型选择。
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className="space-y-1">
+                <span className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+                  厂家
+                </span>
+                <input
+                  value={vendorDraft}
+                  onChange={(e) => {
+                    setVendorDraft(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  placeholder="google / openai / anthropic / ..."
+                  className="w-full px-3 py-2 bg-white border border-[#B37D56]/20 text-sm chinese-font rounded-none focus:outline-none focus:border-[#B37D56]/50"
+                  autoComplete="off"
+                />
+              </label>
+
+              <label className="space-y-1">
+                <span className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+                  模型
+                </span>
+                <input
+                  value={modelDraft}
+                  onChange={(e) => {
+                    setModelDraft(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  placeholder={defaultAiConfig.model}
+                  className="w-full px-3 py-2 bg-white border border-[#B37D56]/20 text-sm chinese-font rounded-none focus:outline-none focus:border-[#B37D56]/50"
+                  autoComplete="off"
+                />
+              </label>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-[#FAF7F2]/50 border border-[#B37D56]/5">
+              <div>
+                <p className="font-bold text-[#2F2F2F] chinese-font">当前生效</p>
+                <p className="text-xs text-[#2F2F2F]/40">
+                  厂家：{aiVendor}；模型：{aiModel}
+                </p>
+              </div>
+              <div className="text-[10px] text-[#2F2F2F]/40 uppercase tracking-widest">
+                {isDirty ? "未保存" : "已同步"}
+              </div>
             </div>
           </div>
         </section>

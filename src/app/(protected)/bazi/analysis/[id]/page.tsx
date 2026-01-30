@@ -11,6 +11,7 @@ import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useChatStore, type Message } from "@/stores/useChatStore";
 import { useToastStore } from "@/stores/useToastStore";
+import { useAiConfigStore } from "@/stores/useAiConfigStore";
 
 const ELEMENT_STYLES: Record<string, { color: string }> = {
   wood: { color: "#40de5a" },
@@ -278,6 +279,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const toast = useToastStore();
+  const aiModel = useAiConfigStore((state) => state.model);
 
   const records = useCaseStore((state) => state.records);
   const recordStatus = useCaseStore((state) => state.status);
@@ -328,6 +330,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       const text = await geminiChat({
         systemInstruction,
         messages,
+        model: aiModel,
       });
 
       addMessage(id, { role: "model", text: text || "...", timestamp: Date.now() });
