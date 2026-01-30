@@ -277,8 +277,10 @@ function BaziFortunePanel({ derived, birthDate }: { derived: DerivedBazi | null;
                     >
                       {stem || "—"}
                     </div>
+                    <div className="text-[10px] text-[#A62121] chinese-font font-bold whitespace-nowrap">
+                      {stemTenGod || "—"}
+                    </div>
                   </div>
-                  <div className="mt-1 text-[10px] text-[#A62121] chinese-font font-bold">{stemTenGod || "—"}</div>
 
                   <div className="mt-2 flex items-baseline justify-between gap-2">
                     <div
@@ -287,8 +289,10 @@ function BaziFortunePanel({ derived, birthDate }: { derived: DerivedBazi | null;
                     >
                       {branch || "—"}
                     </div>
+                    <div className="text-[10px] text-[#B37D56] chinese-font font-bold whitespace-nowrap">
+                      {branchTenGod || "—"}
+                    </div>
                   </div>
-                  <div className="mt-1 text-[10px] text-[#B37D56] chinese-font font-bold">{branchTenGod || "—"}</div>
                 </button>
               );
             })}
@@ -342,8 +346,10 @@ function BaziFortunePanel({ derived, birthDate }: { derived: DerivedBazi | null;
                     >
                       {stem || "—"}
                     </div>
+                    <div className="text-[10px] text-[#A62121] chinese-font font-bold whitespace-nowrap">
+                      {stemTenGod || "—"}
+                    </div>
                   </div>
-                  <div className="mt-1 text-[10px] text-[#A62121] chinese-font font-bold">{stemTenGod || "—"}</div>
 
                   <div className="mt-2 flex items-baseline justify-between gap-2">
                     <div
@@ -352,8 +358,10 @@ function BaziFortunePanel({ derived, birthDate }: { derived: DerivedBazi | null;
                     >
                       {branch || "—"}
                     </div>
+                    <div className="text-[10px] text-[#B37D56] chinese-font font-bold whitespace-nowrap">
+                      {branchTenGod || "—"}
+                    </div>
                   </div>
-                  <div className="mt-1 text-[10px] text-[#B37D56] chinese-font font-bold">{branchTenGod || "—"}</div>
                 </button>
               );
             })}
@@ -394,7 +402,9 @@ function BaziFortunePanel({ derived, birthDate }: { derived: DerivedBazi | null;
                     >
                       {stem || "—"}
                     </div>
-                    <div className="text-[10px] text-[#A62121] chinese-font font-bold">{stemTenGod || "—"}</div>
+                    <div className="text-[10px] text-[#A62121] chinese-font font-bold whitespace-nowrap">
+                      {stemTenGod || "—"}
+                    </div>
                   </div>
 
                   <div className="mt-1 flex items-baseline justify-between gap-2">
@@ -404,7 +414,9 @@ function BaziFortunePanel({ derived, birthDate }: { derived: DerivedBazi | null;
                     >
                       {branch || "—"}
                     </div>
-                    <div className="text-[10px] text-[#B37D56] chinese-font font-bold">{branchTenGod || "—"}</div>
+                    <div className="text-[10px] text-[#B37D56] chinese-font font-bold whitespace-nowrap">
+                      {branchTenGod || "—"}
+                    </div>
                   </div>
                 </div>
               );
