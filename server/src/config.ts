@@ -23,7 +23,8 @@ export function getPort(): number {
 export function getDatabaseUrl(): string {
   const moduleDir = path.dirname(fileURLToPath(import.meta.url));
   const repoRoot = path.resolve(moduleDir, "../..");
-  const defaultDbPath = path.resolve(moduleDir, "../prisma/dev.db");
+  // TODO(d0ublecl1ck): Make this default location configurable (env/config) for non-local environments.
+  const defaultDbPath = path.resolve("/Users/d0ublecl1ck/d0ublecl1ck_pkm/备份", "baghdad-v1.db");
   return normalizeDatabaseUrl(getEnv("DATABASE_URL") ?? `file:${defaultDbPath}`, repoRoot);
 }
 

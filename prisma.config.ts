@@ -25,7 +25,7 @@ export default defineConfig({
   schema: "server/prisma/schema.prisma",
   datasource: {
     url: normalizeDatabaseUrl(
-      process.env.DATABASE_URL ?? `file:${path.resolve(repoRoot, "server/prisma/dev.db")}`,
+      process.env.DATABASE_URL ?? `file:${path.resolve("/Users/d0ublecl1ck/d0ublecl1ck_pkm/备份", "baghdad-v1.db")}`,
     ),
   },
 });

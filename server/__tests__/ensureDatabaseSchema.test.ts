@@ -13,7 +13,6 @@ describe("ensureDatabaseSchema", () => {
   const databaseUrl = `file:${testDbPath}`;
 
   beforeAll(() => {
-    fs.mkdirSync(testDbDir, { recursive: true });
     process.env.AUTO_MIGRATE = "1";
   });
 
@@ -53,4 +52,3 @@ describe("ensureDatabaseSchema", () => {
     }
   });
 });
-
