@@ -91,7 +91,7 @@ export default function Page() {
           void (async () => {
             const name = createName.trim();
             if (!name) {
-              toast.show("请先填写客户姓名", "warning");
+              toast.show("请先填写缘主姓名", "warning");
               return;
             }
             setIsCreating(true);
@@ -103,7 +103,7 @@ export default function Page() {
                 notes: createNotes,
                 tags: createTags,
               });
-              toast.show("新客户已成功建档", "success");
+              toast.show("新缘主已成功建档", "success");
               closeCreateModal();
             } catch (e) {
               if (e instanceof ApiError) {
@@ -121,7 +121,7 @@ export default function Page() {
       <header className="flex justify-between items-end border-b border-[#B37D56]/10 pb-6">
         <div>
           <h2 className="text-3xl font-bold text-[#2F2F2F] chinese-font tracking-widest">
-            客户名录
+            缘主名录
           </h2>
           <p className="text-xs text-[#B37D56] font-bold mt-1 uppercase tracking-widest">
             Inscribed Customers ({filteredCustomers.length})
@@ -131,7 +131,7 @@ export default function Page() {
           onClick={openCreateModal}
           className="px-6 py-2 bg-[#A62121] text-white font-bold text-sm tracking-widest hover:bg-[#8B1A1A] transition-all rounded-[2px]"
         >
-          登记新客户
+          登记新缘主
         </button>
       </header>
 

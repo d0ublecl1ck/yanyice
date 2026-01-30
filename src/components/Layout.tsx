@@ -160,8 +160,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-2">
-          <SidebarItem href="/" icon={Home} label="首页工作台" active={pathname === '/'} collapsed={isSidebarCollapsed} />
-          <SidebarItem href="/customers" icon={Users} label="客户档案" active={pathname.startsWith('/customers')} collapsed={isSidebarCollapsed} />
+          <SidebarItem href="/" icon={Home} label="案头" active={pathname === '/'} collapsed={isSidebarCollapsed} />
+          <SidebarItem href="/customers" icon={Users} label="缘主档案" active={pathname.startsWith('/customers')} collapsed={isSidebarCollapsed} />
           
           <div className="mt-3 px-6 mb-1">
             {!isSidebarCollapsed && <p className="text-[10px] font-bold text-[#B37D56] uppercase tracking-widest opacity-40">Bazi Module</p>}
@@ -177,46 +177,46 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             }
             collapsed={isSidebarCollapsed}
           />
-          <SidebarItem
-            href="/bazi/rules"
-            icon={BaziRulesIcon}
-            label="八字断诀"
-            active={isBaziRulesActive}
-            collapsed={isSidebarCollapsed}
-          />
+	          <SidebarItem
+	            href="/bazi/rules"
+	            icon={BaziRulesIcon}
+	            label="八字断语"
+	            active={isBaziRulesActive}
+	            collapsed={isSidebarCollapsed}
+	          />
 
           <div className="mt-3 px-6 mb-1">
             {!isSidebarCollapsed && <p className="text-[10px] font-bold text-[#A62121] uppercase tracking-widest opacity-40">Liuyao Module</p>}
             {isSidebarCollapsed && <div className="h-[1px] bg-[#A62121]/10 w-full" />}
           </div>
-          <SidebarItem
-            href="/liuyao"
-            icon={LiuyaoExamplesIcon}
-            label="六爻卦例"
-            active={
-              pathname === "/liuyao" ||
-              pathname.startsWith("/liuyao/edit") ||
-              pathname.startsWith("/liuyao/new") ||
-              pathname.startsWith("/liuyao/analysis")
-            }
-            collapsed={isSidebarCollapsed}
-          />
-          <SidebarItem
-            href="/liuyao/rules"
-            icon={LiuyaoRulesIcon}
-            label="六爻断诀"
-            active={isLiuyaoRulesActive}
-            collapsed={isSidebarCollapsed}
-          />
+	          <SidebarItem
+	            href="/liuyao"
+	            icon={LiuyaoExamplesIcon}
+	            label="六爻卦谱"
+	            active={
+	              pathname === "/liuyao" ||
+	              pathname.startsWith("/liuyao/edit") ||
+	              pathname.startsWith("/liuyao/new") ||
+	              pathname.startsWith("/liuyao/analysis")
+	            }
+	            collapsed={isSidebarCollapsed}
+	          />
+	          <SidebarItem
+	            href="/liuyao/rules"
+	            icon={LiuyaoRulesIcon}
+	            label="六爻断辞"
+	            active={isLiuyaoRulesActive}
+	            collapsed={isSidebarCollapsed}
+	          />
 
           <div className="mt-3">
-            <SidebarItem
-              icon={Search}
-              label="全局搜索 (Ctrl+K)"
-              active={isSearchOpen}
-              collapsed={isSidebarCollapsed}
-              onClick={() => setIsSearchOpen(true)}
-            />
+	            <SidebarItem
+	              icon={Search}
+	              label="全册检索 (Ctrl+K)"
+	              active={isSearchOpen}
+	              collapsed={isSidebarCollapsed}
+	              onClick={() => setIsSearchOpen(true)}
+	            />
             <SidebarItem href="/export" icon={Download} label="数据同步" active={pathname === '/export'} collapsed={isSidebarCollapsed} />
             <SidebarItem href="/settings" icon={Settings} label="个人设置" active={pathname === '/settings'} collapsed={isSidebarCollapsed} />
           </div>
@@ -237,7 +237,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 onClick={() => setIsFabOpen(false)}
                 className="flex items-center gap-3 bg-white border border-[#B37D56]/20 px-4 py-3 shadow-lg hover:border-[#A62121] transition-all group rounded-none"
               >
-                <span className="text-xs font-bold text-[#2F2F2F] chinese-font tracking-widest group-hover:text-[#A62121]">登记客户</span>
+	                <span className="text-xs font-bold text-[#2F2F2F] chinese-font tracking-widest group-hover:text-[#A62121]">登记缘主</span>
                 <div className="w-10 h-10 bg-[#8DA399]/10 text-[#8DA399] flex items-center justify-center">
                   <UserPlus size={18} />
                 </div>

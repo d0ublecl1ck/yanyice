@@ -82,7 +82,7 @@ export function CaseAll({ initialFilter }: { initialFilter: CaseFilter }) {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="搜索咨询主题或客户姓名..."
+            placeholder="搜索咨询主题或缘主姓名..."
             className="w-full bg-white border border-[#B37D56]/10 pl-12 pr-6 py-3 outline-none focus:border-[#A62121] transition-all text-sm rounded-none shadow-sm"
           />
         </div>
@@ -110,7 +110,7 @@ export function CaseAll({ initialFilter }: { initialFilter: CaseFilter }) {
               .sort((a, b) => b.createdAt - a.createdAt)
               .map((record) => {
                 const customer = customers.find((c) => c.id === record.customerId);
-                const displayCustomerName = record.customerName ?? customer?.name ?? "未知客户";
+                const displayCustomerName = record.customerName ?? customer?.name ?? "未知缘主";
                 const href = recordEditHref(record.module, record.id);
                 return (
                   <Link

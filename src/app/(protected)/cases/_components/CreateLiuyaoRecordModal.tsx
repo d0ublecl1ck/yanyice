@@ -108,7 +108,7 @@ export function CreateLiuyaoRecordModal({
   return (
     <Modal
       open={open}
-      title="新建六爻卦例"
+      title="新建六爻卦谱"
       onClose={onClose}
       size="md"
       maxHeightClassName="max-h-[90vh]"
@@ -160,7 +160,7 @@ export function CreateLiuyaoRecordModal({
                   },
                 });
 
-                showToast("已创建六爻卦例", "success");
+                showToast("已创建六爻卦谱", "success");
                 onClose();
               } catch {
                 showToast("创建失败，请稍后重试", "error");
@@ -192,7 +192,7 @@ export function CreateLiuyaoRecordModal({
 
             <div className="space-y-2 group">
               <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
-                关联客户（可选）
+                关联缘主（可选）
               </label>
               <Select
                 value={customerId}

@@ -63,7 +63,7 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
 
 	  const handleSave = async () => {
 	    if (!name) {
-	      toast.show('请填写客户姓名', 'error');
+	      toast.show('请填写缘主姓名', 'error');
 	      return;
 	    }
 	    const formState = { name, gender, birthDate, birthTime, phone, notes, tags };
@@ -71,10 +71,10 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
 	    try {
 	      if (id) {
 	        await updateCustomer(id, buildUpdateCustomerPayload(formState));
-	        toast.show('客户资料已更新', 'success');
+	        toast.show('缘主资料已更新', 'success');
 	      } else {
 	        await addCustomer(buildCreateCustomerPayload(formState));
-	        toast.show('新客户已成功建档', 'success');
+	        toast.show('新缘主已成功建档', 'success');
 	      }
 	      router.push('/customers');
 	    } catch (e) {
@@ -116,7 +116,7 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
     <div className="space-y-10 relative">
       <header className="flex justify-between items-center border-b border-[#B37D56]/10 pb-6">
         <div>
-          <h2 className="text-3xl font-bold text-[#2F2F2F] chinese-font tracking-widest">{id ? '编辑客户资料' : '新客户登记'}</h2>
+          <h2 className="text-3xl font-bold text-[#2F2F2F] chinese-font tracking-widest">{id ? '编辑缘主资料' : '新缘主登记'}</h2>
           <p className="text-xs text-[#B37D56] font-bold mt-1 uppercase tracking-widest">Registry ID: {id || 'NEW'}</p>
         </div>
         <div className="flex gap-4">
@@ -142,8 +142,8 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
 
       <ConfirmDialog
         open={isDeleteOpen}
-        title="确认删除客户？"
-        description="此操作会移除客户资料及其关联记录，且不可撤销。"
+        title="确认删除缘主？"
+        description="此操作会移除缘主资料及其关联记录，且不可撤销。"
         confirmText="删除"
         cancelText="取消"
         onCancel={() => setIsDeleteOpen(false)}
@@ -152,7 +152,7 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
           void (async () => {
             try {
               await deleteCustomer(id);
-              toast.show('客户资料已移除', 'info');
+              toast.show('缘主资料已移除', 'info');
               router.push('/customers');
             } catch {
               toast.show('删除失败，请稍后重试', 'error');
@@ -256,7 +256,7 @@ export const CustomerEditView: React.FC<{ id?: string }> = ({ id }) => {
           <section className="bg-white p-8 border border-[#B37D56]/10">
             <div className="flex justify-between items-center mb-10">
               <h3 className="text-sm font-bold text-[#2F2F2F] tracking-[0.3em] uppercase border-l-4 border-[#B37D56] pl-4">大运大事记</h3>
-              {!id && <p className="text-[10px] text-[#B37D56] italic">登记保存客户后即可记录大事记</p>}
+              {!id && <p className="text-[10px] text-[#B37D56] italic">登记保存缘主后即可记录大事记</p>}
             </div>
 
             {id && (

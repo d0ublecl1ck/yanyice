@@ -37,7 +37,7 @@ export default function Page() {
       <header className="flex justify-between items-end">
         <div>
           <h2 className="text-4xl font-bold text-[#2F2F2F] chinese-font tracking-tight">
-            工作台首页
+            案头
           </h2>
           <p className="text-[#B37D56] font-medium mt-3 chinese-font opacity-80">
             欢迎回来，今日已记录{" "}
@@ -64,7 +64,7 @@ export default function Page() {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
         {[
           {
-            title: "客户",
+            title: "缘主档案",
             subtitle: "Customers",
             val: counts.customers,
             icon: Users,
@@ -80,7 +80,7 @@ export default function Page() {
             color: "#2F2F2F",
           },
           {
-            title: "六爻卦例",
+            title: "六爻卦谱",
             subtitle: "I Ching Cases",
             val: counts.liuyaoRecords,
             icon: BookOpen,
@@ -241,7 +241,7 @@ export default function Page() {
               className="block p-8 bg-white border border-[#B37D56]/20 group hover:border-[#A62121] transition-all rounded-none"
             >
               <p className="text-xl font-bold text-[#2F2F2F] group-hover:text-[#A62121] transition-colors chinese-font mb-1 tracking-widest">
-                添加客户
+                添加缘主
               </p>
               <p className="text-[#2F2F2F]/40 text-[10px] chinese-font">
                 Register New Customer
