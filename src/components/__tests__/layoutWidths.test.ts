@@ -48,9 +48,15 @@ describe("layout width constraints", () => {
   });
 
   test("bazi create modal avoids page-wide max width", async () => {
-    const source = await readFile("src/app/(protected)/cases/_components/caseBazi.tsx", "utf8");
-    expect(source).toContain("max-w-4xl");
-    expect(source).not.toContain("max-w-6xl");
+    const modalSource = await readFile("src/components/ui/Modal.tsx", "utf8");
+    const baziSource = await readFile(
+      "src/app/(protected)/cases/_components/CreateBaziRecordModal.tsx",
+      "utf8",
+    );
+
+    expect(modalSource).toContain('md: "max-w-md"');
+    expect(modalSource).not.toContain("max-w-6xl");
+    expect(baziSource).toContain('size="md"');
   });
 
   test("bazi new modal supports record tags", async () => {
@@ -59,6 +65,14 @@ describe("layout width constraints", () => {
     expect(source).toContain("输入标签，回车添加");
     expect(source).toContain("tags, setTags");
     expect(source).toContain("addTagsFromText");
+  });
+
+  test("bazi embedded new is single-column layout", async () => {
+    const source = await readFile("src/app/(protected)/bazi/_components/BaziEditView.tsx", "utf8");
+    expect(source).toContain('embedded ? "grid-cols-1 gap-6" : "grid-cols-1 md:grid-cols-2 gap-8"');
+    expect(source).toContain('embedded ? "" : "md:grid-cols-2"');
+    expect(source).toContain('embedded ? "flex flex-col gap-1" : "flex items-center gap-4"');
+    expect(source).toContain('className={`grid grid-cols-2 gap-3 items-center ${');
   });
 
   test("bazi edit/new primary button label differs", async () => {

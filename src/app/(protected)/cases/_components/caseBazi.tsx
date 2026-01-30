@@ -4,14 +4,14 @@ import React, { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Plus, Search, Calendar, ChevronRight, Hash, X } from "lucide-react";
+import { Plus, Search, Calendar, ChevronRight, Hash } from "lucide-react";
 
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import { newCaseHref, recordAnalysisHref, recordEditHref } from "@/lib/caseLinks";
 import type { BaZiData } from "@/lib/types";
 import { zodiacInfoFromBranch } from "@/lib/zodiac";
-import { BaziEditView } from "../../bazi/_components/BaziEditView";
+import { CreateBaziRecordModal } from "./CreateBaziRecordModal";
 import { CaseArchiveLayout } from "./CaseArchiveLayout";
 
 function BaziEightCharChops({ baziData }: { baziData?: BaZiData }) {
@@ -240,38 +240,7 @@ export function CaseBazi() {
         )}
       </CaseArchiveLayout>
 
-      {isCreateOpen ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="新建八字"
-          className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm p-4 flex items-center justify-center"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) closeCreate();
-          }}
-        >
-          <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-[4px] border border-[#B37D56]/20 shadow-none overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-[#B37D56]/10 flex justify-between items-center">
-              <p className="text-xs font-bold tracking-widest chinese-font text-[#2F2F2F] flex items-center gap-2">
-                <Hash size={16} />
-                新建八字
-              </p>
-              <button
-                type="button"
-                onClick={closeCreate}
-                className="text-[#2F2F2F]/20 hover:text-[#A62121] transition-colors"
-                aria-label="关闭"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="overflow-y-auto max-h-[90vh] p-4 md:p-6 bg-[#FAF7F2]">
-              <BaziEditView embedded />
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
+	      <CreateBaziRecordModal open={isCreateOpen} onClose={closeCreate} />
+	    </div>
+	  );
 }

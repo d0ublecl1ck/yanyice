@@ -973,12 +973,12 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
     return { date, time };
   }, [recordDate]);
 
-  return (
-    <div
-      className={`w-full max-w-none animate-in fade-in duration-500 ${
-        embedded ? "space-y-6 pb-6" : "space-y-8 pb-20"
-      }`}
-    >
+	  return (
+	    <div
+	      className={`w-full max-w-none animate-in fade-in duration-500 ${
+	        embedded ? "space-y-6" : "space-y-8 pb-20"
+	      }`}
+	    >
       {!embedded ? (
         <header className="flex items-center gap-4">
           <div className="w-10 h-10 bg-black text-white rounded-none flex items-center justify-center shrink-0 rotate-45">
@@ -995,15 +995,25 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
         </header>
       ) : null}
 
-      <div
-        className={`bg-white rounded-[4px] border border-[#B37D56]/20 shadow-none relative ${
-          embedded ? "p-6 md:p-8 space-y-8" : "p-10 space-y-12"
-        }`}
-      >
-        <div className="absolute top-0 right-0 w-24 h-24 border-r border-t border-[#B37D56]/10 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 border-l border-b border-[#B37D56]/10 pointer-events-none" />
-
-        <div className={`grid grid-cols-1 md:grid-cols-2 items-end ${embedded ? "gap-6" : "gap-8"}`}>
+	      <div
+	        className={
+	          embedded
+	            ? "space-y-8"
+	            : "bg-white rounded-[4px] border border-[#B37D56]/20 shadow-none relative p-10 space-y-12"
+	        }
+	      >
+	        {!embedded ? (
+	          <>
+	            <div className="absolute top-0 right-0 w-24 h-24 border-r border-t border-[#B37D56]/10 pointer-events-none" />
+	            <div className="absolute bottom-0 left-0 w-24 h-24 border-l border-b border-[#B37D56]/10 pointer-events-none" />
+	          </>
+	        ) : null}
+	
+	        <div
+	          className={`grid items-end ${
+	            embedded ? "grid-cols-1 gap-6" : "grid-cols-1 md:grid-cols-2 gap-8"
+	          }`}
+        >
           <div className="space-y-2">
             <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest ml-1">
               姓名
@@ -1096,7 +1106,11 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
           <p className="text-[10px] text-[#2F2F2F]/30 chinese-font ml-1">最多 50 个，每个最多 32 字。</p>
         </div>
 
-        <div className={`w-full flex flex-col md:flex-row md:items-stretch gap-4 ${embedded ? "" : ""}`}>
+        <div
+          className={`w-full flex flex-col gap-4 ${
+            embedded ? "" : "md:flex-row md:items-stretch"
+          }`}
+        >
           <div
             role="button"
             tabIndex={0}
@@ -1131,7 +1145,7 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
                     ))}
                   </div>
                 ) : (
-                  <>
+                  <div className={`${embedded ? "flex flex-col gap-1" : "flex items-center gap-4"}`}>
                     <span
                       className={`font-bold text-[#2F2F2F] chinese-font tracking-tight shrink-0 ${
                         embedded ? "text-xl" : "text-2xl"
@@ -1142,18 +1156,22 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
                     <span className="text-base font-bold text-[#B37D56] chinese-font opacity-60 shrink-0">
                       {dateParts.time}
                     </span>
-                  </>
+                  </div>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 md:w-[260px] md:shrink-0 items-center">
-            <button
-              type="button"
-              onClick={() => setBazi({ ...bazi, isDst: !bazi.isDst })}
-              className="w-full flex items-center gap-2 text-[10px] font-bold chinese-font tracking-widest text-[#2F2F2F]/40 hover:text-[#2F2F2F] transition-colors"
-            >
+	          <div
+	            className={`grid grid-cols-2 gap-3 items-center ${
+	              embedded ? "" : "md:w-[260px] md:shrink-0"
+	            }`}
+	          >
+	            <button
+	              type="button"
+	              onClick={() => setBazi({ ...bazi, isDst: !bazi.isDst })}
+	              className="w-full flex items-center gap-2 text-[10px] font-bold chinese-font tracking-widest text-[#2F2F2F]/40 hover:text-[#2F2F2F] transition-colors"
+	            >
               <div
                 className={`w-4 h-4 rounded-[1px] border flex items-center justify-center transition-all ${
                   bazi.isDst ? "bg-[#B37D56] border-[#B37D56]" : "border-[#B37D56]/20"
@@ -1175,10 +1193,10 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
               >
                 {bazi.isTrueSolarTime ? <Check size={10} className="text-white" /> : null}
               </div>
-              真太阳时
-            </button>
-          </div>
-        </div>
+	              真太阳时
+	            </button>
+	          </div>
+	        </div>
 
         <div
           className="flex items-center gap-3 cursor-pointer group"
@@ -1198,7 +1216,11 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
         </div>
 
         <div className={`pt-6 ${embedded ? "mt-2" : "pt-8"} border-t border-[#B37D56]/10`}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+          <div
+            className={`grid grid-cols-1 gap-4 items-start ${
+              embedded ? "" : "md:grid-cols-2"
+            }`}
+          >
             <div className={`grid gap-3 ${id ? "grid-cols-1" : "grid-cols-2"} items-center`}>
               <div className="relative w-full">
                 <select

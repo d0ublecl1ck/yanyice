@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { X, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { ChineseDatePicker } from "@/components/ChineseDatePicker";
 import { ChineseTimePicker } from "@/components/ChineseTimePicker";
 import { Select, type SelectOption } from "@/components/Select";
+import { Modal, ModalPrimaryButton, ModalSecondaryButton } from "@/components/ui/Modal";
 import { LiuyaoLineSvg } from "@/components/liuyao/LiuyaoLineSvg";
 import { calcLiuyaoGanzhiFromIso } from "@/lib/lunarGanzhi";
 import { recordEditHref } from "@/lib/caseLinks";
@@ -108,172 +109,19 @@ export function CreateLiuyaoRecordModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[220] flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-3xl rounded-[4px] border border-[#B37D56]/20 shadow-none overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="p-6 border-b border-[#B37D56]/10 flex justify-between items-center">
-          <p className="text-xs font-bold tracking-widest chinese-font text-[#2F2F2F]">
-            新建六爻卦例
-          </p>
-          <button
-            onClick={onClose}
-            className="text-[#2F2F2F]/20 hover:text-[#A62121]"
-            aria-label="关闭"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        <div className="p-8 grid grid-cols-1 lg:grid-cols-5 gap-8">
-          <div className="lg:col-span-3 space-y-8">
-            <section className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
-                <div className="space-y-2 group">
-                  <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
-                    关联客户（可选）
-                  </label>
-                  <Select
-                    value={customerId}
-                    onValueChange={(v) => setCustomerId(String(v))}
-                    emptyLabel="-- 不绑定 --"
-                    options={customers.map((c) => ({ value: c.id, label: c.name }))}
-                  />
-                </div>
-
-                <div className="space-y-2 group">
-                  <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
-                    咨询主题
-                  </label>
-                  <input
-                    type="text"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    placeholder="如：问来年财运..."
-                    className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-2 outline-none focus:border-[#A62121] transition-colors chinese-font font-bold rounded-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
-                <ChineseDatePicker label="起卦日期" value={dateIso} onChange={setDateIso} />
-                <ChineseTimePicker label="起卦时间" value={timeHHmm} onChange={setTimeHHmm} />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
-                    月建
-                  </label>
-                  <div className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-1.5 font-bold chinese-font">
-                    {monthBranch}月
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
-                    日辰
-                  </label>
-                  <div className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-1.5 font-bold chinese-font">
-                    {dayBranch}日
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section className="space-y-4">
-              <h3 className="text-[10px] text-[#B37D56] font-bold uppercase tracking-[0.4em]">
-                Tags（可选）
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {tags.map((t) => (
-                  <span
-                    key={t}
-                    className="text-[10px] bg-[#FAF7F2] text-[#2F2F2F] px-2 py-1 border border-[#B37D56]/10 flex items-center gap-1"
-                  >
-                    {t}{" "}
-                    <button
-                      onClick={() => setTags(tags.filter((tag) => tag !== t))}
-                      className="text-[#A62121] hover:font-bold"
-                      aria-label={`移除标签 ${t}`}
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key !== "Enter") return;
-                    const next = newTag.trim();
-                    if (!next) return;
-                    setTags((prev) => (prev.includes(next) ? prev : [...prev, next]));
-                    setNewTag("");
-                  }}
-                  placeholder="新增标签"
-                  className="flex-1 bg-transparent border-b border-[#2F2F2F]/10 py-1 text-xs outline-none focus:border-[#A62121]"
-                />
-                <button
-                  onClick={() => {
-                    const next = newTag.trim();
-                    if (!next) return;
-                    setTags((prev) => (prev.includes(next) ? prev : [...prev, next]));
-                    setNewTag("");
-                  }}
-                  className="text-[#A62121]"
-                  aria-label="添加标签"
-                >
-                  <Plus size={18} />
-                </button>
-              </div>
-            </section>
-          </div>
-
-          <div className="lg:col-span-2 space-y-6">
-            <section className="bg-[#FAF7F2]/40 p-6 border border-[#B37D56]/10 rounded-none">
-              <h3 className="text-center text-[10px] text-[#B37D56] mb-6 tracking-[0.5em] font-bold uppercase">
-                六爻（自下而上）
-              </h3>
-              <div className="flex flex-col-reverse gap-3 items-stretch">
-                {lines.map((line, idx) => (
-                  <div
-                    key={idx}
-                    className="grid grid-cols-[3rem_minmax(0,1fr)_7rem] items-center gap-3 py-2 px-3 border border-transparent hover:bg-black/[0.01]"
-                  >
-                    <span className="text-[9px] font-bold text-[#2F2F2F]/20 chinese-font">
-                      {LINE_LABELS[idx] ?? `爻${idx + 1}`}
-                    </span>
-                    <div className="flex justify-center min-w-0">
-                      <LiuyaoLineSvg
-                        line={line}
-                        className="h-6 w-full max-w-[160px]"
-                        lineColor="#2F2F2F"
-                        markColor="#A62121"
-                      />
-                    </div>
-                    <Select
-                      aria-label={`第 ${idx + 1} 爻`}
-                      value={line}
-                      onValueChange={(v) => setLineAtIndex(idx, v as LineType)}
-                      options={LINE_OPTIONS}
-                      size="sm"
-                    />
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
-        </div>
-
-        <div className="p-6 border-t border-[#B37D56]/10 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-6 py-2 border border-[#B37D56]/20 text-[#2F2F2F] text-[10px] font-bold tracking-widest uppercase rounded-[2px] hover:bg-[#FAF7F2] transition-all"
-          >
-            取消
-          </button>
-          <button
+    <Modal
+      open={open}
+      title="新建六爻卦例"
+      onClose={onClose}
+      size="md"
+      maxHeightClassName="max-h-[90vh]"
+      scrollBody
+      hideScrollbar
+      bodyClassName="p-6"
+      footer={
+        <div className="flex justify-end gap-3">
+          <ModalSecondaryButton onClick={onClose}>取消</ModalSecondaryButton>
+          <ModalPrimaryButton
             disabled={isSubmitting}
             onClick={async () => {
               if (!accessToken) {
@@ -324,12 +172,150 @@ export function CreateLiuyaoRecordModal({
                 setIsSubmitting(false);
               }
             }}
-            className="px-8 py-2 bg-[#2F2F2F] text-white text-[10px] font-bold tracking-widest uppercase rounded-[2px] hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? "创建中..." : "创建"}
-          </button>
+          </ModalPrimaryButton>
         </div>
+      }
+    >
+      <div className="space-y-8">
+        <section className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+            <div className="space-y-2 group">
+              <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+                咨询主题
+              </label>
+              <input
+                type="text"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder="如：问来年财运..."
+                className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-2 outline-none focus:border-[#A62121] transition-colors chinese-font font-bold rounded-none"
+              />
+            </div>
+
+            <div className="space-y-2 group">
+              <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+                关联客户（可选）
+              </label>
+              <Select
+                value={customerId}
+                onValueChange={(v) => setCustomerId(String(v))}
+                emptyLabel="-- 不绑定 --"
+                options={customers.map((c) => ({ value: c.id, label: c.name }))}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+            <ChineseDatePicker label="起卦日期" value={dateIso} onChange={setDateIso} />
+            <ChineseTimePicker label="起卦时间" value={timeHHmm} onChange={setTimeHHmm} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+                月建
+              </label>
+              <div className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-1.5 font-bold chinese-font">
+                {monthBranch}月
+              </div>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+                日辰
+              </label>
+              <div className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-1.5 font-bold chinese-font">
+                {dayBranch}日
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <h3 className="text-[10px] text-[#B37D56] font-bold uppercase tracking-[0.4em]">
+            Tags（可选）
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {tags.map((t) => (
+              <span
+                key={t}
+                className="text-[10px] bg-[#FAF7F2] text-[#2F2F2F] px-2 py-1 border border-[#B37D56]/10 flex items-center gap-1"
+              >
+                {t}{" "}
+                <button
+                  onClick={() => setTags(tags.filter((tag) => tag !== t))}
+                  className="text-[#A62121] hover:font-bold"
+                  aria-label={`移除标签 ${t}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newTag}
+              onChange={(e) => setNewTag(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key !== "Enter") return;
+                const next = newTag.trim();
+                if (!next) return;
+                setTags((prev) => (prev.includes(next) ? prev : [...prev, next]));
+                setNewTag("");
+              }}
+              placeholder="新增标签"
+              className="flex-1 bg-transparent border-b border-[#2F2F2F]/10 py-1 text-xs outline-none focus:border-[#A62121]"
+            />
+            <button
+              onClick={() => {
+                const next = newTag.trim();
+                if (!next) return;
+                setTags((prev) => (prev.includes(next) ? prev : [...prev, next]));
+                setNewTag("");
+              }}
+              className="text-[#A62121]"
+              aria-label="添加标签"
+            >
+              <Plus size={18} />
+            </button>
+          </div>
+        </section>
+
+        <section className="bg-[#FAF7F2]/40 p-6 border border-[#B37D56]/10 rounded-none">
+          <h3 className="text-center text-[10px] text-[#B37D56] mb-6 tracking-[0.5em] font-bold uppercase">
+            六爻（自下而上）
+          </h3>
+          <div className="flex flex-col-reverse gap-3 items-stretch">
+            {lines.map((line, idx) => (
+              <div
+                key={idx}
+                className="grid grid-cols-[3rem_minmax(0,1fr)_7rem] items-center gap-3 py-2 px-3 border border-transparent hover:bg-black/[0.01]"
+              >
+                <span className="text-[9px] font-bold text-[#2F2F2F]/20 chinese-font">
+                  {LINE_LABELS[idx] ?? `爻${idx + 1}`}
+                </span>
+                <div className="flex justify-center min-w-0">
+                  <LiuyaoLineSvg
+                    line={line}
+                    className="h-6 w-full max-w-[160px]"
+                    lineColor="#2F2F2F"
+                    markColor="#A62121"
+                  />
+                </div>
+                <Select
+                  aria-label={`第 ${idx + 1} 爻`}
+                  value={line}
+                  onValueChange={(v) => setLineAtIndex(idx, v as LineType)}
+                  options={LINE_OPTIONS}
+                  size="sm"
+                />
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
-    </div>
+    </Modal>
   );
 }
