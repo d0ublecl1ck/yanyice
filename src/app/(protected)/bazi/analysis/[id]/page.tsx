@@ -91,6 +91,9 @@ type DerivedBazi = {
       endYear?: number;
       startAge?: number;
       endAge?: number;
+      stemTenGod?: string;
+      branchTenGods?: string[];
+      branchHiddenStems?: string[];
       years?: Array<{
         year?: number;
         gz?: string;
