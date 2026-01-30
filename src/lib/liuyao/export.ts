@@ -1,4 +1,4 @@
-import { ANIMALS, LINE_SYMBOLS } from "@/lib/constants";
+import { ANIMALS } from "@/lib/constants";
 import type { LiuyaoPaipan } from "@/lib/liuyao/paipan";
 
 type ExportChatMessage = { role: "user" | "model"; text: string };
@@ -27,6 +27,18 @@ const mdTable = (headers: string[], rows: string[][]) => {
   return [headerLine, sepLine, ...rowLines].join("\n");
 };
 
+const yaoLabelByPosFromTop = (posFromTop: number) =>
+  (["上爻", "五爻", "四爻", "三爻", "二爻", "初爻"] as const)[posFromTop] ?? `${posFromTop + 1}爻`;
+
+const posLabelByPosFromTop = (posFromTop: number) =>
+  (["上", "五", "四", "三", "二", "初"] as const)[posFromTop] ?? `${posFromTop + 1}`;
+
+const getSixGodText = (posFromTop: number, fallbackIdx: number, sixGod: string | null) =>
+  sixGod ?? ANIMALS[(fallbackIdx ?? posFromTop) % 6] ?? ANIMALS[0];
+
+const formatShenSha = (items: Array<{ name: string; branch: string }>) =>
+  items.map((it) => `${it.name}在${it.branch}`).join("、");
+
 export function formatLiuyaoExportText(params: {
   id: string;
   subject: string;
@@ -42,18 +54,15 @@ export function formatLiuyaoExportText(params: {
 }): string {
   const lines: string[] = [];
 
-  lines.push("# 六爻卦例导出");
+  lines.push("一、 基础信息");
   lines.push("");
-  lines.push(`- ID：${params.id}`);
-  lines.push(`- 题目：${params.subject}`);
-  if (params.customerName) lines.push(`- 客户：${params.customerName}`);
-  if (params.solarDate) lines.push(`- 时间：${params.solarDate}`);
-  if (params.monthBranch) lines.push(`- 月建：${params.monthBranch}`);
-  if (params.dayBranch) lines.push(`- 日辰：${params.dayBranch}`);
+  lines.push(`- 占事：${params.subject}`);
+  lines.push("- 排卦工具：（未记录）");
+  if (params.solarDate) lines.push(`- 起卦时间：${params.solarDate}`);
 
   if (params.fourPillars) {
     const fp = params.fourPillars;
-    lines.push(`- 四柱：${fp.yearGanzhi} ${fp.monthGanzhi} ${fp.dayGanzhi} ${fp.hourGanzhi}`);
+    lines.push(`- 干支：${fp.yearGanzhi}年 ${fp.monthGanzhi}月 ${fp.dayGanzhi}日 ${fp.hourGanzhi}时`);
     if (fp.xunKong) lines.push(`- 旬空：${fp.xunKong}`);
   }
 
@@ -73,71 +82,102 @@ export function formatLiuyaoExportText(params: {
           : null;
 
     const baseTitle = p.base.name ? joinNonEmpty([p.base.name, palace ? `（${palace}）` : null], " ") : null;
-    if (baseTitle) lines.push(`- 本卦：${baseTitle}`);
     const changedTitle = p.changed.name ? joinNonEmpty([p.changed.name, changedPalace ? `（${changedPalace}）` : null], " ") : null;
-    if (changedTitle) lines.push(`- 变卦：${changedTitle}`);
+    void baseTitle;
+    void changedTitle;
   }
 
+  const sha = params.shenSha?.items ?? [];
+  if (sha.length) lines.push(`- 神煞：${formatShenSha(sha)}`);
+
+  lines.push("");
+  lines.push("二、 卦象结构");
+  lines.push("");
+  if (params.paipan?.base.name) lines.push(`- 本卦：${params.paipan.base.name}（${params.paipan.palace.name ?? "未知"}宫）`);
+  if (params.paipan?.changed.name)
+    lines.push(`- 变卦：${params.paipan.changed.name}（${params.paipan.changedPalace.name ?? "未知"}宫）`);
+
+  if (params.paipan) {
+    const moving = params.paipan.lines.filter((l) => l.isMoving);
+    if (moving.length) {
+      const desc = moving
+        .map((l) => {
+          const sixGod = l.sixGod ?? ANIMALS[l.indexFromBottom % 6] ?? "六神";
+          const basePosFromTop = 5 - l.indexFromBottom;
+          const baseYao = yaoLabelByPosFromTop(basePosFromTop);
+          const changedYao = baseYao;
+          return `${sixGod}位的${l.relative}${l.najia.text}${l.najia.element}爻（本卦${baseYao}）发动，变为${l.changedRelative}${l.changedNajia.text}${l.changedNajia.element}爻（变卦${changedYao}）`;
+        })
+        .join("；");
+      lines.push(`- 动爻：${desc}`);
+    } else {
+      lines.push("- 动爻：（无）");
+    }
+  }
+
+  lines.push("");
+  lines.push("三、 六神与爻位详解");
   lines.push("");
 
   if (params.paipan) {
-    lines.push("## 排盘（上六→初六）");
-    lines.push("");
     const fromTop = [...params.paipan.lines].reverse();
 
-    const rows = fromTop.map((l, idxFromTop) => {
-      const pos = `${6 - idxFromTop}爻`;
-      const sixGodText = l.sixGod ?? ANIMALS[idxFromTop % 6];
+    const baseTitle = params.paipan.base.name
+      ? `1. 本卦：${params.paipan.base.name}（${params.paipan.palace.name ?? "未知"}宫）`
+      : "1. 本卦：（未知）";
+    lines.push(baseTitle);
+    lines.push("");
 
-      const baseSymbol = `${l.symbol}${l.isMoving ? ` ${markToText(l.moveMark)}` : ""}`.trim();
-      const baseShiying = joinNonEmpty([l.isShi ? "世" : null, l.isYing ? "应" : null], "");
-      const baseCell = joinNonEmpty(
-        [
-          joinNonEmpty([l.relative, `${l.najia.text}${l.najia.element}`]),
-          baseSymbol,
-          baseShiying ? `(${baseShiying})` : null,
-        ],
-        "<br/>",
-      );
-
-      const changedSymbol = (LINE_SYMBOLS[l.changedLineType]?.base ?? "").trim();
-      const changedShiying = joinNonEmpty([l.changedIsShi ? "世" : null, l.changedIsYing ? "应" : null], "");
-      const changedCell = joinNonEmpty(
-        [
-          joinNonEmpty([l.changedRelative, `${l.changedNajia.text}${l.changedNajia.element}`]),
-          changedSymbol,
-          changedShiying ? `(${changedShiying})` : null,
-        ],
-        "<br/>",
-      );
-
-      return [pos, sixGodText, baseCell, changedCell];
+    const baseRows = fromTop.map((l, posFromTop) => {
+      const sixGod = getSixGodText(posFromTop, posFromTop, l.sixGod);
+      const yao = yaoLabelByPosFromTop(posFromTop);
+      const zhi = l.najia.branch;
+      const statusParts: Array<string | null> = [
+        l.isMoving ? `发动${l.moveMark ? `(${markToText(l.moveMark)})` : ""}` : "静爻",
+        l.isShi ? "世" : null,
+        l.isYing ? "应" : null,
+        l.isMoving ? `化${l.changedRelative}` : null,
+      ];
+      const status = joinNonEmpty(statusParts, "、");
+      const pos = posLabelByPosFromTop(posFromTop);
+      return [sixGod, yao, l.relative, zhi, status, pos];
     });
 
-    lines.push(
-      mdTable(["位置", "六神", "本卦", "变卦"], rows),
-    );
+    lines.push(mdTable(["六神", "爻位", "六亲", "地支", "状态", "位置"], baseRows));
+    lines.push("");
+
+    const changedTitle = params.paipan.changed.name
+      ? `2. 变卦：${params.paipan.changed.name}（${params.paipan.changedPalace.name ?? "未知"}宫）`
+      : "2. 变卦：（未知）";
+    lines.push(changedTitle);
+    lines.push("");
+
+    const changedRows = fromTop.map((l, posFromTop) => {
+      const sixGod = getSixGodText(posFromTop, posFromTop, l.sixGod);
+      const yao = yaoLabelByPosFromTop(posFromTop);
+      const zhi = l.changedNajia.branch;
+      const statusParts: Array<string | null> = [
+        l.isMoving ? "化爻" : "静爻",
+        l.changedIsShi ? "世" : null,
+        l.changedIsYing ? "应" : null,
+      ];
+      const status = joinNonEmpty(statusParts, "、");
+      const pos = posLabelByPosFromTop(posFromTop);
+      return [sixGod, yao, l.changedRelative, zhi, status, pos];
+    });
+
+    lines.push(mdTable(["六神", "爻位", "六亲", "地支", "状态", "位置"], changedRows));
     lines.push("");
   }
 
-  lines.push("## 神煞");
-  lines.push("");
-  const sha = params.shenSha?.items ?? [];
-  if (sha.length) {
-    lines.push(sha.map((it) => `${it.name}—${it.branch}`).join("、"));
-  } else {
-    lines.push("（无/暂缺）");
-  }
-  lines.push("");
-
-  lines.push("## 断语简析");
+  lines.push("四、 断语简析");
   lines.push("");
   lines.push(params.notes?.trim() ? params.notes.trim() : "（无）");
   lines.push("");
 
   const chat = params.chatHistory ?? [];
   if (chat.length) {
-    lines.push("## 对话记录");
+    lines.push("五、 对话记录");
     lines.push("");
     const chatRows = chat.map((m) => [
       m.role === "user" ? "我" : "助手",
