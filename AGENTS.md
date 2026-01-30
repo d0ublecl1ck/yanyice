@@ -5,3 +5,4 @@
 - Use 0-2px border-radius for the overall frame; reserve 4px for key interactive elements.
 - Use hairline dividers for separation; avoid relying on shadows for structure.
 - Run `bun lint` after modifications and fix all lint errors.
+- When given reference images, use them only for fields/layout and UI behavior; do not copy their styling; match the styling of existing project components and pages.
