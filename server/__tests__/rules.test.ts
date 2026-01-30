@@ -108,66 +108,9 @@ describe("rule module", () => {
     expect(deleteRes.statusCode).toBe(204);
   });
 
-  it("supports seeding default rules", async () => {
-    const email = `seed${Date.now()}@example.com`;
-    const password = "password123";
-
-    const registerRes = await app.inject({
-      method: "POST",
-      url: "/api/auth/register",
-      payload: { email, password },
-    });
-    expect(registerRes.statusCode).toBe(201);
-    const { accessToken } = registerRes.json() as { accessToken: string };
-
-    const seedLiuyaoRes = await app.inject({
-      method: "POST",
-      url: "/api/rules/seed",
-      headers: { authorization: `Bearer ${accessToken}` },
-      payload: { module: "liuyao" },
-    });
-    expect(seedLiuyaoRes.statusCode).toBe(200);
-    const seedLiuyaoBody = seedLiuyaoRes.json() as { createdCount: number };
-    expect(seedLiuyaoBody.createdCount).toBe(6);
-
-    const seedLiuyaoAgainRes = await app.inject({
-      method: "POST",
-      url: "/api/rules/seed",
-      headers: { authorization: `Bearer ${accessToken}` },
-      payload: { module: "liuyao" },
-    });
-    expect(seedLiuyaoAgainRes.statusCode).toBe(200);
-    const seedLiuyaoAgainBody = seedLiuyaoAgainRes.json() as { createdCount: number };
-    expect(seedLiuyaoAgainBody.createdCount).toBe(0);
-
-    const listLiuyaoRes = await app.inject({
-      method: "GET",
-      url: "/api/rules?module=liuyao",
-      headers: { authorization: `Bearer ${accessToken}` },
-    });
-    expect(listLiuyaoRes.statusCode).toBe(200);
-    const listLiuyaoBody = listLiuyaoRes.json() as { rules: Array<{ module: string }> };
-    expect(listLiuyaoBody.rules).toHaveLength(6);
-    expect(listLiuyaoBody.rules.every((r) => r.module === "liuyao")).toBe(true);
-
-    const seedAllRes = await app.inject({
-      method: "POST",
-      url: "/api/rules/seed",
-      headers: { authorization: `Bearer ${accessToken}` },
-      payload: {},
-    });
-    expect(seedAllRes.statusCode).toBe(200);
-    const seedAllBody = seedAllRes.json() as { createdCount: number };
-    expect(seedAllBody.createdCount).toBe(6);
-
-    const listAllRes = await app.inject({
-      method: "GET",
-      url: "/api/rules",
-      headers: { authorization: `Bearer ${accessToken}` },
-    });
-    expect(listAllRes.statusCode).toBe(200);
-    const listAllBody = listAllRes.json() as { rules: Array<{ module: string }> };
-    expect(listAllBody.rules).toHaveLength(12);
+  it("does not expose rule seeding endpoint", async () => {
+    const res = await app.inject({ method: "POST", url: "/api/rules/seed" });
+    expect(res.statusCode).toBe(404);
   });
 
   it("exposes OpenAPI paths for rules", async () => {
@@ -175,6 +118,6 @@ describe("rule module", () => {
     expect(res.statusCode).toBe(200);
     const body = res.json() as { paths?: Record<string, unknown> };
     expect(body.paths?.["/api/rules"]).toBeDefined();
-    expect(body.paths?.["/api/rules/seed"]).toBeDefined();
+    expect(body.paths?.["/api/rules/seed"]).toBeUndefined();
   });
 });

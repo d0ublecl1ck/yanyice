@@ -2,7 +2,6 @@ import type { FastifyInstance } from "fastify";
 import { Type, type Static } from "@sinclair/typebox";
 
 import type { ModuleType } from "@prisma/client";
-import { getSeedRules } from "../domain/rules/seedRules";
 
 const ErrorResponse = Type.Object({
   code: Type.String(),
@@ -34,12 +33,6 @@ const UpdateRuleBody = Type.Partial(CreateRuleBody);
 
 type CreateRuleBodyType = Static<typeof CreateRuleBody>;
 type UpdateRuleBodyType = Static<typeof UpdateRuleBody>;
-
-const SeedRulesBody = Type.Object({
-  module: Type.Optional(Type.Union([Type.Literal("liuyao"), Type.Literal("bazi")])),
-});
-
-type SeedRulesBodyType = Static<typeof SeedRulesBody>;
 
 function normalizeModule(module: Static<typeof RuleDto>["module"]): ModuleType {
   return module === "bazi" ? "bazi" : "liuyao";
@@ -88,55 +81,6 @@ export async function ruleRoutes(app: FastifyInstance) {
       });
 
       return { rules: rows.map(toRuleDto) };
-    },
-  );
-
-  app.post(
-    "/rules/seed",
-    {
-      schema: {
-        tags: ["rules"],
-        security: [{ bearerAuth: [] }],
-        body: SeedRulesBody,
-        response: {
-          200: Type.Object({
-            createdCount: Type.Number(),
-          }),
-          401: ErrorResponse,
-        },
-      },
-      onRequest: [app.authenticate],
-    },
-    async (request) => {
-      const userId = request.user.sub;
-      const body = request.body as SeedRulesBodyType;
-      const seedModule = body.module ? normalizeModule(body.module) : undefined;
-
-      const templates = getSeedRules(seedModule);
-      const seedKeys = templates.map((t) => t.seedKey);
-      const existing = await app.prisma.rule.findMany({
-        where: { userId, seedKey: { in: seedKeys } },
-        select: { seedKey: true },
-      });
-
-      const existingSeedKeys = new Set(existing.map((r) => r.seedKey).filter((k): k is string => !!k));
-      const toCreate = templates.filter((t) => !existingSeedKeys.has(t.seedKey));
-
-      if (toCreate.length === 0) return { createdCount: 0 };
-
-      const created = await app.prisma.rule.createMany({
-        data: toCreate.map((t) => ({
-          userId,
-          seedKey: t.seedKey,
-          module: t.module,
-          name: t.name.trim(),
-          enabled: t.enabled,
-          condition: t.condition.trim(),
-          message: t.message.trim(),
-        })),
-      });
-
-      return { createdCount: created.count };
     },
   );
 
