@@ -108,8 +108,16 @@ export function CreateLiuyaoRecordModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[220] flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-3xl rounded-[4px] border border-[#B37D56]/20 shadow-none overflow-hidden animate-in zoom-in-95 duration-200">
+    <div
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[210] flex items-center justify-center p-4"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="新建六爻卦例"
+    >
+      <div className="bg-white w-full max-w-md max-h-[90vh] rounded-[4px] border border-[#B37D56]/20 shadow-none overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
         <div className="p-6 border-b border-[#B37D56]/10 flex justify-between items-center">
           <p className="text-xs font-bold tracking-widest chinese-font text-[#2F2F2F]">
             新建六爻卦例
@@ -123,7 +131,8 @@ export function CreateLiuyaoRecordModal({
           </button>
         </div>
 
-        <div className="p-8 grid grid-cols-1 lg:grid-cols-5 gap-8">
+        <div className="min-h-0 flex-1 overflow-y-auto p-6 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           <div className="lg:col-span-3 space-y-8">
             <section className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
@@ -263,6 +272,7 @@ export function CreateLiuyaoRecordModal({
                 ))}
               </div>
             </section>
+          </div>
           </div>
         </div>
 
