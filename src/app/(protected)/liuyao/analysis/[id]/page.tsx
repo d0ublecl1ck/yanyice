@@ -208,14 +208,28 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             <div className="text-[10px] text-[#8B6A52] font-bold pb-4 uppercase tracking-widest text-center">
               六神
             </div>
-            <div className="text-[10px] text-[#8B6A52] font-bold pb-4 uppercase tracking-widest text-center">
-              {baseTitle ?? "本卦"}
+            <div className="pb-4 px-3">
+              <div className="text-[10px] text-[#8B6A52] font-bold uppercase tracking-widest text-center">
+                {baseTitle ?? "本卦"}
+              </div>
+              <div className="mt-2 flex justify-end">
+                <div className="w-28 text-[10px] text-[#8B6A52] font-bold tracking-widest text-right">
+                  六亲
+                </div>
+              </div>
             </div>
             <div className="text-[10px] text-[#8B6A52] font-bold pb-4 uppercase tracking-widest text-center">
               动
             </div>
-            <div className="text-[10px] text-[#8B6A52] font-bold pb-4 uppercase tracking-widest text-center">
-              {changedTitle ?? "变卦"}
+            <div className="pb-4 px-3">
+              <div className="text-[10px] text-[#8B6A52] font-bold uppercase tracking-widest text-center">
+                {changedTitle ?? "变卦"}
+              </div>
+              <div className="mt-2 flex justify-end">
+                <div className="w-28 text-[10px] text-[#8B6A52] font-bold tracking-widest text-right">
+                  六亲
+                </div>
+              </div>
             </div>
 
             {(linesFromTop ?? []).map((line, idxFromTop) => {
