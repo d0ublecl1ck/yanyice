@@ -251,7 +251,7 @@ function BaziFortunePanel({ derived, birthDate }: { derived: DerivedBazi | null;
               const gz = safeString(d.gz);
               const { stem, branch } = splitGanzhi(gz);
               const stemTenGod = safeString(d.stemTenGod);
-              const branchTenGod = safeString((d as unknown as { branchTenGods?: unknown })?.branchTenGods?.[0]);
+              const branchTenGod = safeString(d.branchTenGods?.[0]);
               const stemEl = getElByStem(stem);
               const branchEl = getElByBranch(branch);
               return (
@@ -318,7 +318,7 @@ function BaziFortunePanel({ derived, birthDate }: { derived: DerivedBazi | null;
               const gz = safeString(y.gz);
               const { stem, branch } = splitGanzhi(gz);
               const stemTenGod = safeString(y.stemTenGod);
-              const branchTenGod = safeString((y as unknown as { branchTenGods?: unknown })?.branchTenGods?.[0]);
+              const branchTenGod = safeString(y.branchTenGods?.[0]);
               const age = inferredBirthYear == null ? null : safeNumber(y.year) == null ? null : safeNumber(y.year)! - inferredBirthYear;
               const ageText = formatAge(age);
               const stemEl = getElByStem(stem);
@@ -385,7 +385,7 @@ function BaziFortunePanel({ derived, birthDate }: { derived: DerivedBazi | null;
               const gz = safeString(m.gz);
               const { stem, branch } = splitGanzhi(gz);
               const stemTenGod = safeString(m.stemTenGod);
-              const branchTenGod = safeString((m as unknown as { branchTenGods?: unknown })?.branchTenGods?.[0]);
+              const branchTenGod = safeString(m.branchTenGods?.[0]);
               const stemEl = getElByStem(stem);
               const branchEl = getElByBranch(branch);
               return (
