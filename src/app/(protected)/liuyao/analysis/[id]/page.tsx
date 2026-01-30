@@ -204,32 +204,42 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
       <div className="mt-10 grid grid-cols-1 lg:grid-cols-10 gap-8">
         <div className="lg:col-span-7 bg-white border border-[#B37D56]/15 p-8 space-y-8 rounded-none">
-          <div className="grid grid-cols-[4rem_minmax(0,1fr)_2.5rem_minmax(0,1fr)] gap-0">
-            <div className="py-2" />
-            <div className="text-[11px] text-[#8B6A52] font-bold py-2 tracking-widest text-center">
+          <div className="grid grid-cols-[4rem_7rem_minmax(0,1fr)_3rem_2.5rem_4rem_7rem_minmax(0,1fr)_3rem] gap-0">
+            <div className="col-span-4 text-[11px] text-[#8B6A52] font-bold py-2 tracking-widest text-center">
               {baseTitle ?? "本卦"}
             </div>
             <div className="py-2" />
-            <div className="text-[11px] text-[#8B6A52] font-bold py-2 tracking-widest text-center">
+            <div className="col-span-4 text-[11px] text-[#8B6A52] font-bold py-2 tracking-widest text-center">
               {changedTitle ?? "变卦"}
             </div>
 
-            <div className="text-[10px] text-[#8B6A52] font-bold py-3 uppercase tracking-widest text-center border-b border-[#B37D56]/10">
-              六神
-            </div>
-            <div className="text-[10px] text-[#8B6A52] font-bold py-3 uppercase tracking-widest text-center border-b border-[#B37D56]/10">
-              六亲
-            </div>
-            <div className="text-[10px] text-[#8B6A52] font-bold py-3 uppercase tracking-widest text-center border-b border-[#B37D56]/10">
-              动
-            </div>
-            <div className="text-[10px] text-[#8B6A52] font-bold py-3 uppercase tracking-widest text-center border-b border-[#B37D56]/10">
-              六亲
-            </div>
+            {(
+              [
+                "六神",
+                "六亲",
+                "爻",
+                "世应",
+                "发动",
+                "六神",
+                "六亲",
+                "爻",
+                "世应",
+              ] as const
+            ).map((label) => (
+              <div
+                key={label}
+                className="text-[10px] text-[#8B6A52] font-bold py-3 uppercase tracking-widest text-center border-b border-[#B37D56]/10"
+              >
+                {label}
+              </div>
+            ))}
 
             {(linesFromTop ?? []).map((line, idxFromTop) => {
               const sixGodText = line.sixGod ?? ANIMALS[idxFromTop % 6];
               const movingMarkText = line.moveMark === "O" ? "○" : line.moveMark === "X" ? "×" : line.moveMark;
+
+              const baseShiying = `${line.isShi ? "世" : ""}${line.isYing ? "应" : ""}` || "—";
+              const changedShiying = `${line.changedIsShi ? "世" : ""}${line.changedIsYing ? "应" : ""}` || "—";
 
               return (
                 <React.Fragment key={idxFromTop}>
@@ -237,37 +247,39 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                     {sixGodText}
                   </div>
 
-                  <div className="relative py-4 border-t border-[#B37D56]/5">
-                    <div className="flex items-center gap-4 px-3">
-                      <div className="w-28 text-xs font-bold text-[#4A4A4A] chinese-font leading-tight text-right">
-                        <div>{line.relative}</div>
-                        <div className="text-[10px] text-[#6B6B6B]">
-                          {line.najia.text}
-                          {line.najia.element}
-                        </div>
-                      </div>
-                      <div className="flex-1 flex justify-center min-w-0">
-                        <LiuyaoLineSvg
-                          line={line.lineType}
-                          className="h-6 w-full max-w-[220px]"
-                          lineColor="#2F2F2F"
-                          markColor="#A62121"
-                          showMark={false}
-                        />
+                  <div className="flex items-center justify-end py-4 px-3 border-t border-[#B37D56]/5">
+                    <div className="text-xs font-bold text-[#4A4A4A] chinese-font leading-tight text-right">
+                      <div>{line.relative}</div>
+                      <div className="text-[10px] text-[#6B6B6B]">
+                        {line.najia.text}
+                        {line.najia.element}
                       </div>
                     </div>
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
-                      {line.isShi && (
-                        <span className="text-xs font-bold text-[#A62121] chinese-font tracking-widest">
-                          世
-                        </span>
-                      )}
-                      {line.isYing && (
-                        <span className="text-xs font-bold text-[#4A4A4A] chinese-font tracking-widest">
-                          应
-                        </span>
-                      )}
-                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-center py-4 border-t border-[#B37D56]/5">
+                    <LiuyaoLineSvg
+                      line={line.lineType}
+                      className="h-6 w-full max-w-[220px]"
+                      lineColor="#2F2F2F"
+                      markColor="#A62121"
+                      showMark={false}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-center py-4 border-t border-[#B37D56]/5">
+                    {baseShiying === "—" ? (
+                      <span className="text-sm font-bold text-[#6B6B6B]">—</span>
+                    ) : (
+                      <div className="flex gap-1">
+                        {line.isShi && (
+                          <span className="text-xs font-bold text-[#A62121] chinese-font tracking-widest">世</span>
+                        )}
+                        {line.isYing && (
+                          <span className="text-xs font-bold text-[#4A4A4A] chinese-font tracking-widest">应</span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-center py-4 border-t border-[#B37D56]/5">
@@ -282,37 +294,43 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                     )}
                   </div>
 
-                  <div className="relative py-4 border-t border-[#B37D56]/5">
-                    <div className="flex items-center gap-4 px-3">
-                      <div className="w-28 text-xs font-bold text-[#4A4A4A] chinese-font leading-tight text-right">
-                        <div>{line.changedRelative}</div>
-                        <div className="text-[10px] text-[#6B6B6B]">
-                          {line.changedNajia.text}
-                          {line.changedNajia.element}
-                        </div>
-                      </div>
-                      <div className="flex-1 flex justify-center min-w-0">
-                        <LiuyaoLineSvg
-                          line={line.changedLineType}
-                          className="h-6 w-full max-w-[220px]"
-                          lineColor="#2F2F2F"
-                          markColor="#A62121"
-                          showMark={false}
-                        />
+                  <div className="flex items-center justify-center text-[11px] text-[#5A5A5A] font-bold py-4 border-t border-[#B37D56]/5">
+                    {sixGodText}
+                  </div>
+
+                  <div className="flex items-center justify-end py-4 px-3 border-t border-[#B37D56]/5">
+                    <div className="text-xs font-bold text-[#4A4A4A] chinese-font leading-tight text-right">
+                      <div>{line.changedRelative}</div>
+                      <div className="text-[10px] text-[#6B6B6B]">
+                        {line.changedNajia.text}
+                        {line.changedNajia.element}
                       </div>
                     </div>
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
-                      {line.changedIsShi && (
-                        <span className="text-xs font-bold text-[#A62121] chinese-font tracking-widest">
-                          世
-                        </span>
-                      )}
-                      {line.changedIsYing && (
-                        <span className="text-xs font-bold text-[#4A4A4A] chinese-font tracking-widest">
-                          应
-                        </span>
-                      )}
-                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-center py-4 border-t border-[#B37D56]/5">
+                    <LiuyaoLineSvg
+                      line={line.changedLineType}
+                      className="h-6 w-full max-w-[220px]"
+                      lineColor="#2F2F2F"
+                      markColor="#A62121"
+                      showMark={false}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-center py-4 border-t border-[#B37D56]/5">
+                    {changedShiying === "—" ? (
+                      <span className="text-sm font-bold text-[#6B6B6B]">—</span>
+                    ) : (
+                      <div className="flex gap-1">
+                        {line.changedIsShi && (
+                          <span className="text-xs font-bold text-[#A62121] chinese-font tracking-widest">世</span>
+                        )}
+                        {line.changedIsYing && (
+                          <span className="text-xs font-bold text-[#4A4A4A] chinese-font tracking-widest">应</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </React.Fragment>
               );
