@@ -167,28 +167,11 @@ export function CaseLiuyao() {
                     </div>
 
                     <div className="flex-1 min-w-0 space-y-4">
-                      <div className="flex items-start justify-between gap-6">
-                        <div className="min-w-0">
-                          {record.tags.length > 0 ? (
-                            <div className="flex flex-wrap gap-1 mb-2">
-                              {record.tags.slice(0, 3).map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="text-[9px] px-2 py-0.5 border border-[#B37D56]/10 bg-[#FAF7F2] text-[#2F2F2F]/60 font-bold tracking-widest rounded-[2px]"
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                              {record.tags.length > 3 ? (
-                                <span className="text-[9px] px-2 py-0.5 border border-[#B37D56]/10 bg-white text-[#2F2F2F]/30 font-bold tracking-widest rounded-[2px]">
-                                  +{record.tags.length - 3}
-                                </span>
-                              ) : null}
-                            </div>
-                          ) : null}
-                          <h4 className="font-bold text-[#2F2F2F] chinese-font group-hover:text-[#A62121] transition-colors truncate">
-                            {record.subject}
-                          </h4>
+	                      <div className="flex items-start justify-between gap-6">
+	                        <div className="min-w-0">
+	                          <h4 className="font-bold text-[#2F2F2F] chinese-font group-hover:text-[#A62121] transition-colors truncate">
+	                            {record.subject}
+	                          </h4>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
                             <span className="text-[10px] font-bold text-[#B37D56] uppercase tracking-widest">
                               {displayCustomerName}
@@ -220,15 +203,33 @@ export function CaseLiuyao() {
                             编辑
                           </Link>
                         </div>
-                        <ChevronRight
-                          size={16}
-                          className="text-[#2F2F2F]/10 group-hover:text-[#A62121] transition-all transform group-hover:translate-x-1"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+	                        <ChevronRight
+	                          size={16}
+	                          className="text-[#2F2F2F]/10 group-hover:text-[#A62121] transition-all transform group-hover:translate-x-1"
+	                        />
+	                      </div>
+
+	                      {record.tags.length > 0 ? (
+	                        <div className="flex flex-wrap gap-1">
+	                          {record.tags.slice(0, 3).map((tag) => (
+	                            <span
+	                              key={tag}
+	                              className="text-[9px] px-2 py-0.5 border border-[#B37D56]/10 bg-[#FAF7F2] text-[#2F2F2F]/60 font-bold tracking-widest rounded-[2px]"
+	                            >
+	                              {tag}
+	                            </span>
+	                          ))}
+	                          {record.tags.length > 3 ? (
+	                            <span className="text-[9px] px-2 py-0.5 border border-[#B37D56]/10 bg-white text-[#2F2F2F]/30 font-bold tracking-widest rounded-[2px]">
+	                              +{record.tags.length - 3}
+	                            </span>
+	                          ) : null}
+	                        </div>
+	                      ) : null}
+	                    </div>
+	                  </div>
+	                );
+	              })}
           </div>
         ) : (
           <div className="py-24 text-center">
