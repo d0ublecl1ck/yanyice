@@ -233,16 +233,6 @@ export default function RulesPageClient({ module }: { module: ModuleType }) {
             <p className="text-[#2F2F2F]/20 chinese-font italic">
               {status === "loading" ? "正在加载规则..." : "当前模块暂无规则"}
             </p>
-            {status !== "loading" ? (
-              <div className="mt-6">
-                <button
-                  onClick={() => setIsAdding(true)}
-                  className="px-6 py-2 text-xs font-bold tracking-widest bg-[#2F2F2F] text-white hover:bg-[#1F1F1F] transition-colors rounded-[2px]"
-                >
-                  新建规则
-                </button>
-              </div>
-            ) : null}
           </div>
         )}
       </div>
