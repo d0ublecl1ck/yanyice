@@ -82,10 +82,8 @@ describe("layout width constraints", () => {
 
   test("settings page uses a three-column masonry layout on large screens", async () => {
     const source = await readFile("src/app/(protected)/settings/page.tsx", "utf8");
-    expect(source).toContain("columns-1 md:columns-2 lg:columns-3");
+    expect(source).toContain("grid-cols-1 md:grid-cols-2 lg:grid-cols-3");
     expect(source).toContain("w-full max-w-none");
-    expect(source).toContain("[column-gap:2rem]");
-    expect(source).toContain("break-inside-avoid");
     expect(source).not.toContain("lg:col-span-2");
   });
 

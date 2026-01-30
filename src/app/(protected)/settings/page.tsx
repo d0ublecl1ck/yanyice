@@ -192,8 +192,9 @@ export default function Page() {
         <p className="text-slate-500 mt-1 chinese-font">管理您的账号安全与 AI 配置</p>
       </header>
 
-      <div className="w-full max-w-none columns-1 md:columns-2 lg:columns-3 lg:[column-fill:balance] [column-gap:2rem]">
-        <section className="mb-8 inline-block w-full break-inside-avoid bg-white p-8 border border-[#B37D56]/10 space-y-6">
+      <div className="w-full max-w-none grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="flex flex-col gap-8">
+          <section className="bg-white p-8 border border-[#B37D56]/10 space-y-6">
           <div className="flex items-center justify-between gap-3 border-b border-[#B37D56]/10 pb-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-[#A62121]/5 text-[#A62121] rounded-none border border-[#A62121]/10">
@@ -223,9 +224,9 @@ export default function Page() {
               {user?.email?.charAt(0).toUpperCase()}
             </div>
           </div>
-        </section>
+          </section>
 
-        <section className="mb-8 inline-block w-full break-inside-avoid bg-white p-8 border border-[#B37D56]/10 space-y-6">
+          <section className="bg-white p-8 border border-[#B37D56]/10 space-y-6">
           <div className="flex items-center justify-between gap-3 border-b border-[#B37D56]/10 pb-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-[#B37D56]/10 text-[#B37D56] rounded-none border border-[#B37D56]/20">
@@ -333,9 +334,11 @@ export default function Page() {
               <div className="text-[10px] text-[#2F2F2F]/40 uppercase tracking-widest">自动保存</div>
             </div>
           </div>
-        </section>
+          </section>
+        </div>
 
-        <section className="mb-8 inline-block w-full break-inside-avoid bg-white p-8 border border-[#B37D56]/10 space-y-6">
+        <div className="flex flex-col gap-8">
+          <section className="bg-white p-8 border border-[#B37D56]/10 space-y-6">
           <div className="flex items-center justify-between gap-3 border-b border-[#B37D56]/10 pb-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-[#2F2F2F]/5 text-[#2F2F2F] rounded-none border border-[#2F2F2F]/10">
@@ -389,9 +392,11 @@ export default function Page() {
               </p>
             </div>
           </div>
-        </section>
+          </section>
+        </div>
 
-        <section className="mb-8 inline-block w-full break-inside-avoid bg-white p-8 border border-[#B37D56]/10 space-y-6">
+        <div className="flex flex-col gap-8">
+          <section className="bg-white p-8 border border-[#B37D56]/10 space-y-6">
           <div className="flex items-center gap-3 border-b border-[#B37D56]/10 pb-4">
             <div className="p-2 bg-[#8DA399]/10 text-[#8DA399] rounded-none border border-[#8DA399]/20">
               <Shield size={20} />
@@ -428,7 +433,8 @@ export default function Page() {
               </div>
             </div>
           </div>
-        </section>
+          </section>
+        </div>
       </div>
 
       <section className="pt-2">
