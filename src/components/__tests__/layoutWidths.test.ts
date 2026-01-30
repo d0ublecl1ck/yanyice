@@ -61,6 +61,11 @@ describe("layout width constraints", () => {
     expect(source).toContain("addTagsFromText");
   });
 
+  test("bazi edit/new primary button label differs", async () => {
+    const source = await readFile("src/app/(protected)/bazi/_components/BaziEditView.tsx", "utf8");
+    expect(source).toContain('{id ? "保存" : "立即排盘"}');
+  });
+
   test("settings page uses a two-column grid on large screens", async () => {
     const source = await readFile("src/app/(protected)/settings/page.tsx", "utf8");
     expect(source).toContain("grid-cols-1 lg:grid-cols-2");

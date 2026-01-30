@@ -1272,7 +1272,7 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
               onClick={() => void handleSave()}
               className="w-full h-12 md:h-[52px] bg-[#2F2F2F] text-white rounded-[2px] text-lg font-bold chinese-font tracking-[0.6em] hover:bg-black transition-all active:scale-[0.98] flex items-center justify-center shadow-none"
             >
-              立即排盘
+              {id ? "保存" : "立即排盘"}
             </button>
           </div>
         </div>
