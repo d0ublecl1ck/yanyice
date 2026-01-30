@@ -182,10 +182,18 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             </button>
           </div>
           <h2 className="text-2xl font-bold text-[#2F2F2F] chinese-font">{analysis.subject}</h2>
-          <p className="text-xs text-[#5A5A5A] chinese-font tracking-widest uppercase">
-            {customerName ? `${customerName} · ` : ""}
-            {analysis.solarDate} · 月建{analysis.monthBranch} · 日辰{analysis.dayBranch}
-          </p>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#5A5A5A] chinese-font tracking-widest uppercase">
+            {customerName ? <span>{customerName}</span> : null}
+            {customerName ? <span className="text-[#B37D56]/30">·</span> : null}
+            <span>{analysis.solarDate}</span>
+            <span className="text-[#B37D56]/30">·</span>
+            <span className="inline-flex items-center gap-1 px-2 py-1 border border-[#B37D56]/20 bg-[#FAF7F2] text-[#2F2F2F] font-bold rounded-[2px]">
+              月建<span className="text-[#A62121]">{analysis.monthBranch}</span>
+            </span>
+            <span className="inline-flex items-center gap-1 px-2 py-1 border border-[#B37D56]/20 bg-[#FAF7F2] text-[#2F2F2F] font-bold rounded-[2px]">
+              日辰<span className="text-[#A62121]">{analysis.dayBranch}</span>
+            </span>
+          </div>
           {paipan?.base.name && (
             <p className="text-xs text-[#8B6A52] chinese-font tracking-widest uppercase mt-1">
               本卦{paipan.base.name}
