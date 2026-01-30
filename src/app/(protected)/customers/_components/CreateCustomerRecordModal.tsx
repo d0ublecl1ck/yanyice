@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { X } from "lucide-react";
+import { Modal, ModalPrimaryButton } from "@/components/ui/Modal";
 
 import type { CustomerGender } from "@/lib/types";
 
@@ -42,160 +42,139 @@ export function CreateCustomerRecordModal({
   isCreating: boolean;
   onSubmit: () => void;
 }) {
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[210] flex items-center justify-center p-4"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      role="dialog"
-      aria-modal="true"
-      aria-label="登记新客户"
+    <Modal
+      open={open}
+      title="登记新客户"
+      onClose={onClose}
+      size="md"
+      showCloseButton
+      bodyClassName="p-6 space-y-5"
     >
-      <div className="bg-white w-full max-w-md rounded-[4px] border border-[#B37D56]/20 shadow-none overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="p-6 border-b border-[#B37D56]/10 flex justify-between items-center">
-          <p className="text-xs font-bold tracking-widest chinese-font text-[#2F2F2F]">
-            登记新客户
-          </p>
-          <button
-            onClick={onClose}
-            className="text-[#2F2F2F]/20 hover:text-[#A62121]"
-            aria-label="关闭"
-          >
-            <X size={20} />
-          </button>
+      <div className="space-y-2">
+        <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+          姓名（必填）
+        </label>
+        <input
+          ref={nameInputRef}
+          value={createName}
+          onChange={(e) => setCreateName(e.target.value)}
+          placeholder="请输入客户姓名"
+          className="w-full bg-white border border-[#B37D56]/10 px-3 py-2 text-xs font-bold rounded-[2px] outline-none focus:border-[#A62121] transition-colors chinese-font"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+          性别（必填）
+        </label>
+        <div className="flex gap-3">
+          {(
+            [
+              { id: "male", label: "男" },
+              { id: "female", label: "女" },
+              { id: "other", label: "不详" },
+            ] as const
+          ).map((g) => (
+            <button
+              key={g.id}
+              onClick={() => setCreateGender(g.id)}
+              className={`px-4 py-2 text-xs border font-bold transition-all rounded-[2px] ${
+                createGender === g.id
+                  ? "bg-[#2F2F2F] text-white border-[#2F2F2F]"
+                  : "border-[#B37D56]/20 text-[#2F2F2F]/50 hover:border-[#A62121]"
+              }`}
+            >
+              {g.label}
+            </button>
+          ))}
         </div>
+      </div>
 
-        <div className="p-6 space-y-5">
-          <div className="space-y-2">
-            <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
-              姓名（必填）
-            </label>
-            <input
-              ref={nameInputRef}
-              value={createName}
-              onChange={(e) => setCreateName(e.target.value)}
-              placeholder="请输入客户姓名"
-              className="w-full bg-white border border-[#B37D56]/10 px-3 py-2 text-xs font-bold rounded-[2px] outline-none focus:border-[#A62121] transition-colors chinese-font"
-            />
-          </div>
+      <div className="space-y-2">
+        <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+          联系方式（可选）
+        </label>
+        <input
+          value={createPhone}
+          onChange={(e) => setCreatePhone(e.target.value)}
+          placeholder="手机号 / 微信 / 其他"
+          className="w-full bg-white border border-[#B37D56]/10 px-3 py-2 text-xs rounded-[2px] outline-none focus:border-[#A62121] transition-colors"
+        />
+      </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
-              性别（必填）
-            </label>
-            <div className="flex gap-3">
-              {(
-                [
-                  { id: "male", label: "男" },
-                  { id: "female", label: "女" },
-                  { id: "other", label: "不详" },
-                ] as const
-              ).map((g) => (
-                <button
-                  key={g.id}
-                  onClick={() => setCreateGender(g.id)}
-                  className={`px-4 py-2 text-xs border font-bold transition-all rounded-[2px] ${
-                    createGender === g.id
-                      ? "bg-[#2F2F2F] text-white border-[#2F2F2F]"
-                      : "border-[#B37D56]/20 text-[#2F2F2F]/50 hover:border-[#A62121]"
-                  }`}
-                >
-                  {g.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
-              联系方式（可选）
-            </label>
-            <input
-              value={createPhone}
-              onChange={(e) => setCreatePhone(e.target.value)}
-              placeholder="手机号 / 微信 / 其他"
-              className="w-full bg-white border border-[#B37D56]/10 px-3 py-2 text-xs rounded-[2px] outline-none focus:border-[#A62121] transition-colors"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
-              标签（可选）
-            </label>
-            {createTags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {createTags.map((t) => (
-                  <span
-                    key={t}
-                    className="text-[10px] bg-[#FAF7F2] text-[#2F2F2F] px-2 py-1 border border-[#B37D56]/10 flex items-center gap-1"
-                  >
-                    {t}{" "}
-                    <button
-                      onClick={() => setCreateTags(createTags.filter((tag) => tag !== t))}
-                      className="text-[#A62121] hover:font-bold"
-                      aria-label={`移除标签 ${t}`}
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={createNewTag}
-                onChange={(e) => setCreateNewTag(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key !== "Enter") return;
-                  const next = createNewTag.trim();
-                  if (!next || createTags.includes(next)) return;
-                  setCreateTags([...createTags, next]);
-                  setCreateNewTag("");
-                }}
-                placeholder="输入后回车添加"
-                className="flex-1 bg-white border border-[#B37D56]/10 px-3 py-2 text-xs rounded-[2px] outline-none focus:border-[#A62121] transition-colors"
-              />
-              <button
-                onClick={() => {
-                  const next = createNewTag.trim();
-                  if (!next || createTags.includes(next)) return;
-                  setCreateTags([...createTags, next]);
-                  setCreateNewTag("");
-                }}
-                className="px-4 py-2 text-xs border border-[#B37D56]/20 text-[#B37D56] font-bold rounded-[2px] hover:bg-[#FAF7F2] transition-all"
+      <div className="space-y-2">
+        <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+          标签（可选）
+        </label>
+        {createTags.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {createTags.map((t) => (
+              <span
+                key={t}
+                className="text-[10px] bg-[#FAF7F2] text-[#2F2F2F] px-2 py-1 border border-[#B37D56]/10 flex items-center gap-1"
               >
-                添加
-              </button>
-            </div>
+                {t}{" "}
+                <button
+                  onClick={() => setCreateTags(createTags.filter((tag) => tag !== t))}
+                  className="text-[#A62121] hover:font-bold"
+                  aria-label={`移除标签 ${t}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
           </div>
-
-          <div className="space-y-2">
-            <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
-              备注（可选）
-            </label>
-            <textarea
-              rows={4}
-              value={createNotes}
-              onChange={(e) => setCreateNotes(e.target.value)}
-              placeholder="补充说明..."
-              className="w-full bg-[#FAF7F2]/50 p-4 border border-[#B37D56]/5 text-xs outline-none focus:border-[#A62121] italic rounded-[4px]"
-            />
-          </div>
-
+        )}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={createNewTag}
+            onChange={(e) => setCreateNewTag(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter") return;
+              const next = createNewTag.trim();
+              if (!next || createTags.includes(next)) return;
+              setCreateTags([...createTags, next]);
+              setCreateNewTag("");
+            }}
+            placeholder="输入后回车添加"
+            className="flex-1 bg-white border border-[#B37D56]/10 px-3 py-2 text-xs rounded-[2px] outline-none focus:border-[#A62121] transition-colors"
+          />
           <button
-            disabled={isCreating}
-            onClick={onSubmit}
-            className="w-full h-12 bg-[#A62121] text-white font-bold chinese-font tracking-[0.4em] rounded-[2px] hover:bg-[#8B1A1A] transition-all disabled:opacity-60 disabled:hover:bg-[#A62121]"
+            onClick={() => {
+              const next = createNewTag.trim();
+              if (!next || createTags.includes(next)) return;
+              setCreateTags([...createTags, next]);
+              setCreateNewTag("");
+            }}
+            className="px-4 py-2 text-xs border border-[#B37D56]/20 text-[#B37D56] font-bold rounded-[2px] hover:bg-[#FAF7F2] transition-all"
           >
-            {isCreating ? "创建中..." : "创建"}
+            添加
           </button>
         </div>
       </div>
-    </div>
+
+      <div className="space-y-2">
+        <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+          备注（可选）
+        </label>
+        <textarea
+          rows={4}
+          value={createNotes}
+          onChange={(e) => setCreateNotes(e.target.value)}
+          placeholder="补充说明..."
+          className="w-full bg-[#FAF7F2]/50 p-4 border border-[#B37D56]/5 text-xs outline-none focus:border-[#A62121] italic rounded-[4px]"
+        />
+      </div>
+
+      <ModalPrimaryButton
+        disabled={isCreating}
+        onClick={onSubmit}
+        className="w-full h-12 chinese-font tracking-[0.4em] hover:bg-[#8B1A1A]"
+      >
+        {isCreating ? "创建中..." : "创建"}
+      </ModalPrimaryButton>
+    </Modal>
   );
 }
-

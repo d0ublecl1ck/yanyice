@@ -2,16 +2,18 @@ import { describe, expect, test } from "bun:test";
 
 describe("CaseBazi create modal", () => {
   test("aligns overlay + container styling with customer modal conventions", async () => {
-    const source = await Bun.file(new URL("../CreateBaziRecordModal.tsx", import.meta.url)).text();
+    const modalSource = await Bun.file(new URL("../../../../../components/ui/Modal.tsx", import.meta.url)).text();
+    const baziSource = await Bun.file(new URL("../CreateBaziRecordModal.tsx", import.meta.url)).text();
 
-    expect(source).toContain(
+    expect(modalSource).toContain(
       'className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[210] flex items-center justify-center p-4"',
     );
-    expect(source).toContain("max-w-md");
-    expect(source).toContain("rounded-[4px]");
-    expect(source).toContain("border border-[#B37D56]/20");
-    expect(source).toContain("min-h-0 flex-1 overflow-y-auto p-6");
-    expect(source).toContain("[scrollbar-width:none]");
-    expect(source).toContain("[&::-webkit-scrollbar]:hidden");
+    expect(modalSource).toContain("rounded-[4px]");
+    expect(modalSource).toContain("border border-[#B37D56]/20");
+    expect(modalSource).toContain("text-xs font-bold tracking-widest chinese-font text-[#2F2F2F]");
+    expect(modalSource).toContain("[&::-webkit-scrollbar]:hidden");
+
+    expect(baziSource).toContain('title="新建八字"');
+    expect(baziSource).toContain("hideScrollbar");
   });
 });
