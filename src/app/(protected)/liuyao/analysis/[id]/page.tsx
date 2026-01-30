@@ -9,6 +9,7 @@ import { ANIMALS } from "@/lib/constants";
 import { geminiChat, type ChatMessage } from "@/lib/geminiService";
 import { paipanLiuyao } from "@/lib/liuyao/paipan";
 import { LiuyaoLineSvg } from "@/components/liuyao/LiuyaoLineSvg";
+import { getGanzhiFourPillars } from "@/lib/lunarGanzhi";
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -79,6 +80,13 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       return null;
     }
   }, [record]);
+
+  const fourPillars = useMemo(() => {
+    const iso = record?.liuyaoData?.date ?? "";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return null;
+    return getGanzhiFourPillars(d);
+  }, [record?.liuyaoData?.date]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -216,12 +224,19 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       <div className="mt-10 grid grid-cols-1 lg:grid-cols-10 gap-8">
         <div className="lg:col-span-7 bg-white border border-[#B37D56]/15 p-8 space-y-8 rounded-none">
           <div className="flex items-center justify-start gap-2">
-            <span className="inline-flex items-center gap-1 px-2 py-1 border border-[#B37D56]/20 bg-[#FAF7F2] text-[#2F2F2F] font-bold rounded-[2px] text-xs chinese-font tracking-widest uppercase">
-              月建<span className="text-[#A62121]">{analysis.monthBranch}</span>
-            </span>
-            <span className="inline-flex items-center gap-1 px-2 py-1 border border-[#B37D56]/20 bg-[#FAF7F2] text-[#2F2F2F] font-bold rounded-[2px] text-xs chinese-font tracking-widest uppercase">
-              日辰<span className="text-[#A62121]">{analysis.dayBranch}</span>
-            </span>
+            {fourPillars ? (
+              <>
+                <span className="inline-flex items-center px-2 py-1 border border-[#B37D56]/20 bg-[#FAF7F2] text-[#2F2F2F] font-bold rounded-[2px] text-xs chinese-font tracking-widest uppercase">
+                  {fourPillars.yearGanzhi} {fourPillars.monthGanzhi} {fourPillars.dayGanzhi}{" "}
+                  {fourPillars.hourGanzhi}
+                </span>
+                {fourPillars.xunKong ? (
+                  <span className="inline-flex items-center px-2 py-1 border border-[#B37D56]/20 bg-[#FAF7F2] text-[#2F2F2F] font-bold rounded-[2px] text-xs chinese-font tracking-widest uppercase">
+                    （旬空 {fourPillars.xunKong}）
+                  </span>
+                ) : null}
+              </>
+            ) : null}
           </div>
           <div className="grid grid-cols-[4rem_7rem_minmax(0,1fr)_3rem_2.5rem_4rem_7rem_minmax(0,1fr)_3rem] gap-0">
             <div className="col-span-4 text-[11px] text-[#8B6A52] font-bold py-2 tracking-widest text-center">
