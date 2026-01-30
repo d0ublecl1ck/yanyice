@@ -83,6 +83,13 @@ export function CaseBazi() {
     );
   });
 
+  const gridClassName = useMemo(() => {
+    const count = filteredRecords.length;
+    if (count === 1) return "grid grid-cols-1 gap-px";
+    if (count === 2) return "grid grid-cols-1 md:grid-cols-2 gap-px";
+    return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-3 gap-px";
+  }, [filteredRecords.length]);
+
   const closeCreate = React.useCallback(() => {
     const qs = new URLSearchParams(searchParams.toString());
     qs.delete("new");
@@ -127,7 +134,7 @@ export function CaseBazi() {
         onActiveTagChange={setActiveTag}
       >
         {filteredRecords.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-3 gap-px">
+          <div className={gridClassName}>
             {filteredRecords
               .sort((a, b) => b.createdAt - a.createdAt)
               .map((record) => {
