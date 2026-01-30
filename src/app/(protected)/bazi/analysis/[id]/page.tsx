@@ -257,14 +257,16 @@ function BaziFortunePanel({ derived, birthDate }: { derived: DerivedBazi | null;
                   type="button"
                   onClick={() => setSelectedDecadeIndex(idx)}
                   className={[
-                    "px-2 py-2 text-left border border-[#B37D56]/10 transition-colors rounded-[2px]",
-                    active ? "bg-[#2F2F2F] border-[#2F2F2F]" : "bg-white hover:bg-[#FAF7F2]",
+                    "px-2 py-2 text-left border transition-colors rounded-[2px]",
+                    active
+                      ? "bg-[#FAF7F2] border-[#A62121]"
+                      : "bg-white border-[#B37D56]/10 hover:border-[#A62121] hover:bg-[#FAF7F2]",
                   ].join(" ")}
                 >
-                  <div className={["text-[10px] font-bold tracking-widest", active ? "text-white" : "text-[#2F2F2F]"].join(" ")}>
+                  <div className="text-[10px] text-[#2F2F2F] font-bold tracking-widest">
                     {labelYear || "—"}
                   </div>
-                  <div className={["mt-1 text-[10px] font-bold tracking-widest", active ? "text-white" : "text-[#2F2F2F]"].join(" ")}>
+                  <div className="mt-1 text-[10px] text-[#2F2F2F] font-bold tracking-widest">
                     {labelAge || "—"}
                   </div>
 
@@ -275,22 +277,18 @@ function BaziFortunePanel({ derived, birthDate }: { derived: DerivedBazi | null;
                     >
                       {stem || "—"}
                     </div>
-                    <div className={["text-[10px] chinese-font font-bold", active ? "text-white" : "text-[#A62121]"].join(" ")}>
-                      {stemTenGod || "—"}
-                    </div>
                   </div>
+                  <div className="mt-1 text-[10px] text-[#A62121] chinese-font font-bold">{stemTenGod || "—"}</div>
 
-                  <div className="mt-1 flex items-baseline justify-between gap-2">
+                  <div className="mt-2 flex items-baseline justify-between gap-2">
                     <div
                       className="text-[16px] chinese-font font-bold leading-none"
                       style={{ color: ELEMENT_STYLES[branchEl].color }}
                     >
                       {branch || "—"}
                     </div>
-                    <div className={["text-[10px] chinese-font font-bold", active ? "text-white" : "text-[#B37D56]"].join(" ")}>
-                      {branchTenGod || "—"}
-                    </div>
                   </div>
+                  <div className="mt-1 text-[10px] text-[#B37D56] chinese-font font-bold">{branchTenGod || "—"}</div>
                 </button>
               );
             })}
@@ -324,14 +322,16 @@ function BaziFortunePanel({ derived, birthDate }: { derived: DerivedBazi | null;
                   type="button"
                   onClick={() => setSelectedYearIndex(idx)}
                   className={[
-                    "px-2 py-2 text-left border border-[#B37D56]/10 transition-colors rounded-[2px]",
-                    active ? "bg-[#2F2F2F] border-[#2F2F2F]" : "bg-white hover:bg-[#FAF7F2]",
+                    "px-2 py-2 text-left border transition-colors rounded-[2px]",
+                    active
+                      ? "bg-[#FAF7F2] border-[#A62121]"
+                      : "bg-white border-[#B37D56]/10 hover:border-[#A62121] hover:bg-[#FAF7F2]",
                   ].join(" ")}
                 >
-                  <div className={["text-[10px] font-bold tracking-widest", active ? "text-white" : "text-[#2F2F2F]"].join(" ")}>
+                  <div className="text-[10px] text-[#2F2F2F] font-bold tracking-widest">
                     {yearNum || "—"}
                   </div>
-                  <div className={["mt-1 text-[10px] font-bold tracking-widest", active ? "text-white" : "text-[#2F2F2F]"].join(" ")}>
+                  <div className="mt-1 text-[10px] text-[#2F2F2F] font-bold tracking-widest">
                     {ageText || "—"}
                   </div>
 
@@ -342,22 +342,18 @@ function BaziFortunePanel({ derived, birthDate }: { derived: DerivedBazi | null;
                     >
                       {stem || "—"}
                     </div>
-                    <div className={["text-[10px] chinese-font font-bold", active ? "text-white" : "text-[#A62121]"].join(" ")}>
-                      {stemTenGod || "—"}
-                    </div>
                   </div>
+                  <div className="mt-1 text-[10px] text-[#A62121] chinese-font font-bold">{stemTenGod || "—"}</div>
 
-                  <div className="mt-1 flex items-baseline justify-between gap-2">
+                  <div className="mt-2 flex items-baseline justify-between gap-2">
                     <div
                       className="text-[16px] chinese-font font-bold leading-none"
                       style={{ color: ELEMENT_STYLES[branchEl].color }}
                     >
                       {branch || "—"}
                     </div>
-                    <div className={["text-[10px] chinese-font font-bold", active ? "text-white" : "text-[#B37D56]"].join(" ")}>
-                      {branchTenGod || "—"}
-                    </div>
                   </div>
+                  <div className="mt-1 text-[10px] text-[#B37D56] chinese-font font-bold">{branchTenGod || "—"}</div>
                 </button>
               );
             })}
@@ -386,7 +382,7 @@ function BaziFortunePanel({ derived, birthDate }: { derived: DerivedBazi | null;
                   key={`${termName}-${idx}`}
                   className="px-2 py-3 text-left border border-[#B37D56]/10 bg-white rounded-[2px]"
                 >
-                  <div className="flex items-baseline justify-between gap-2">
+                  <div className="flex flex-col items-center gap-0.5 border-b border-[#B37D56]/10 pb-2">
                     <div className="text-[10px] text-[#2F2F2F] font-bold tracking-widest">{termName || "—"}</div>
                     <div className="text-[10px] text-[#2F2F2F] font-bold tracking-widest uppercase">{termDate}</div>
                   </div>
