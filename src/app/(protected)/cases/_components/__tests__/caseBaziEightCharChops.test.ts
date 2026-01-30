@@ -6,6 +6,7 @@ describe("bazi case cards", () => {
 
     expect(source).toContain("function BaziEightCharChops");
     expect(source).toContain("grid-cols-4");
+    expect(source).toContain("grid-rows-2");
     expect(source).toContain("rounded-full");
     expect(source).toContain("flex items-center gap-3");
 
