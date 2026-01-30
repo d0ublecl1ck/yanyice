@@ -22,15 +22,22 @@ export type YinYang = "yin" | "yang";
 
 export type LiuyaoLine = {
   indexFromBottom: number;
+  lineType: LineType;
+  changedLineType: LineType;
   yinYang: YinYang;
+  changedYinYang: YinYang;
   isMoving: boolean;
   symbol: string;
   moveMark: string;
   sixGod: SixGod | null;
   najia: LineNajia;
+  changedNajia: LineNajia;
   relative: string;
+  changedRelative: string;
   isShi: boolean;
   isYing: boolean;
+  changedIsShi: boolean;
+  changedIsYing: boolean;
 };
 
 export type LiuyaoHexagram = {
@@ -47,6 +54,13 @@ export type LiuyaoPaipan = {
   base: LiuyaoHexagram;
   changed: LiuyaoHexagram;
   palace: {
+    name: TrigramName | null;
+    element: string | null;
+    generation: string | null;
+    shiLineIndexFromBottom: number | null;
+    yingLineIndexFromBottom: number | null;
+  };
+  changedPalace: {
     name: TrigramName | null;
     element: string | null;
     generation: string | null;
@@ -72,6 +86,12 @@ function changedYinYang(line: LineType): YinYang {
   if (line === 2) return "yin";
   if (line === 3) return "yang";
   return yinYangOfLine(line);
+}
+
+function changedLineType(line: LineType): LineType {
+  if (line === 2) return 1;
+  if (line === 3) return 0;
+  return line;
 }
 
 function trigramKeyTopToBottom(bitsBottomToTop: readonly YinYang[]): string {
@@ -134,6 +154,7 @@ export function paipanLiuyao(data: LiuYaoData): LiuyaoPaipan {
 
   const baseYinYang = data.lines.map(normalizeToBaseYinYang);
   const changedLinesYinYang = data.lines.map(changedYinYang);
+  const changedLineTypes = data.lines.map(changedLineType);
 
   const lower = trigramFromLines(baseYinYang.slice(0, 3));
   const upper = trigramFromLines(baseYinYang.slice(3, 6));
@@ -152,10 +173,18 @@ export function paipanLiuyao(data: LiuYaoData): LiuyaoPaipan {
   const shiLineIndexFromBottom = shiYing?.shiLineIndexFromBottom ?? null;
   const yingLineIndexFromBottom = shiYing?.yingLineIndexFromBottom ?? null;
 
+  const changedPalaceName = changedMeta?.palace ?? null;
+  const changedPalaceElement = changedPalaceName ? TRIGRAM_ELEMENT[changedPalaceName] : null;
+  const changedGeneration = changedMeta?.generation ?? null;
+  const changedShiYing = changedGeneration ? SHI_YING_BY_GENERATION[changedGeneration] : null;
+  const changedShiLineIndexFromBottom = changedShiYing?.shiLineIndexFromBottom ?? null;
+  const changedYingLineIndexFromBottom = changedShiYing?.yingLineIndexFromBottom ?? null;
+
   const { monthBranch, dayGanzhi, dayStem } = coerceDayStem(data);
   const sixGodStart = dayStem ? sixGodStartIndexByDayStem(dayStem) : null;
 
-  const najia = buildNajia(lower, upper);
+  const baseNajia = buildNajia(lower, upper);
+  const changedNajia = buildNajia(lowerChanged, upperChanged);
 
   const lines: LiuyaoLine[] = data.lines.map((line, idxFromBottom) => {
     const meta = LINE_SYMBOLS[line] ?? LINE_SYMBOLS[0];
@@ -164,20 +193,35 @@ export function paipanLiuyao(data: LiuYaoData): LiuyaoPaipan {
     const sixGod =
       sixGodStart === null ? null : (SIX_GOD_ORDER[(sixGodStart + idxFromBottom) % 6] as SixGod);
 
-    const lineNajia = najia[idxFromBottom]!;
+    const lineNajia = baseNajia[idxFromBottom]!;
     const relative = palaceElement ? relativeOf(lineNajia.element, palaceElement) : "父母";
+
+    const changedLineNajia = changedNajia[idxFromBottom]!;
+    const changedRelative = changedPalaceElement
+      ? relativeOf(changedLineNajia.element, changedPalaceElement)
+      : "父母";
+
+    const changedType = changedLineTypes[idxFromBottom] ?? line;
+    const changedYY = changedLinesYinYang[idxFromBottom] ?? yy;
 
     return {
       indexFromBottom: idxFromBottom,
+      lineType: line,
+      changedLineType: changedType,
       yinYang: yy,
+      changedYinYang: changedYY,
       isMoving,
       symbol: meta.base,
       moveMark: meta.mark,
       sixGod,
       najia: lineNajia,
+      changedNajia: changedLineNajia,
       relative,
+      changedRelative,
       isShi: shiLineIndexFromBottom === idxFromBottom,
       isYing: yingLineIndexFromBottom === idxFromBottom,
+      changedIsShi: changedShiLineIndexFromBottom === idxFromBottom,
+      changedIsYing: changedYingLineIndexFromBottom === idxFromBottom,
     };
   });
 
@@ -193,6 +237,13 @@ export function paipanLiuyao(data: LiuYaoData): LiuyaoPaipan {
       generation,
       shiLineIndexFromBottom,
       yingLineIndexFromBottom,
+    },
+    changedPalace: {
+      name: changedPalaceName,
+      element: changedPalaceElement,
+      generation: changedGeneration,
+      shiLineIndexFromBottom: changedShiLineIndexFromBottom,
+      yingLineIndexFromBottom: changedYingLineIndexFromBottom,
     },
     lines,
   };

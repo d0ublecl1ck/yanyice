@@ -8,6 +8,8 @@ import { useRouter } from "next/navigation";
 import { ANIMALS } from "@/lib/constants";
 import { geminiChat, type ChatMessage } from "@/lib/geminiService";
 import { paipanLiuyao } from "@/lib/liuyao/paipan";
+import { LiuyaoLineSvg } from "@/components/liuyao/LiuyaoLineSvg";
+import { getGanzhiFourPillars } from "@/lib/lunarGanzhi";
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -15,6 +17,16 @@ import { useChatStore, type Message } from "@/stores/useChatStore";
 import { useToastStore } from "@/stores/useToastStore";
 
 const EMPTY_HISTORY: Message[] = [];
+
+const WUXING_COLORS: Record<string, string> = {
+  木: "#40de5a",
+  火: "#ff2d51",
+  土: "#5d513c",
+  金: "#eacd76",
+  水: "#065279",
+};
+
+const getWuxingColor = (el: string) => WUXING_COLORS[el] ?? WUXING_COLORS["土"];
 
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -68,6 +80,13 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       return null;
     }
   }, [record]);
+
+  const fourPillars = useMemo(() => {
+    const iso = record?.liuyaoData?.date ?? "";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return null;
+    return getGanzhiFourPillars(d);
+  }, [record?.liuyaoData?.date]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -123,7 +142,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   if (isLoading) {
     return (
       <div className="py-24 text-center">
-        <p className="text-[#2F2F2F]/30 chinese-font italic">加载中…</p>
+        <p className="text-[#6B6B6B] chinese-font italic text-sm">加载中…</p>
       </div>
     );
   }
@@ -131,7 +150,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   if (!record || !analysis) {
     return (
       <div className="py-24 text-center">
-        <p className="text-[#2F2F2F]/20 chinese-font italic">未找到该六爻卦例</p>
+        <p className="text-[#6B6B6B] chinese-font italic text-sm">未找到该六爻卦例</p>
         <div className="mt-6">
           <button
             onClick={() => router.push("/liuyao")}
@@ -145,6 +164,18 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   }
 
   const linesFromTop = paipan ? [...paipan.lines].reverse() : null;
+  const baseTitle = paipan?.base.name
+    ? `${paipan.base.name}${paipan.palace.name ? `（${paipan.palace.name}宫）` : ""}${
+        paipan.palace.generation && paipan.palace.generation !== "本宫" ? `-${paipan.palace.generation}` : ""
+      }`
+    : null;
+  const changedTitle = paipan?.changed.name
+    ? `${paipan.changed.name}${paipan.changedPalace.name ? `（${paipan.changedPalace.name}宫）` : ""}${
+        paipan.changedPalace.generation && paipan.changedPalace.generation !== "本宫"
+          ? `-${paipan.changedPalace.generation}`
+          : ""
+      }`
+    : null;
 
   return (
     <div className="relative pb-20">
@@ -159,12 +190,13 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             </button>
           </div>
           <h2 className="text-2xl font-bold text-[#2F2F2F] chinese-font">{analysis.subject}</h2>
-          <p className="text-[10px] text-[#2F2F2F]/40 chinese-font tracking-widest uppercase">
-            {customerName ? `${customerName} · ` : ""}
-            {analysis.solarDate} · 月建{analysis.monthBranch} · 日辰{analysis.dayBranch}
-          </p>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#5A5A5A] chinese-font tracking-widest uppercase">
+            {customerName ? <span>{customerName}</span> : null}
+            {customerName ? <span className="text-[#B37D56]/30">·</span> : null}
+            <span>{analysis.solarDate}</span>
+          </div>
           {paipan?.base.name && (
-            <p className="text-[10px] text-[#B37D56]/70 chinese-font tracking-widest uppercase mt-1">
+            <p className="text-xs text-[#8B6A52] chinese-font tracking-widest uppercase mt-1">
               本卦{paipan.base.name}
               {paipan.changed.name ? ` · 变卦${paipan.changed.name}` : ""}
               {paipan.palace.name && paipan.palace.generation
@@ -176,58 +208,158 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         <div className="flex gap-3">
           <button
             onClick={() => setIsPanelOpen(true)}
-            className="text-[#B37D56] text-[10px] font-bold tracking-[0.2em] uppercase border border-[#B37D56]/20 px-4 py-2 rounded-[2px] hover:bg-[#B37D56]/5"
+            className="text-[#B37D56] text-xs font-bold tracking-[0.2em] uppercase border border-[#B37D56]/20 px-4 py-2 rounded-[2px] hover:bg-[#B37D56]/5"
           >
             助手
           </button>
           <Link
             href={`/liuyao/edit/${encodeURIComponent(id)}`}
-            className="bg-[#A62121] text-white px-5 py-2 text-[10px] font-bold tracking-[0.2em] uppercase rounded-[2px] hover:bg-[#8B1A1A]"
+            className="bg-[#A62121] text-white px-5 py-2 text-xs font-bold tracking-[0.2em] uppercase rounded-[2px] hover:bg-[#8B1A1A]"
           >
             修改
           </Link>
         </div>
       </header>
 
-      <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-8 bg-white border border-[#B37D56]/15 p-8 space-y-8 rounded-none">
-          <div className="grid grid-cols-12 gap-0 text-center">
-            <div className="col-span-2 text-[9px] text-[#B37D56]/40 font-bold mb-4 uppercase tracking-widest">
-              六神
+      <div className="mt-10 grid grid-cols-1 lg:grid-cols-10 gap-8">
+        <div className="lg:col-span-7 bg-white border border-[#B37D56]/15 p-8 space-y-8 rounded-none">
+	          <div className="flex items-center justify-start gap-2">
+	            {fourPillars ? (
+	              <>
+	                <span className="inline-flex items-center gap-2 px-2 py-1 border border-[#B37D56]/20 bg-[#FAF7F2] text-[#2F2F2F] font-bold rounded-[2px] text-xs chinese-font tracking-widest uppercase">
+	                  <span>{fourPillars.yearGanzhi}</span>
+	                  <span className="text-[#A62121] font-black text-sm">{fourPillars.monthGanzhi}</span>
+	                  <span className="text-[#A62121] font-black text-sm">{fourPillars.dayGanzhi}</span>
+	                  <span>{fourPillars.hourGanzhi}</span>
+	                </span>
+	                {fourPillars.xunKong ? (
+	                  <span className="inline-flex items-center gap-2 px-2 py-1 border border-[#A62121]/30 bg-[#FAF7F2] text-[#2F2F2F] font-bold rounded-[2px] text-xs chinese-font tracking-widest uppercase">
+	                    <span>旬空</span>
+	                    <span className="text-[#A62121] font-black text-sm">{fourPillars.xunKong}</span>
+	                  </span>
+	                ) : null}
+	              </>
+	            ) : null}
+	          </div>
+          <div className="grid grid-cols-[4rem_7rem_minmax(0,1fr)_3rem_2.5rem_4rem_7rem_minmax(0,1fr)_3rem] gap-0">
+            <div className="col-span-4 text-[11px] text-[#8B6A52] font-bold py-2 tracking-widest text-center">
+              {baseTitle ?? "本卦"}
             </div>
-            <div className="col-span-10 text-[9px] text-[#B37D56]/40 font-bold mb-4 uppercase tracking-widest">
-              六爻
+            <div className="py-2" />
+            <div className="col-span-4 text-[11px] text-[#8B6A52] font-bold py-2 tracking-widest text-center">
+              {changedTitle ?? "变卦"}
             </div>
 
+            {(
+              [
+                "六神",
+                "六亲",
+                "爻",
+                "世应",
+                "发动",
+                "六神",
+                "六亲",
+                "爻",
+                "世应",
+              ] as const
+            ).map((label) => (
+              <div
+                key={label}
+                className="text-[10px] text-[#8B6A52] font-bold py-3 uppercase tracking-widest text-center border-b border-[#B37D56]/10"
+              >
+                {label}
+              </div>
+            ))}
+
             {(linesFromTop ?? []).map((line, idxFromTop) => {
+              const sixGodText = line.sixGod ?? ANIMALS[idxFromTop % 6];
+              const movingMarkText = line.moveMark === "O" ? "○" : line.moveMark === "X" ? "×" : line.moveMark;
+
+              const baseShiying = `${line.isShi ? "世" : ""}${line.isYing ? "应" : ""}`;
+              const changedShiying = `${line.changedIsShi ? "世" : ""}${line.changedIsYing ? "应" : ""}`;
+
               return (
                 <React.Fragment key={idxFromTop}>
-                  <div className="col-span-2 flex items-center justify-center text-[10px] text-[#2F2F2F]/40 font-bold py-3 border-t border-[#B37D56]/5">
-                    {line.sixGod ?? ANIMALS[idxFromTop % 6]}
+                  <div className="flex items-center justify-center text-[11px] text-[#5A5A5A] font-bold py-4 border-t border-[#B37D56]/5">
+                    {sixGodText}
                   </div>
-                  <div className="col-span-10 flex items-center justify-center gap-3 py-3 border-t border-[#B37D56]/5 relative">
-                    <div className="flex flex-col items-end text-[10px] w-16 font-bold text-[#2F2F2F]/50">
-                      <span>{line.relative}</span>
-                      <span className="text-[9px] text-[#2F2F2F]/30">{line.najia.text}</span>
+
+                  <div className="flex items-center justify-end py-4 px-3 border-t border-[#B37D56]/5">
+                    <div
+                      className="text-xs font-bold chinese-font leading-tight text-right"
+                      style={{ color: getWuxingColor(line.najia.element) }}
+                    >
+                      {line.relative} {line.najia.text}
+                      {line.najia.element}
                     </div>
-                    <div className="text-xl font-mono leading-none">
-                      {line.symbol.replace(/ /g, "　")}
+                  </div>
+
+                  <div className="flex items-center justify-center py-4 border-t border-[#B37D56]/5">
+                    <LiuyaoLineSvg
+                      line={line.lineType}
+                      className="h-6 w-full max-w-[220px]"
+                      lineColor="#2F2F2F"
+                      markColor="#A62121"
+                      showMark={false}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-center py-4 border-t border-[#B37D56]/5">
+                    {baseShiying ? (
+                      <div className="flex gap-1">
+                        {line.isShi && (
+                          <span className="text-xs font-bold text-[#A62121] chinese-font tracking-widest">世</span>
+                        )}
+                        {line.isYing && (
+                          <span className="text-xs font-bold text-[#4A4A4A] chinese-font tracking-widest">应</span>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="flex items-center justify-center py-4 border-t border-[#B37D56]/5">
+                    {line.isMoving ? (
+                      <span className="inline-flex items-center justify-center w-8 h-8 border border-[#A62121] bg-[#FAF7F2] text-[#A62121] text-lg font-black rounded-[2px]">
+                        {movingMarkText}
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <div className="flex items-center justify-center text-[11px] text-[#5A5A5A] font-bold py-4 border-t border-[#B37D56]/5">
+                    {sixGodText}
+                  </div>
+
+                  <div className="flex items-center justify-end py-4 px-3 border-t border-[#B37D56]/5">
+                    <div
+                      className="text-xs font-bold chinese-font leading-tight text-right"
+                      style={{ color: getWuxingColor(line.changedNajia.element) }}
+                    >
+                      {line.changedRelative} {line.changedNajia.text}
+                      {line.changedNajia.element}
                     </div>
-                    <div className="w-4 text-[10px] font-bold text-[#A62121]">
-                      {line.isMoving ? line.moveMark : ""}
-                    </div>
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
-                      {line.isShi && (
-                        <span className="text-[10px] font-bold text-[#A62121] chinese-font tracking-widest">
-                          世
-                        </span>
-                      )}
-                      {line.isYing && (
-                        <span className="text-[10px] font-bold text-[#2F2F2F]/50 chinese-font tracking-widest">
-                          应
-                        </span>
-                      )}
-                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-center py-4 border-t border-[#B37D56]/5">
+                    <LiuyaoLineSvg
+                      line={line.changedLineType}
+                      className="h-6 w-full max-w-[220px]"
+                      lineColor="#2F2F2F"
+                      markColor="#A62121"
+                      showMark={false}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-center py-4 border-t border-[#B37D56]/5">
+                    {changedShiying ? (
+                      <div className="flex gap-1">
+                        {line.changedIsShi && (
+                          <span className="text-xs font-bold text-[#A62121] chinese-font tracking-widest">世</span>
+                        )}
+                        {line.changedIsYing && (
+                          <span className="text-xs font-bold text-[#4A4A4A] chinese-font tracking-widest">应</span>
+                        )}
+                      </div>
+                    ) : null}
                   </div>
                 </React.Fragment>
               );
@@ -235,15 +367,15 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           </div>
         </div>
 
-        <div className="lg:col-span-4 bg-white border border-[#B37D56]/15 p-8 space-y-8 rounded-[4px] shadow-none">
-          <h3 className="text-[10px] font-bold text-[#B37D56] uppercase border-b border-[#B37D56]/15 pb-2 tracking-[0.3em]">
+        <div className="lg:col-span-3 bg-white border border-[#B37D56]/15 p-8 space-y-8 rounded-[4px] shadow-none">
+          <h3 className="text-xs font-bold text-[#B37D56] uppercase border-b border-[#B37D56]/15 pb-2 tracking-[0.3em]">
             断语简析
           </h3>
-          <div className="space-y-4 text-sm chinese-font leading-relaxed">
+          <div className="space-y-4 text-[15px] chinese-font leading-relaxed">
             <p className="border-l border-[#B37D56]/30 pl-4 font-bold text-[#2F2F2F]">
               （占断模板）以用神、世应、动变为纲，结合月建日辰定旺衰。
             </p>
-            <p className="border-l border-black/10 pl-4 text-[#2F2F2F]/40">
+            <p className="border-l border-black/10 pl-4 text-[#4A4A4A]">
               {record.notes?.trim() ? record.notes : "（暂无备注）"}
             </p>
           </div>
@@ -255,7 +387,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           <div className="w-[360px] bg-white border-l border-[#B37D56]/20 flex flex-col h-full shadow-none">
             <div className="p-5 border-b border-[#B37D56]/10 bg-[#FAF7F2] flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <span className="text-xs font-bold chinese-font text-[#2F2F2F] tracking-widest">
+                <span className="text-sm font-bold chinese-font text-[#2F2F2F] tracking-widest">
                   易理探讨
                 </span>
                 <button
@@ -263,14 +395,14 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                     clearHistory(id);
                     showToast("已清空对话", "info");
                   }}
-                  className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#2F2F2F]/30 hover:text-[#A62121]"
+                  className="text-[11px] font-bold tracking-[0.2em] uppercase text-[#6B6B6B] hover:text-[#A62121]"
                 >
                   清空
                 </button>
               </div>
               <button
                 onClick={() => setIsPanelOpen(false)}
-                className="text-[#2F2F2F]/30 uppercase text-[10px] hover:text-[#A62121]"
+                className="text-[#6B6B6B] uppercase text-[11px] hover:text-[#A62121]"
               >
                 Close
               </button>
@@ -279,7 +411,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
               {history.map((msg, idx) => (
                 <div
                   key={idx}
-                  className={`p-3 text-xs border chinese-font leading-relaxed ${
+                  className={`p-3 text-sm border chinese-font leading-relaxed ${
                     msg.role === "user"
                       ? "bg-[#FAF7F2] border-[#B37D56]/20 ml-8"
                       : "bg-white border-black/10 mr-8"
@@ -289,7 +421,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                 </div>
               ))}
               {isTyping && (
-                <div className="p-3 text-xs border border-black/10 mr-8 text-[#2F2F2F]/40">
+                <div className="p-3 text-sm border border-black/10 mr-8 text-[#6B6B6B]">
                   正在推演...
                 </div>
               )}
@@ -304,7 +436,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                   if (e.key === "Enter") void handleSend();
                 }}
                 placeholder="咨询..."
-                className="w-full bg-[#FAF7F2] border border-[#B37D56]/20 px-3 py-2 text-xs outline-none rounded-[2px]"
+                className="w-full bg-[#FAF7F2] border border-[#B37D56]/20 px-3 py-2 text-sm outline-none rounded-[2px]"
               />
               <button
                 onClick={() => void handleSend()}
