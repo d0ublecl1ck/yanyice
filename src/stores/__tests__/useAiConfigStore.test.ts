@@ -30,17 +30,20 @@ const memoryLocalStorage = createMemoryLocalStorage();
 const originalFetch = globalThis.fetch;
 
 beforeAll(() => {
-  (globalThis as unknown as { localStorage: LocalStorageLike }).localStorage = memoryLocalStorage;
+  Object.defineProperty(globalThis, "localStorage", { value: memoryLocalStorage, configurable: true });
 });
 
 afterAll(() => {
   globalThis.fetch = originalFetch;
   if (originalLocalStorage === undefined) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    delete (globalThis as any).localStorage;
+    try {
+      delete (globalThis as unknown as { localStorage?: unknown }).localStorage;
+    } catch {
+      Object.defineProperty(globalThis, "localStorage", { value: undefined, configurable: true });
+    }
     return;
   }
-  (globalThis as unknown as { localStorage: unknown }).localStorage = originalLocalStorage;
+  Object.defineProperty(globalThis, "localStorage", { value: originalLocalStorage, configurable: true });
 });
 
 beforeEach(() => {
@@ -132,4 +135,3 @@ test("updateModel and saveApiKey send PUT requests", async () => {
   expect(useAiConfigStore.getState().model).toBe("glm-4v-flash");
   expect(useAiConfigStore.getState().hasApiKey).toBe(true);
 });
-
