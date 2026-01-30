@@ -30,6 +30,11 @@ describe("liuyao paipan", () => {
     expect(p.palace.shiLineIndexFromBottom).toBe(3);
     expect(p.palace.yingLineIndexFromBottom).toBe(0);
 
+    expect(p.changedPalace.name).toBe("巽");
+    expect(p.changedPalace.generation).toBe("五世");
+    expect(p.changedPalace.shiLineIndexFromBottom).toBe(4);
+    expect(p.changedPalace.yingLineIndexFromBottom).toBe(1);
+
     expect(p.lines[0]?.najia.text).toBe("丁巳");
     expect(p.lines[1]?.najia.text).toBe("丁卯");
     expect(p.lines[2]?.najia.text).toBe("丁丑");
@@ -47,5 +52,13 @@ describe("liuyao paipan", () => {
     expect(p.lines[3]?.isShi).toBe(true);
 
     expect(p.lines.map((l) => l.lineType)).toEqual(data.lines);
+    expect(p.lines.map((l) => l.changedLineType)).toEqual([
+      LineType.SHAO_YANG,
+      LineType.SHAO_YIN,
+      LineType.SHAO_YIN,
+      LineType.SHAO_YANG,
+      LineType.SHAO_YIN,
+      LineType.SHAO_YANG,
+    ]);
   });
 });
