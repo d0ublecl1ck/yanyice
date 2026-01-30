@@ -202,8 +202,8 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         </div>
       </header>
 
-      <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-12 bg-white border border-[#B37D56]/15 p-8 space-y-8 rounded-none">
+      <div className="mt-10 grid grid-cols-1 lg:grid-cols-10 gap-8">
+        <div className="lg:col-span-7 bg-white border border-[#B37D56]/15 p-8 space-y-8 rounded-none">
           <div className="grid grid-cols-[4rem_minmax(0,1fr)_2.5rem_minmax(0,1fr)] gap-0">
             <div className="text-[9px] text-[#B37D56]/40 font-bold pb-4 uppercase tracking-widest text-center">
               六神
@@ -299,7 +299,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           </div>
         </div>
 
-        <div className="lg:col-span-12 bg-white border border-[#B37D56]/15 p-8 space-y-8 rounded-[4px] shadow-none">
+        <div className="lg:col-span-3 bg-white border border-[#B37D56]/15 p-8 space-y-8 rounded-[4px] shadow-none">
           <h3 className="text-[10px] font-bold text-[#B37D56] uppercase border-b border-[#B37D56]/15 pb-2 tracking-[0.3em]">
             断语简析
           </h3>
