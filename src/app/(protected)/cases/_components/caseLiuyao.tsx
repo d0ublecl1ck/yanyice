@@ -62,9 +62,9 @@ export function CaseLiuyao() {
         />
       </div>
 
-      <div className="bg-white border border-[#B37D56]/10 rounded-none shadow-sm overflow-hidden">
+      <div className="border border-[#B37D56]/10 rounded-none shadow-sm overflow-hidden bg-[#B37D56]/10">
         {filteredRecords.length > 0 ? (
-          <div className="divide-y divide-[#B37D56]/5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px">
             {filteredRecords
               .sort((a, b) => b.createdAt - a.createdAt)
               .map((record) => {
@@ -81,7 +81,7 @@ export function CaseLiuyao() {
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") router.push(editHref);
                     }}
-                    className="flex items-center group hover:bg-[#FAF7F2] transition-all p-6"
+                    className="bg-white flex items-start gap-4 group hover:bg-[#FAF7F2] transition-all p-6"
                   >
                     <div className="w-12 h-12 bg-[#B37D56]/5 flex items-center justify-center shrink-0">
                       <FileText
@@ -89,44 +89,50 @@ export function CaseLiuyao() {
                         className="text-[#B37D56]/30 group-hover:text-[#A62121] transition-colors"
                       />
                     </div>
-                    <div className="ml-6 flex-1 grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-                      <div className="md:col-span-2">
-                        <h4 className="font-bold text-[#2F2F2F] chinese-font group-hover:text-[#A62121] transition-colors">
-                          {record.subject}
-                        </h4>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[10px] font-bold text-[#B37D56] uppercase tracking-widest">
-                            {displayCustomerName}
-                          </span>
-                          <span className="text-[10px] text-[#2F2F2F]/20">|</span>
-                          <span className="text-[10px] text-[#2F2F2F]/30">文王六爻</span>
+
+                    <div className="flex-1 min-w-0 space-y-4">
+                      <div className="flex items-start justify-between gap-6">
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-[#2F2F2F] chinese-font group-hover:text-[#A62121] transition-colors truncate">
+                            {record.subject}
+                          </h4>
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <span className="text-[10px] font-bold text-[#B37D56] uppercase tracking-widest">
+                              {displayCustomerName}
+                            </span>
+                            <span className="text-[10px] text-[#2F2F2F]/20">|</span>
+                            <span className="text-[10px] text-[#2F2F2F]/30">文王六爻</span>
+                          </div>
+                        </div>
+                        <div className="text-[11px] text-[#2F2F2F]/40 font-bold uppercase tracking-widest flex items-center gap-2 shrink-0">
+                          <Calendar size={12} />
+                          {new Date(record.createdAt).toLocaleDateString()}
                         </div>
                       </div>
-                      <div className="text-[11px] text-[#2F2F2F]/40 font-bold uppercase tracking-widest flex items-center gap-2">
-                        <Calendar size={12} />
-                        {new Date(record.createdAt).toLocaleDateString()}
-                      </div>
-                      <div className="text-right flex items-center justify-end gap-2">
-                        <Link
-                          href={analysisHref}
-                          className="text-[9px] px-2 py-0.5 border border-black/10 text-[#2F2F2F]/60 font-bold hover:border-[#A62121]/30 hover:text-[#A62121]"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          排盘
-                        </Link>
-                        <Link
-                          href={editHref}
-                          className="text-[9px] px-2 py-0.5 border border-[#B37D56]/20 text-[#2F2F2F]/30 font-bold hover:border-[#A62121]/30 hover:text-[#A62121]"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          编辑
-                        </Link>
+
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={analysisHref}
+                            className="text-[9px] px-2 py-0.5 border border-black/10 text-[#2F2F2F]/60 font-bold hover:border-[#A62121]/30 hover:text-[#A62121]"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            排盘
+                          </Link>
+                          <Link
+                            href={editHref}
+                            className="text-[9px] px-2 py-0.5 border border-[#B37D56]/20 text-[#2F2F2F]/30 font-bold hover:border-[#A62121]/30 hover:text-[#A62121]"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            编辑
+                          </Link>
+                        </div>
+                        <ChevronRight
+                          size={16}
+                          className="text-[#2F2F2F]/10 group-hover:text-[#A62121] transition-all transform group-hover:translate-x-1"
+                        />
                       </div>
                     </div>
-                    <ChevronRight
-                      size={16}
-                      className="ml-6 text-[#2F2F2F]/10 group-hover:text-[#A62121] transition-all transform group-hover:translate-x-1"
-                    />
                   </div>
                 );
               })}
