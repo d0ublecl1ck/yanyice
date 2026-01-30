@@ -185,8 +185,8 @@ const transformToFullAnalysis = (params: {
             ? "乾造"
             : "命造",
       pillars,
-      tgNotes: relations.tianGan.join(",") || "（暂无）",
-      dzNotes: relations.diZhi.join(",") || "（暂无）",
+      tgNotes: relations.tianGan,
+      dzNotes: relations.diZhi,
     };
   }
 
@@ -276,8 +276,8 @@ const transformToFullAnalysis = (params: {
           ? "乾造"
           : "命造",
     pillars,
-    tgNotes: relations.tianGan.join(",") || "（暂无）",
-    dzNotes: relations.diZhi.join(",") || "（暂无）",
+    tgNotes: relations.tianGan,
+    dzNotes: relations.diZhi,
   };
 };
 
@@ -561,13 +561,31 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 	              <h3 className="text-[10px] font-bold text-[#B37D56] uppercase tracking-[0.3em] border-b border-[#B37D56]/15 pb-2">
 	                命局关系
 	              </h3>
-	              <div className="space-y-3">
-	                <p className="text-[13px] text-[#2F2F2F] chinese-font leading-relaxed font-bold">
-	                  天干留意：{analysis.tgNotes}
-	                </p>
-	                <p className="text-[13px] text-[#2F2F2F] chinese-font leading-relaxed font-bold">
-	                  地支留意：{analysis.dzNotes}
-	                </p>
+	              <div className="space-y-8">
+	                <div className="space-y-2">
+	                  <span className="text-[9px] font-bold text-[#B37D56]/40 uppercase tracking-widest">
+	                    天干留意
+	                  </span>
+	                  <div className="text-[13px] text-[#2F2F2F] chinese-font leading-relaxed font-bold border-l border-[#B37D56]/15 pl-3 space-y-1">
+	                    {analysis.tgNotes.length ? (
+	                      analysis.tgNotes.map((note: string, idx: number) => <div key={idx}>{note}</div>)
+	                    ) : (
+	                      <div className="text-[#2F2F2F]/30">（暂无）</div>
+	                    )}
+	                  </div>
+	                </div>
+	                <div className="space-y-2">
+	                  <span className="text-[9px] font-bold text-[#B37D56]/40 uppercase tracking-widest">
+	                    地支留意
+	                  </span>
+	                  <div className="text-[13px] text-[#2F2F2F] chinese-font leading-relaxed font-bold border-l border-[#B37D56]/15 pl-3 space-y-1">
+	                    {analysis.dzNotes.length ? (
+	                      analysis.dzNotes.map((note: string, idx: number) => <div key={idx}>{note}</div>)
+	                    ) : (
+	                      <div className="text-[#2F2F2F]/30">（暂无）</div>
+	                    )}
+	                  </div>
+	                </div>
 	              </div>
 	            </div>
 
