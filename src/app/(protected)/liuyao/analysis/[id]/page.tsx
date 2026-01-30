@@ -205,34 +205,26 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       <div className="mt-10 grid grid-cols-1 lg:grid-cols-10 gap-8">
         <div className="lg:col-span-7 bg-white border border-[#B37D56]/15 p-8 space-y-8 rounded-none">
           <div className="grid grid-cols-[4rem_minmax(0,1fr)_2.5rem_minmax(0,1fr)] gap-0">
-            <div className="text-[10px] text-[#8B6A52] font-bold py-3 uppercase tracking-widest text-center">
-              六神
-            </div>
-            <div className="text-[10px] text-[#8B6A52] font-bold py-3 uppercase tracking-widest text-center">
+            <div className="py-2" />
+            <div className="text-[11px] text-[#8B6A52] font-bold py-2 tracking-widest text-center">
               {baseTitle ?? "本卦"}
             </div>
-            <div className="text-[10px] text-[#8B6A52] font-bold py-3 uppercase tracking-widest text-center">
-              动
-            </div>
-            <div className="text-[10px] text-[#8B6A52] font-bold py-3 uppercase tracking-widest text-center">
+            <div className="py-2" />
+            <div className="text-[11px] text-[#8B6A52] font-bold py-2 tracking-widest text-center">
               {changedTitle ?? "变卦"}
             </div>
 
-            <div className="border-b border-[#B37D56]/10" />
-            <div className="px-3 py-2 border-b border-[#B37D56]/10">
-              <div className="flex justify-end">
-                <div className="w-28 text-[10px] text-[#8B6A52] font-bold tracking-widest text-right">
-                  六亲
-                </div>
-              </div>
+            <div className="text-[10px] text-[#8B6A52] font-bold py-3 uppercase tracking-widest text-center border-b border-[#B37D56]/10">
+              六神
             </div>
-            <div className="border-b border-[#B37D56]/10" />
-            <div className="px-3 py-2 border-b border-[#B37D56]/10">
-              <div className="flex justify-end">
-                <div className="w-28 text-[10px] text-[#8B6A52] font-bold tracking-widest text-right">
-                  六亲
-                </div>
-              </div>
+            <div className="text-[10px] text-[#8B6A52] font-bold py-3 uppercase tracking-widest text-center border-b border-[#B37D56]/10">
+              六亲
+            </div>
+            <div className="text-[10px] text-[#8B6A52] font-bold py-3 uppercase tracking-widest text-center border-b border-[#B37D56]/10">
+              动
+            </div>
+            <div className="text-[10px] text-[#8B6A52] font-bold py-3 uppercase tracking-widest text-center border-b border-[#B37D56]/10">
+              六亲
             </div>
 
             {(linesFromTop ?? []).map((line, idxFromTop) => {
