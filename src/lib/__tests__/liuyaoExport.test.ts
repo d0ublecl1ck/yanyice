@@ -28,7 +28,6 @@ describe("liuyao export", () => {
       solarDate: "2026/1/1 12:00:00",
       monthBranch: "子",
       dayBranch: "甲子",
-      notes: "这里是断语",
       paipan: paipanLiuyao(data),
       shenSha: { items: [{ name: "天乙", branch: "子" }] },
       chatHistory: [
@@ -52,10 +51,7 @@ describe("liuyao export", () => {
 
     expect(text).toContain("- 神煞：天乙在子");
 
-    expect(text).toContain("四、 断语简析");
-    expect(text).toContain("这里是断语");
-
-    expect(text).toContain("五、 对话记录");
+    expect(text).toContain("四、 对话记录");
     expect(text).toContain("| 角色 | 内容 |");
     expect(text).toContain("我");
     expect(text).toContain("你好");

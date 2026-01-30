@@ -46,7 +46,6 @@ export function formatLiuyaoExportText(params: {
   solarDate?: string | null;
   monthBranch?: string | null;
   dayBranch?: string | null;
-  notes?: string | null;
   fourPillars?: ExportFourPillars | null;
   paipan?: LiuyaoPaipan | null;
   shenSha?: { items?: Array<{ name: string; branch: string }> } | null;
@@ -170,14 +169,9 @@ export function formatLiuyaoExportText(params: {
     lines.push("");
   }
 
-  lines.push("四、 断语简析");
-  lines.push("");
-  lines.push(params.notes?.trim() ? params.notes.trim() : "（无）");
-  lines.push("");
-
   const chat = params.chatHistory ?? [];
   if (chat.length) {
-    lines.push("五、 对话记录");
+    lines.push("四、 对话记录");
     lines.push("");
     const chatRows = chat.map((m) => [
       m.role === "user" ? "我" : "助手",

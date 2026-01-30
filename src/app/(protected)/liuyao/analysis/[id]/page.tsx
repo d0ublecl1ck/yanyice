@@ -110,7 +110,6 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       solarDate: analysis?.solarDate ?? null,
       monthBranch: analysis?.monthBranch ?? null,
       dayBranch: analysis?.dayBranch ?? null,
-      notes: record?.notes ?? null,
       fourPillars,
       paipan,
       shenSha,
