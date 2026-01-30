@@ -28,6 +28,14 @@ function getToastErrorMessage(err: unknown): string {
   return "操作失败，请稍后重试";
 }
 
+function normalizeQuoteLines(lines: string): string {
+  return lines
+    .split(/\r?\n/g)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join("\n");
+}
+
 export default function Page() {
   const { user, logout } = useAuthStore();
   const router = useRouter();
@@ -56,6 +64,7 @@ export default function Page() {
   const [isClearOpen, setIsClearOpen] = useState(false);
   const [quoteLinesDraft, setQuoteLinesDraft] = useState("");
   const [hasEditedQuoteLines, setHasEditedQuoteLines] = useState(false);
+  const [isResetQuotesOpen, setIsResetQuotesOpen] = useState(false);
   const lastServerRef = useRef<{ vendor: string; model: string } | null>(null);
 
   useEffect(() => {
@@ -145,14 +154,35 @@ export default function Page() {
     );
   };
 
-  const handleSaveQuoteLines = () => {
-    void saveQuoteLines(quoteLinesDraft).then(() => {
+  useEffect(() => {
+    if (quoteStatus !== "ready") return;
+    if (!hasEditedQuoteLines) return;
+    if (quoteStatus === "loading") return;
+
+    const normalized = normalizeQuoteLines(quoteLinesDraft);
+    const enabledLines = quotes.filter((q) => q.enabled).map((q) => q.text).join("\n");
+    const enabledNormalized = normalizeQuoteLines(enabledLines);
+
+    if (normalized === enabledNormalized) {
       setHasEditedQuoteLines(false);
-      toast("名言列表已保存", "success");
-    }).catch((err) => {
-      toast(getToastErrorMessage(err), "warning");
-    });
-  };
+      return;
+    }
+
+    if (!normalized) return;
+
+    const t = window.setTimeout(() => {
+      void saveQuoteLines(quoteLinesDraft)
+        .then(() => {
+          setHasEditedQuoteLines(false);
+          toast("名言已自动保存", "success");
+        })
+        .catch((err) => {
+          toast(getToastErrorMessage(err), "warning");
+        });
+    }, 800);
+
+    return () => window.clearTimeout(t);
+  }, [hasEditedQuoteLines, quoteLinesDraft, quoteStatus, quotes, saveQuoteLines, toast]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -332,14 +362,7 @@ export default function Page() {
 
             <button
               onClick={() => {
-                void resetSystemQuotes()
-                  .then(() => {
-                    setHasEditedQuoteLines(false);
-                    toast("系统名言已恢复", "info");
-                  })
-                  .catch((err) => {
-                    toast(getToastErrorMessage(err), "warning");
-                  });
+                setIsResetQuotesOpen(true);
               }}
               className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-[#B37D56]/20 text-[#2F2F2F] font-bold text-xs tracking-widest hover:bg-[#FAF7F2] transition-all chinese-font rounded-[2px]"
               title="恢复系统内置名言"
@@ -366,6 +389,10 @@ export default function Page() {
                 setHasEditedQuoteLines(true);
                 setQuoteLinesDraft(e.target.value);
               }}
+              onBlur={() => {
+                const normalized = normalizeQuoteLines(quoteLinesDraft);
+                if (!normalized) toast("请至少保留一条名言", "warning");
+              }}
               placeholder="每行输入一条名言…"
               rows={10}
               className="w-full px-3 py-2 bg-white border border-[#B37D56]/20 text-sm chinese-font rounded-none focus:outline-none focus:border-[#B37D56]/50 resize-y"
@@ -374,18 +401,30 @@ export default function Page() {
 
             <div className="flex items-center justify-between gap-3">
               <p className="text-[10px] text-[#2F2F2F]/40">
-                {quoteStatus === "loading" ? "正在加载…" : "支持重复行自动去重；空行会被忽略"}
+                {quoteStatus === "loading" ? "正在加载…" : "自动保存；重复行会被去重；空行会被忽略"}
               </p>
-              <button
-                onClick={handleSaveQuoteLines}
-                className="px-3 py-2 bg-[#2F2F2F] text-white text-xs font-bold tracking-widest hover:bg-black transition-colors rounded-[2px] chinese-font"
-                disabled={quoteStatus === "loading"}
-              >
-                保存
-              </button>
             </div>
           </div>
         </section>
+
+        <ConfirmDialog
+          open={isResetQuotesOpen}
+          title="恢复系统名言？"
+          description="将恢复系统内置名言内容并启用（你自定义新增的名言不会删除）。"
+          confirmText="恢复"
+          onCancel={() => setIsResetQuotesOpen(false)}
+          onConfirm={() => {
+            setIsResetQuotesOpen(false);
+            void resetSystemQuotes()
+              .then(() => {
+                setHasEditedQuoteLines(false);
+                toast("系统名言已恢复", "info");
+              })
+              .catch((err) => {
+                toast(getToastErrorMessage(err), "warning");
+              });
+          }}
+        />
 
         <section className="bg-white p-8 border border-[#B37D56]/10 space-y-6">
           <div className="flex items-center gap-3 border-b border-[#B37D56]/10 pb-4">
