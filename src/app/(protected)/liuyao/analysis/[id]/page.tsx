@@ -220,6 +220,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
             {(linesFromTop ?? []).map((line, idxFromTop) => {
               const sixGodText = line.sixGod ?? ANIMALS[idxFromTop % 6];
+              const movingMarkText = line.moveMark === "O" ? "○" : line.moveMark === "X" ? "×" : line.moveMark;
 
               return (
                 <React.Fragment key={idxFromTop}>
@@ -260,8 +261,16 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-center text-xs font-bold text-[#A62121] py-4 border-t border-[#B37D56]/5">
-                    {line.isMoving ? line.moveMark : ""}
+                  <div className="flex items-center justify-center py-4 border-t border-[#B37D56]/5">
+                    {line.isMoving ? (
+                      <span className="inline-flex items-center justify-center w-8 h-8 border border-[#A62121] bg-[#FAF7F2] text-[#A62121] text-lg font-black rounded-[2px]">
+                        {movingMarkText}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center justify-center w-8 h-8 text-[#6B6B6B] text-sm font-bold">
+                        —
+                      </span>
+                    )}
                   </div>
 
                   <div className="relative py-4 border-t border-[#B37D56]/5">
