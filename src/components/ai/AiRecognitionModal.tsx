@@ -30,6 +30,12 @@ type Props<T extends AiRecognizeTarget> = {
 
 const PAPER_TEXTURE_URL = "https://www.transparenttextures.com/patterns/natural-paper.png";
 
+const placeholderByTarget: Record<AiRecognizeTarget, string> = {
+  bazi: "例如：1995年8月10日10点出生在北京，或粘贴一段命理描述...",
+  liuyao: "例如：问来年财运，起卦时间 2025-01-01 10:30，或粘贴一段卦例描述...",
+  customer: "例如：张三，男，电话 138xxxxxx，或粘贴一段客户描述...",
+};
+
 export function AiRecognitionModal<T extends AiRecognizeTarget>({
   open,
   target,
@@ -43,21 +49,13 @@ export function AiRecognitionModal<T extends AiRecognizeTarget>({
   const [text, setText] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [dots, setDots] = useState("");
 
   useEffect(() => {
     if (!open) return;
     setText("");
     setImageFile(null);
     setIsLoading(false);
-    setDots("");
   }, [open]);
-
-  useEffect(() => {
-    if (!isLoading) return;
-    const t = window.setInterval(() => setDots((prev) => (prev.length >= 3 ? "" : `${prev}.`)), 450);
-    return () => window.clearInterval(t);
-  }, [isLoading]);
 
   const imagePreviewUrl = useMemo(() => {
     if (!imageFile) return null;
@@ -86,24 +84,34 @@ export function AiRecognitionModal<T extends AiRecognizeTarget>({
       reader.readAsDataURL(file);
     });
 
-  const maybePasteImage = (e: React.ClipboardEvent) => {
-    if (isLoading) return false;
-    const dt = e.clipboardData;
-    if (!dt) return false;
+  useEffect(() => {
+    if (!open) return;
 
-    const items = Array.from(dt.items ?? []);
-    const imageItem = items.find((it) => it.kind === "file" && it.type.startsWith("image/"));
-    const blob = imageItem?.getAsFile?.() ?? null;
-    if (!blob) return false;
+    const onPaste = (e: ClipboardEvent) => {
+      if (isLoading) return;
+      const dt = e.clipboardData;
+      if (!dt) return;
 
-    const file = new File([blob], `clipboard-${Date.now()}.${blob.type.split("/")[1] || "png"}`, {
-      type: blob.type || "image/png",
-    });
-    setImageFile(file);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    toast.show("已从剪贴板粘贴图片", "success");
-    return true;
-  };
+      const items = Array.from(dt.items ?? []);
+      const imageItem = items.find((it) => it.kind === "file" && it.type.startsWith("image/"));
+      const blob = imageItem?.getAsFile?.() ?? null;
+      if (!blob) return;
+
+      const file = new File([blob], `clipboard-${Date.now()}.${blob.type.split("/")[1] || "png"}`, {
+        type: blob.type || "image/png",
+      });
+      setImageFile(file);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      toast.show("已从剪贴板粘贴图片", "success");
+
+      // Prevent clipboard image payload from being pasted as text into focused fields.
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    document.addEventListener("paste", onPaste, true);
+    return () => document.removeEventListener("paste", onPaste, true);
+  }, [isLoading, open, toast]);
 
   if (!open) return null;
 
@@ -122,11 +130,6 @@ export function AiRecognitionModal<T extends AiRecognizeTarget>({
       containerStyle={{ backgroundImage: `url("${PAPER_TEXTURE_URL}")` }}
       footer={
         <div className="space-y-3">
-          {isLoading ? (
-            <div className="text-[10px] text-[#B37D56] font-bold tracking-widest chinese-font text-center">
-              正在推演天机{dots}
-            </div>
-          ) : null}
           <div className="flex gap-3">
             <ModalSecondaryButton disabled={isLoading} onClick={onClose} className="flex-1">
               取消
@@ -164,13 +167,12 @@ export function AiRecognitionModal<T extends AiRecognizeTarget>({
                     toast.show("识别失败，请稍后重试", "error");
                   } finally {
                     setIsLoading(false);
-                    setDots("");
                   }
                 })();
               }}
               className="flex-1 h-12 chinese-font tracking-[0.4em]"
             >
-              {isLoading ? "推演中..." : "开始智能识别"}
+              {isLoading ? "识别中..." : "开始智能识别"}
             </ModalPrimaryButton>
           </div>
           {/* footer note removed */}
@@ -185,10 +187,7 @@ export function AiRecognitionModal<T extends AiRecognizeTarget>({
           rows={4}
           value={text}
           onChange={(e) => setText(e.target.value)}
-          onPaste={(e) => {
-            if (maybePasteImage(e)) e.preventDefault();
-          }}
-          placeholder="例如：1995年8月10日10点出生在北京，或粘贴一段命理描述..."
+          placeholder={placeholderByTarget[target]}
           className="w-full bg-white/60 p-4 border border-[#B37D56]/10 text-xs outline-none focus:border-[#A62121] transition-colors rounded-[4px]"
         />
       </div>
@@ -218,9 +217,6 @@ export function AiRecognitionModal<T extends AiRecognizeTarget>({
         <button
           type="button"
           disabled={isLoading}
-          onPaste={(e) => {
-            if (maybePasteImage(e)) e.preventDefault();
-          }}
           onClick={() => fileInputRef.current?.click()}
           className="w-full border border-dashed border-[#B37D56]/20 bg-white/50 rounded-[4px] h-[180px] flex items-center justify-center text-center hover:border-[#A62121]/30 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
