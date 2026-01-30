@@ -2,7 +2,6 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 import { ChineseDatePicker } from "@/components/ChineseDatePicker";
 import { ChineseTimePicker } from "@/components/ChineseTimePicker";
@@ -10,7 +9,6 @@ import { Select, type SelectOption } from "@/components/Select";
 import { Modal, ModalPrimaryButton, ModalSecondaryButton } from "@/components/ui/Modal";
 import { LiuyaoLineSvg } from "@/components/liuyao/LiuyaoLineSvg";
 import { calcLiuyaoGanzhiFromIso } from "@/lib/lunarGanzhi";
-import { recordEditHref } from "@/lib/caseLinks";
 import { LineType, type LiuYaoData } from "@/lib/types";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useCaseStore } from "@/stores/useCaseStore";
@@ -50,7 +48,6 @@ export function CreateLiuyaoRecordModal({
   onClose: () => void;
   initialCustomerId?: string;
 }) {
-  const router = useRouter();
   const showToast = useToastStore((s) => s.show);
   const accessToken = useAuthStore((s) => s.accessToken);
   const upsertLiuyaoRemote = useCaseStore((s) => s.upsertLiuyaoRemote);
@@ -150,7 +147,7 @@ export function CreateLiuyaoRecordModal({
                   dayBranch,
                 };
 
-                const id = await upsertLiuyaoRemote(accessToken, {
+                await upsertLiuyaoRemote(accessToken, {
                   payload: {
                     customerId: normalizedCustomerId,
                     customerName: customer?.name ?? null,
@@ -165,7 +162,6 @@ export function CreateLiuyaoRecordModal({
 
                 showToast("已创建六爻卦例", "success");
                 onClose();
-                router.push(recordEditHref("liuyao", id));
               } catch {
                 showToast("创建失败，请稍后重试", "error");
               } finally {
