@@ -7,8 +7,7 @@ describe("liuyao shensha", () => {
     const sha = calcLiuyaoShenSha({ dayStem: "乙", dayBranch: "亥", monthBranch: "子" });
 
     expect(sha.items).toEqual([
-      { name: "贵人", branch: "子" },
-      { name: "贵人", branch: "申" },
+      { name: "贵人", branch: "子申" },
       { name: "禄神", branch: "卯" },
       { name: "羊刃", branch: "寅" },
       { name: "文昌", branch: "午" },

@@ -31,8 +31,10 @@ function trineOfDayBranch(dayBranch: string): "申子辰" | "巳酉丑" | "寅�
   return null;
 }
 
-function pushMulti(res: LiuyaoShenShaItem[], name: string, branches: string[]) {
-  for (const b of branches) res.push({ name, branch: b });
+function pushConcat(res: LiuyaoShenShaItem[], name: string, branches: string[]) {
+  const v = branches.join("");
+  if (!v) return;
+  res.push({ name, branch: v });
 }
 
 export function calcLiuyaoShenSha(args: {
@@ -48,11 +50,11 @@ export function calcLiuyaoShenSha(args: {
 
   if (dayStem) {
     // 贵人（日干 → 地支）
-    if ("甲戊".includes(dayStem)) pushMulti(items, "贵人", ["丑", "未"]);
-    else if ("乙己".includes(dayStem)) pushMulti(items, "贵人", ["子", "申"]);
-    else if ("丙丁".includes(dayStem)) pushMulti(items, "贵人", ["亥", "酉"]);
-    else if ("庚辛".includes(dayStem)) pushMulti(items, "贵人", ["午", "寅"]);
-    else if ("壬癸".includes(dayStem)) pushMulti(items, "贵人", ["卯", "巳"]);
+    if ("甲戊".includes(dayStem)) pushConcat(items, "贵人", ["丑", "未"]);
+    else if ("乙己".includes(dayStem)) pushConcat(items, "贵人", ["子", "申"]);
+    else if ("丙丁".includes(dayStem)) pushConcat(items, "贵人", ["亥", "酉"]);
+    else if ("庚辛".includes(dayStem)) pushConcat(items, "贵人", ["午", "寅"]);
+    else if ("壬癸".includes(dayStem)) pushConcat(items, "贵人", ["卯", "巳"]);
 
     // 禄神（日干 → 地支）
     const lu: Record<string, string> = {
