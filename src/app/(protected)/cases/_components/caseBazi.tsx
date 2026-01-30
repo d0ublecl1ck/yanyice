@@ -250,7 +250,7 @@ export function CaseBazi() {
 	            if (e.target === e.currentTarget) closeCreate();
 	          }}
 	        >
-	          <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-[4px] border border-[#B37D56]/20 shadow-none overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
+	          <div className="bg-white w-full max-w-md max-h-[90vh] rounded-[4px] border border-[#B37D56]/20 shadow-none overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
 	            <div className="p-6 border-b border-[#B37D56]/10 flex justify-between items-center">
 	              <p className="text-xs font-bold tracking-widest chinese-font text-[#2F2F2F] flex items-center gap-2">
 	                <Hash size={16} />

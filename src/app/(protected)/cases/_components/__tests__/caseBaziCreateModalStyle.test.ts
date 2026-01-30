@@ -7,7 +7,7 @@ describe("CaseBazi create modal", () => {
     expect(source).toContain(
       'className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[210] flex items-center justify-center p-4"',
     );
-    expect(source).toContain("max-w-4xl");
+    expect(source).toContain("max-w-md");
     expect(source).toContain("rounded-[4px]");
     expect(source).toContain("border border-[#B37D56]/20");
     expect(source).toContain('className="min-h-0 flex-1 overflow-y-auto p-6"');
