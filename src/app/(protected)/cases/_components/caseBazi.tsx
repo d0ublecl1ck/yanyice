@@ -14,6 +14,7 @@ import { newCaseHref, recordAnalysisHref, recordEditHref } from "@/lib/caseLinks
 import type { BaZiData } from "@/lib/types";
 import { zodiacInfoFromBranch } from "@/lib/zodiac";
 import { CreateBaziRecordModal } from "./CreateBaziRecordModal";
+import { EditBaziRecordModal } from "./EditBaziRecordModal";
 import { CaseArchiveLayout } from "./CaseArchiveLayout";
 
 function BaziEightCharChops({ baziData }: { baziData?: BaZiData }) {
@@ -74,7 +75,9 @@ export function CaseBazi() {
   } | null>(null);
 
   const records = useMemo(() => allRecords.filter((r) => r.module === "bazi"), [allRecords]);
-  const isCreateOpen = searchParams.get("new") === "1";
+  const editId = searchParams.get("edit");
+  const isEditOpen = Boolean(editId);
+  const isCreateOpen = searchParams.get("new") === "1" && !isEditOpen;
 
   const availableTags = useMemo(() => {
     const tagCounts = new Map<string, number>();
@@ -127,18 +130,28 @@ export function CaseBazi() {
     const qs = new URLSearchParams(searchParams.toString());
     qs.delete("new");
     qs.delete("customerId");
+    qs.delete("edit");
+    const query = qs.toString();
+    router.replace(query ? `/bazi?${query}` : "/bazi");
+  }, [router, searchParams]);
+
+  const closeEdit = React.useCallback(() => {
+    const qs = new URLSearchParams(searchParams.toString());
+    qs.delete("edit");
     const query = qs.toString();
     router.replace(query ? `/bazi?${query}` : "/bazi");
   }, [router, searchParams]);
 
   React.useEffect(() => {
-    if (!isCreateOpen) return;
+    if (!isCreateOpen && !isEditOpen) return;
 
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeCreate();
+      if (e.key !== "Escape") return;
+      if (isEditOpen) closeEdit();
+      else closeCreate();
     };
     window.addEventListener("keydown", onKeyDown);
 
@@ -146,7 +159,7 @@ export function CaseBazi() {
       document.body.style.overflow = prevOverflow;
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [isCreateOpen, closeCreate]);
+  }, [isCreateOpen, isEditOpen, closeCreate, closeEdit]);
 
   return (
     <div>
@@ -345,6 +358,9 @@ export function CaseBazi() {
       />
 
 	      <CreateBaziRecordModal open={isCreateOpen} onClose={closeCreate} />
+        {editId ? (
+          <EditBaziRecordModal open={isEditOpen} id={editId} onClose={closeEdit} />
+        ) : null}
 	    </div>
 	  );
 }

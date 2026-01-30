@@ -2,8 +2,8 @@
 "use client";
 
 import React, { use, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Hash } from "lucide-react";
 
 import { geminiChat, type ChatMessage } from "@/lib/geminiService";
 import type { BaZiData } from "@/lib/types";
@@ -12,6 +12,8 @@ import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useChatStore, type Message } from "@/stores/useChatStore";
 import { useToastStore } from "@/stores/useToastStore";
 import { useAiConfigStore } from "@/stores/useAiConfigStore";
+import { Modal } from "@/components/ui/Modal";
+import { BaziEditView } from "../../_components/BaziEditView";
 
 const ELEMENT_STYLES: Record<string, { color: string }> = {
   wood: { color: "#40de5a" },
@@ -292,6 +294,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const customer = record?.customerId ? customers.find((c) => c.id === record.customerId) : null;
 
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -312,6 +315,23 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [history]);
+
+  useEffect(() => {
+    if (!isEditOpen) return;
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsEditOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isEditOpen]);
 
   const handleSend = async () => {
     if (!inputText.trim() || !analysis) return;
@@ -403,14 +423,34 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           >
             探讨易理
           </button>
-          <Link
-            href={`/bazi/edit/${encodeURIComponent(id)}`}
+          <button
+            type="button"
+            onClick={() => setIsEditOpen(true)}
             className="bg-[#2F2F2F] text-white px-5 py-2 text-[10px] font-bold tracking-[0.2em] uppercase rounded-[2px] hover:bg-black"
           >
             编辑案卷
-          </Link>
+          </button>
         </div>
       </header>
+
+      <Modal
+        open={isEditOpen}
+        title="编辑八字"
+        titleIcon={<Hash size={16} />}
+        onClose={() => setIsEditOpen(false)}
+        size="md"
+        scrollBody
+        hideScrollbar
+        maxHeightClassName="max-h-[90vh]"
+        bodyClassName="p-6"
+      >
+        <BaziEditView
+          id={id}
+          embedded
+          redirectTo={null}
+          onSaved={() => setIsEditOpen(false)}
+        />
+      </Modal>
 
       <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-10">
         <div className="lg:col-span-5 bg-white border border-[#B37D56]/15 overflow-hidden rounded-none">
