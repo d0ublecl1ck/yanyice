@@ -811,6 +811,8 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
 
   const [subject, setSubject] = useState("");
   const [customerId, setCustomerId] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagDraft, setTagDraft] = useState("");
   const [createCustomerAlso, setCreateCustomerAlso] = useState(false);
   const [recordDate, setRecordDate] = useState(() => nowBjIso());
   const [gender, setGender] = useState<"male" | "female">("male");
@@ -850,6 +852,7 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
     if (record && record.module === "bazi" && record.baziData) {
       setSubject(record.subject);
       setCustomerId(record.customerId || "");
+      setTags(record.tags ?? []);
       setBazi(record.baziData);
       setRecordDate(record.baziData.birthDate);
       setLocation(record.baziData.location || "请选择地区");
@@ -875,11 +878,40 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
     toast.show("时间已更新", "info");
   };
 
+  const addTagsFromText = React.useCallback(
+    (input: string) => {
+      const parts = input
+        .split(/[,\s，]+/)
+        .map((t) => t.trim())
+        .filter(Boolean);
+      if (parts.length === 0) return;
+
+      const next: string[] = [];
+      const seen = new Set<string>();
+      for (const t of [...tags, ...parts]) {
+        const normalized = t.trim();
+        if (!normalized) continue;
+        if (normalized.length > 32) {
+          toast.show("标签过长（最多 32 字）", "warning");
+          continue;
+        }
+        if (seen.has(normalized)) continue;
+        seen.add(normalized);
+        next.push(normalized);
+        if (next.length >= 50) break;
+      }
+
+      if (next.length >= 50) toast.show("标签过多（最多 50 个）", "warning");
+      setTags(next);
+    },
+    [tags, toast],
+  );
+
   const handleSave = async () => {
     const baziData = { ...(bazi as BaZiData), birthDate: recordDate, location };
     try {
       if (id) {
-        await updateRecord(id, { module: "bazi", subject, customerId, baziData });
+        await updateRecord(id, { module: "bazi", subject, customerId, tags, baziData });
         toast.show("已保存", "success");
       } else {
         let resolvedCustomerId = customerId;
@@ -914,7 +946,7 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
           module: "bazi",
           subject: subject || fallbackTitle,
           notes: "",
-          tags: [],
+          tags,
           baziData,
           verifiedStatus: "unverified",
           verifiedNotes: "",
@@ -1010,6 +1042,58 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
               ))}
             </div>
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-4">
+            <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest ml-1">
+              标签
+            </label>
+            {tags.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => setTags([])}
+                className="text-[10px] font-bold tracking-widest text-[#2F2F2F]/30 hover:text-[#A62121] transition-colors"
+              >
+                清空
+              </button>
+            ) : null}
+          </div>
+
+          {tags.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => setTags((prev) => prev.filter((t) => t !== tag))}
+                  className="flex items-center gap-1 text-[10px] px-2 py-1 border border-[#B37D56]/10 bg-[#FAF7F2] text-[#2F2F2F]/70 font-bold tracking-widest rounded-[2px] hover:border-[#A62121]/30 hover:text-[#A62121] transition-colors"
+                >
+                  {tag}
+                  <X size={12} className="opacity-40" />
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          <input
+            value={tagDraft}
+            onChange={(e) => setTagDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addTagsFromText(tagDraft);
+                setTagDraft("");
+                return;
+              }
+              if (e.key === "Backspace" && tagDraft.length === 0 && tags.length > 0) {
+                setTags((prev) => prev.slice(0, -1));
+              }
+            }}
+            placeholder="输入标签，回车添加（支持逗号/空格分隔）"
+            className="w-full bg-white border border-[#B37D56]/10 px-3 py-2 text-xs font-bold rounded-[2px] outline-none focus:border-[#A62121] transition-colors chinese-font"
+          />
+          <p className="text-[10px] text-[#2F2F2F]/30 chinese-font ml-1">最多 50 个，每个最多 32 字。</p>
         </div>
 
         <div className={`w-full flex flex-col md:flex-row md:items-stretch gap-4 ${embedded ? "" : ""}`}>
@@ -1188,7 +1272,7 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
               onClick={() => void handleSave()}
               className="w-full h-12 md:h-[52px] bg-[#2F2F2F] text-white rounded-[2px] text-lg font-bold chinese-font tracking-[0.6em] hover:bg-black transition-all active:scale-[0.98] flex items-center justify-center shadow-none"
             >
-              立即排盘
+              {id ? "保存" : "立即排盘"}
             </button>
           </div>
         </div>

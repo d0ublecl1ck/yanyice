@@ -53,6 +53,19 @@ describe("layout width constraints", () => {
     expect(source).not.toContain("max-w-6xl");
   });
 
+  test("bazi new modal supports record tags", async () => {
+    const source = await readFile("src/app/(protected)/bazi/_components/BaziEditView.tsx", "utf8");
+    expect(source).toContain("标签");
+    expect(source).toContain("输入标签，回车添加");
+    expect(source).toContain("tags, setTags");
+    expect(source).toContain("addTagsFromText");
+  });
+
+  test("bazi edit/new primary button label differs", async () => {
+    const source = await readFile("src/app/(protected)/bazi/_components/BaziEditView.tsx", "utf8");
+    expect(source).toContain('{id ? "保存" : "立即排盘"}');
+  });
+
   test("settings page uses a two-column grid on large screens", async () => {
     const source = await readFile("src/app/(protected)/settings/page.tsx", "utf8");
     expect(source).toContain("grid-cols-1 lg:grid-cols-2");
