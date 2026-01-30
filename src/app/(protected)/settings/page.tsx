@@ -10,6 +10,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { useToastStore } from "@/stores/useToastStore";
 import { useAiConfigStore } from "@/stores/useAiConfigStore";
 import { useQuoteStore } from "@/stores/useQuoteStore";
+import { ApiError } from "@/lib/apiClient";
 import {
   getDefaultAiConfig,
   sanitizeAiApiKey,
@@ -17,6 +18,15 @@ import {
   sanitizeAiVendor,
 } from "@/lib/aiConfig";
 import { AI_VENDORS, getAiVendorById } from "@/lib/aiVendors";
+
+function getToastErrorMessage(err: unknown): string {
+  if (err instanceof ApiError) return err.message;
+  if (err instanceof Error) {
+    if (/failed to fetch/i.test(err.message)) return "连接后端失败，请确认后端服务已启动";
+    return err.message || "操作失败，请稍后重试";
+  }
+  return "操作失败，请稍后重试";
+}
 
 export default function Page() {
   const { user, logout } = useAuthStore();
@@ -136,13 +146,12 @@ export default function Page() {
   };
 
   const handleSaveQuoteLines = () => {
-    void saveQuoteLines(quoteLinesDraft).then(
-      () => {
-        setHasEditedQuoteLines(false);
-        toast("名言列表已保存", "success");
-      },
-      () => toast("保存失败，请稍后重试", "warning"),
-    );
+    void saveQuoteLines(quoteLinesDraft).then(() => {
+      setHasEditedQuoteLines(false);
+      toast("名言列表已保存", "success");
+    }).catch((err) => {
+      toast(getToastErrorMessage(err), "warning");
+    });
   };
 
   return (
@@ -323,13 +332,14 @@ export default function Page() {
 
             <button
               onClick={() => {
-                void resetSystemQuotes().then(
-                  () => {
+                void resetSystemQuotes()
+                  .then(() => {
                     setHasEditedQuoteLines(false);
                     toast("系统名言已恢复", "info");
-                  },
-                  () => toast("恢复失败，请稍后重试", "warning"),
-                );
+                  })
+                  .catch((err) => {
+                    toast(getToastErrorMessage(err), "warning");
+                  });
               }}
               className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-[#B37D56]/20 text-[#2F2F2F] font-bold text-xs tracking-widest hover:bg-[#FAF7F2] transition-all chinese-font rounded-[2px]"
               title="恢复系统内置名言"
