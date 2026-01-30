@@ -266,9 +266,9 @@ export function CaseBazi() {
 	              </button>
 	            </div>
 	
-	            <div className="min-h-0 flex-1 overflow-y-auto p-6">
-	              <BaziEditView embedded />
-	            </div>
+		            <div className="min-h-0 flex-1 overflow-y-auto p-6 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+		              <BaziEditView embedded />
+		            </div>
 	          </div>
 	        </div>
 	      ) : null}

@@ -10,6 +10,8 @@ describe("CaseBazi create modal", () => {
     expect(source).toContain("max-w-md");
     expect(source).toContain("rounded-[4px]");
     expect(source).toContain("border border-[#B37D56]/20");
-    expect(source).toContain('className="min-h-0 flex-1 overflow-y-auto p-6"');
+    expect(source).toContain("min-h-0 flex-1 overflow-y-auto p-6");
+    expect(source).toContain("[scrollbar-width:none]");
+    expect(source).toContain("[&::-webkit-scrollbar]:hidden");
   });
 });
