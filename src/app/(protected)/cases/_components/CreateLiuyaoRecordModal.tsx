@@ -129,15 +129,14 @@ export function CreateLiuyaoRecordModal({
           >
             <X size={20} />
           </button>
-        </div>
+	        </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-6 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          <div className="lg:col-span-3 space-y-8">
-            <section className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
-                <div className="space-y-2 group">
-                  <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+	        <div className="min-h-0 flex-1 overflow-y-auto p-6 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+	          <div className="space-y-8">
+	            <section className="space-y-6">
+	              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+	                <div className="space-y-2 group">
+	                  <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
                     关联客户（可选）
                   </label>
                   <Select
@@ -183,11 +182,11 @@ export function CreateLiuyaoRecordModal({
                   <div className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-1.5 font-bold chinese-font">
                     {dayBranch}日
                   </div>
-                </div>
-              </div>
-            </section>
+	                </div>
+	              </div>
+	            </section>
 
-            <section className="space-y-4">
+	            <section className="space-y-4">
               <h3 className="text-[10px] text-[#B37D56] font-bold uppercase tracking-[0.4em]">
                 Tags（可选）
               </h3>
@@ -235,16 +234,14 @@ export function CreateLiuyaoRecordModal({
                 >
                   <Plus size={18} />
                 </button>
-              </div>
-            </section>
-          </div>
+	              </div>
+	            </section>
 
-          <div className="lg:col-span-2 space-y-6">
-            <section className="bg-[#FAF7F2]/40 p-6 border border-[#B37D56]/10 rounded-none">
-              <h3 className="text-center text-[10px] text-[#B37D56] mb-6 tracking-[0.5em] font-bold uppercase">
-                六爻（自下而上）
-              </h3>
-              <div className="flex flex-col-reverse gap-3 items-stretch">
+	            <section className="bg-[#FAF7F2]/40 p-6 border border-[#B37D56]/10 rounded-none">
+	              <h3 className="text-center text-[10px] text-[#B37D56] mb-6 tracking-[0.5em] font-bold uppercase">
+	                六爻（自下而上）
+	              </h3>
+	              <div className="flex flex-col-reverse gap-3 items-stretch">
                 {lines.map((line, idx) => (
                   <div
                     key={idx}
@@ -269,12 +266,11 @@ export function CreateLiuyaoRecordModal({
                       size="sm"
                     />
                   </div>
-                ))}
-              </div>
-            </section>
-          </div>
-          </div>
-        </div>
+	                ))}
+	              </div>
+	            </section>
+	          </div>
+	        </div>
 
         <div className="p-6 border-t border-[#B37D56]/10 flex justify-end gap-3">
           <button

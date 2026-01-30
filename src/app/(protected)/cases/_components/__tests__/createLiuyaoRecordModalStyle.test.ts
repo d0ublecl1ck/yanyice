@@ -7,6 +7,8 @@ describe("CreateLiuyaoRecordModal style", () => {
     expect(source).toContain(
       'className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[210] flex items-center justify-center p-4"',
     );
+    expect(source).not.toContain("lg:grid-cols-5");
+    expect(source).not.toContain("lg:col-span-2");
     expect(source).toContain("max-w-md");
     expect(source).toContain("max-h-[90vh]");
     expect(source).toContain("flex flex-col");
@@ -15,4 +17,3 @@ describe("CreateLiuyaoRecordModal style", () => {
     expect(source).toContain("[&::-webkit-scrollbar]:hidden");
   });
 });
-
