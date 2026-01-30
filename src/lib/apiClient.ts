@@ -18,7 +18,9 @@ export async function apiFetch<T>(
 ): Promise<T> {
   const url = `${getApiBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
   const headers = new Headers(init?.headers);
-  headers.set("content-type", "application/json");
+  if (!headers.has("content-type") && init?.body != null) {
+    headers.set("content-type", "application/json");
+  }
   if (init?.accessToken) headers.set("authorization", `Bearer ${init.accessToken}`);
 
   const response = await fetch(url, { ...init, headers });
