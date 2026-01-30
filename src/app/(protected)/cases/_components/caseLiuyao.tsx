@@ -14,18 +14,36 @@ export function CaseLiuyao() {
   const allRecords = useCaseStore((state) => state.records);
   const customers = useCustomerStore((state) => state.customers);
   const [search, setSearch] = useState("");
+  const [activeTag, setActiveTag] = useState<string | null>(null);
 
   const records = useMemo(() => allRecords.filter((r) => r.module === "liuyao"), [allRecords]);
+
+  const availableTags = useMemo(() => {
+    const tagCounts = new Map<string, number>();
+    for (const record of records) {
+      for (const tag of record.tags ?? []) {
+        const normalized = tag.trim();
+        if (!normalized) continue;
+        tagCounts.set(normalized, (tagCounts.get(normalized) ?? 0) + 1);
+      }
+    }
+
+    return Array.from(tagCounts.entries()).sort(([aTag, aCount], [bTag, bCount]) => {
+      if (bCount !== aCount) return bCount - aCount;
+      return aTag.localeCompare(bTag);
+    });
+  }, [records]);
 
   const filteredRecords = records.filter((record) => {
     const customer = customers.find((c) => c.id === record.customerId);
     const customerName = record.customerName ?? customer?.name ?? "";
     const q = search.trim().toLowerCase();
-    return (
+    const matchesTag = activeTag == null || (record.tags ?? []).includes(activeTag);
+    const matchesSearch =
       q.length === 0 ||
       record.subject.toLowerCase().includes(q) ||
-      customerName.toLowerCase().includes(q)
-    );
+      customerName.toLowerCase().includes(q);
+    return matchesTag && matchesSearch;
   });
 
   return (
@@ -62,9 +80,67 @@ export function CaseLiuyao() {
         />
       </div>
 
+      {availableTags.length > 0 ? (
+        <section className="space-y-2">
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+              标签筛选
+            </p>
+            {activeTag != null ? (
+              <button
+                type="button"
+                onClick={() => setActiveTag(null)}
+                className="text-[10px] font-bold tracking-widest text-[#2F2F2F]/30 hover:text-[#A62121] transition-colors"
+              >
+                清除筛选
+              </button>
+            ) : null}
+          </div>
+
+          <div className="flex flex-wrap gap-2 items-center">
+            <button
+              type="button"
+              aria-pressed={activeTag == null}
+              onClick={() => setActiveTag(null)}
+              className={[
+                "text-[10px] px-2 py-1 border font-bold tracking-widest transition-colors rounded-[2px]",
+                activeTag == null
+                  ? "bg-black text-white border-black"
+                  : "bg-white text-[#2F2F2F]/60 border-[#B37D56]/10 hover:border-[#A62121]/30 hover:text-[#A62121]",
+              ].join(" ")}
+            >
+              全部
+            </button>
+
+            {availableTags.map(([tag, count]) => {
+              const isActive = activeTag === tag;
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => setActiveTag((prev) => (prev === tag ? null : tag))}
+                  className={[
+                    "text-[10px] px-2 py-1 border font-bold tracking-widest transition-colors flex items-center gap-1 rounded-[2px]",
+                    isActive
+                      ? "bg-[#A62121] text-white border-[#A62121]"
+                      : "bg-white text-[#2F2F2F]/60 border-[#B37D56]/10 hover:border-[#A62121]/30 hover:text-[#A62121]",
+                  ].join(" ")}
+                >
+                  {tag}
+                  <span className={isActive ? "text-white/70" : "text-[#2F2F2F]/20"}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+
       <div className="border border-[#B37D56]/10 rounded-none shadow-sm overflow-hidden bg-[#B37D56]/10">
         {filteredRecords.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-px lg:grid-cols-4">
             {filteredRecords
               .sort((a, b) => b.createdAt - a.createdAt)
               .map((record) => {
@@ -77,9 +153,9 @@ export function CaseLiuyao() {
                     key={record.id}
                     role="link"
                     tabIndex={0}
-                    onClick={() => router.push(editHref)}
+                    onClick={() => router.push(analysisHref)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") router.push(editHref);
+                      if (e.key === "Enter" || e.key === " ") router.push(analysisHref);
                     }}
                     className="bg-white flex items-start gap-4 group hover:bg-[#FAF7F2] transition-all p-6"
                   >
@@ -111,26 +187,38 @@ export function CaseLiuyao() {
                       </div>
 
                       <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <Link
-                            href={analysisHref}
-                            className="text-[9px] px-2 py-0.5 border border-black/10 text-[#2F2F2F]/60 font-bold hover:border-[#A62121]/30 hover:text-[#A62121]"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            排盘
-                          </Link>
+                        <div className="flex flex-wrap gap-1 min-w-0">
+                          {record.tags.length > 0 ? (
+                            <>
+                              {record.tags.slice(0, 3).map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="text-[9px] px-2 py-0.5 border border-[#B37D56]/10 bg-[#FAF7F2] text-[#2F2F2F]/60 font-bold tracking-widest rounded-[2px]"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                              {record.tags.length > 3 ? (
+                                <span className="text-[9px] px-2 py-0.5 border border-[#B37D56]/10 bg-white text-[#2F2F2F]/30 font-bold tracking-widest rounded-[2px]">
+                                  +{record.tags.length - 3}
+                                </span>
+                              ) : null}
+                            </>
+                          ) : null}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
                           <Link
                             href={editHref}
-                            className="text-[9px] px-2 py-0.5 border border-[#B37D56]/20 text-[#2F2F2F]/30 font-bold hover:border-[#A62121]/30 hover:text-[#A62121]"
+                            className="text-[9px] px-2 py-0.5 border border-[#B37D56]/20 text-[#2F2F2F]/30 font-bold hover:border-[#A62121]/30 hover:text-[#A62121] rounded-[2px]"
                             onClick={(e) => e.stopPropagation()}
                           >
                             编辑
                           </Link>
+                          <ChevronRight
+                            size={16}
+                            className="text-[#2F2F2F]/10 group-hover:text-[#A62121] transition-all transform group-hover:translate-x-1"
+                          />
                         </div>
-                        <ChevronRight
-                          size={16}
-                          className="text-[#2F2F2F]/10 group-hover:text-[#A62121] transition-all transform group-hover:translate-x-1"
-                        />
                       </div>
                     </div>
                   </div>

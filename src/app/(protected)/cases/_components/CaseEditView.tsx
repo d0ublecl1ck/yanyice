@@ -568,7 +568,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
           },
         });
         showToast(id ? '卷宗已成功更新' : '新咨询已归档入册', 'success');
-        router.push('/cases');
+        router.push('/records');
         return;
       }
 
@@ -589,7 +589,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
         });
         showToast('新咨询已归档入册', 'success');
       }
-      router.push('/cases');
+      router.push('/records');
     } catch (e) {
       if (e instanceof ApiError) {
         showToast(e.message, 'error');
