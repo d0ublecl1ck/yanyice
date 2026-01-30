@@ -18,6 +18,8 @@ import { zodiacInfoFromBranch } from "@/lib/zodiac";
 import { CreateBaziRecordModal } from "./CreateBaziRecordModal";
 import { CaseArchiveLayout } from "./CaseArchiveLayout";
 
+const EMPTY_PINNED_IDS: string[] = [];
+
 function BaziEightCharChops({ baziData }: { baziData?: BaZiData }) {
   if (!baziData) return null;
 
@@ -53,7 +55,7 @@ export function CaseBazi() {
   const deleteRecord = useCaseStore((state) => state.deleteRecord);
   const customers = useCustomerStore((state) => state.customers);
   const userId = useAuthStore((s) => s.user?.id) ?? "anon";
-  const pinnedIds = usePinnedRecordStore((s) => s.pinnedByUser[userId]?.bazi ?? []);
+  const pinnedIds = usePinnedRecordStore((s) => s.pinnedByUser[userId]?.bazi) ?? EMPTY_PINNED_IDS;
   const togglePin = usePinnedRecordStore((s) => s.togglePin);
   const unpin = usePinnedRecordStore((s) => s.unpin);
   const toast = useToastStore((s) => s.show);

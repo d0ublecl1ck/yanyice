@@ -14,13 +14,16 @@ import { useToastStore } from "@/stores/useToastStore";
 import { newCaseHref, recordAnalysisHref, recordEditHref } from "@/lib/caseLinks";
 import { CaseArchiveLayout } from "./CaseArchiveLayout";
 
+const EMPTY_PINNED_IDS: string[] = [];
+
 export function CaseLiuyao() {
   const router = useRouter();
   const allRecords = useCaseStore((state) => state.records);
   const deleteRecord = useCaseStore((state) => state.deleteRecord);
   const customers = useCustomerStore((state) => state.customers);
   const userId = useAuthStore((s) => s.user?.id) ?? "anon";
-  const pinnedIds = usePinnedRecordStore((s) => s.pinnedByUser[userId]?.liuyao ?? []);
+  const pinnedIds =
+    usePinnedRecordStore((s) => s.pinnedByUser[userId]?.liuyao) ?? EMPTY_PINNED_IDS;
   const togglePin = usePinnedRecordStore((s) => s.togglePin);
   const unpin = usePinnedRecordStore((s) => s.unpin);
   const toast = useToastStore((s) => s.show);
