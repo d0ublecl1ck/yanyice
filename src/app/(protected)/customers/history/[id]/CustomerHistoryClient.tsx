@@ -6,7 +6,7 @@ import { ChevronLeft, History, FileText, Star, ExternalLink } from "lucide-react
 
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useCaseStore } from "@/stores/useCaseStore";
-import { newCaseHref } from "@/lib/caseLinks";
+import { newCaseHref, recordAnalysisHref } from "@/lib/caseLinks";
 
 function CustomerHistoryPage({ id }: { id: string }) {
   const customers = useCustomerStore((state) => state.customers);
@@ -158,7 +158,7 @@ function CustomerHistoryPage({ id }: { id: string }) {
                     )}
                     {item.type === "consultation" && (
                       <Link
-                        href={`/cases/edit/${item.id}`}
+                        href={recordAnalysisHref(item.module, item.id)}
                         className={`mt-4 inline-flex items-center gap-1 text-[9px] font-bold text-[#B37D56] hover:text-[#A62121] uppercase tracking-widest transition-colors ${
                           index % 2 === 0 ? "md:flex-row-reverse" : ""
                         }`}

@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 import { buildCustomerTimeline } from "@/lib/customerTimeline";
-import { newCaseHref } from "@/lib/caseLinks";
+import { newCaseHref, recordAnalysisHref } from "@/lib/caseLinks";
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
 
@@ -168,7 +168,7 @@ function CustomerViewPage({ id }: { id: string }) {
             <div className="space-y-4">
               {customerRecords.length > 0 ? (
                 customerRecords.map((r) => (
-                  <Link key={r.id} href={`/cases/edit/${r.id}`} className="block group">
+                  <Link key={r.id} href={recordAnalysisHref(r.module, r.id)} className="block group">
                     <div className="flex items-center gap-4 bg-white p-4 border border-[#B37D56]/10 group-hover:border-[#A62121] transition-all rounded-[2px]">
                       <div
                         className={`w-10 h-10 flex items-center justify-center shrink-0 rounded-[1px] ${
@@ -237,7 +237,7 @@ function CustomerViewPage({ id }: { id: string }) {
                       ) : null}
                       {item.kind === "consultation" ? (
                         <Link
-                          href={`/cases/edit/${item.id}`}
+                          href={recordAnalysisHref(item.module, item.id)}
                           className="mt-4 flex items-center gap-1 text-[9px] font-bold text-[#B37D56] hover:text-[#A62121] transition-colors uppercase tracking-widest"
                         >
                           查看详情 <ExternalLink size={10} />
