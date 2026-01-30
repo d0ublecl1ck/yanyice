@@ -17,6 +17,16 @@ import { useToastStore } from "@/stores/useToastStore";
 
 const EMPTY_HISTORY: Message[] = [];
 
+const WUXING_COLORS: Record<string, string> = {
+  木: "#40de5a",
+  火: "#ff2d51",
+  土: "#5d513c",
+  金: "#eacd76",
+  水: "#065279",
+};
+
+const getWuxingColor = (el: string) => WUXING_COLORS[el] ?? WUXING_COLORS["土"];
+
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
@@ -247,12 +257,12 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                     {sixGodText}
                   </div>
 
-                  <div className="flex items-center justify-end py-4 px-3 border-t border-[#B37D56]/5">
-                    <div className="text-xs font-bold text-[#4A4A4A] chinese-font leading-tight text-right">
-                      {line.relative} {line.najia.text}
-                      {line.najia.element}
-                    </div>
-                  </div>
+	                  <div className="flex items-center justify-end py-4 px-3 border-t border-[#B37D56]/5">
+	                    <div className="text-xs font-bold text-[#4A4A4A] chinese-font leading-tight text-right">
+	                      {line.relative} {line.najia.text}
+	                      <span style={{ color: getWuxingColor(line.najia.element) }}>{line.najia.element}</span>
+	                    </div>
+	                  </div>
 
                   <div className="flex items-center justify-center py-4 border-t border-[#B37D56]/5">
                     <LiuyaoLineSvg
@@ -289,12 +299,14 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                     {sixGodText}
                   </div>
 
-                  <div className="flex items-center justify-end py-4 px-3 border-t border-[#B37D56]/5">
-                    <div className="text-xs font-bold text-[#4A4A4A] chinese-font leading-tight text-right">
-                      {line.changedRelative} {line.changedNajia.text}
-                      {line.changedNajia.element}
-                    </div>
-                  </div>
+	                  <div className="flex items-center justify-end py-4 px-3 border-t border-[#B37D56]/5">
+	                    <div className="text-xs font-bold text-[#4A4A4A] chinese-font leading-tight text-right">
+	                      {line.changedRelative} {line.changedNajia.text}
+	                      <span style={{ color: getWuxingColor(line.changedNajia.element) }}>
+	                        {line.changedNajia.element}
+	                      </span>
+	                    </div>
+	                  </div>
 
                   <div className="flex items-center justify-center py-4 border-t border-[#B37D56]/5">
                     <LiuyaoLineSvg
