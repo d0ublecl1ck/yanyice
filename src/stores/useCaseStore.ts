@@ -24,7 +24,7 @@ interface CaseState {
   bootstrap: () => Promise<void>;
   refresh: () => Promise<void>;
 
-  addRecord: (record: Omit<ConsultationRecord, "id" | "createdAt">) => Promise<string>;
+  addRecord: (record: Omit<ConsultationRecord, "id" | "createdAt" | "pinnedAt">) => Promise<string>;
   updateRecord: (id: string, updates: Partial<ConsultationRecord>) => Promise<void>;
   deleteRecord: (id: string) => Promise<void>;
 
@@ -171,4 +171,3 @@ export const useCaseStore = create<CaseState>()(
     },
   ),
 );
-

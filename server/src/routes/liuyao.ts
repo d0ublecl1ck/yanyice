@@ -31,6 +31,7 @@ const RecordResponse = Type.Object({
   liuyaoData: LiuyaoData,
   verifiedStatus: VerifiedStatus,
   verifiedNotes: Type.String(),
+  pinnedAt: Type.Optional(Type.Union([Type.Number(), Type.Null()])),
   createdAt: Type.Number(),
 });
 
@@ -74,6 +75,7 @@ function toRecordResponse(row: {
   liuyaoDataJson: string | null;
   verifiedStatus: "unverified" | "accurate" | "inaccurate" | "partial";
   verifiedNotes: string;
+  pinnedAt: Date | null;
   createdAt: Date;
 }): Static<typeof RecordResponse> {
   const tags = safeJsonParse<string[]>(row.tagsJson, []);
@@ -96,6 +98,7 @@ function toRecordResponse(row: {
     liuyaoData,
     verifiedStatus: row.verifiedStatus,
     verifiedNotes: row.verifiedNotes,
+    pinnedAt: row.pinnedAt ? row.pinnedAt.getTime() : null,
     createdAt: row.createdAt.getTime(),
   };
 }
@@ -141,7 +144,7 @@ export async function liuyaoRoutes(app: FastifyInstance) {
       const userId = request.user.sub;
       const rows = await app.prisma.consultationRecord.findMany({
         where: { userId, module: "liuyao" },
-        orderBy: { createdAt: "desc" },
+        orderBy: [{ pinnedAt: "desc" }, { createdAt: "desc" }],
         select: {
           id: true,
           customerId: true,
@@ -153,6 +156,7 @@ export async function liuyaoRoutes(app: FastifyInstance) {
           liuyaoDataJson: true,
           verifiedStatus: true,
           verifiedNotes: true,
+          pinnedAt: true,
           createdAt: true,
         },
       });
@@ -199,6 +203,7 @@ export async function liuyaoRoutes(app: FastifyInstance) {
           liuyaoDataJson: true,
           verifiedStatus: true,
           verifiedNotes: true,
+          pinnedAt: true,
           createdAt: true,
         },
       });
@@ -238,6 +243,7 @@ export async function liuyaoRoutes(app: FastifyInstance) {
           liuyaoDataJson: true,
           verifiedStatus: true,
           verifiedNotes: true,
+          pinnedAt: true,
           createdAt: true,
         },
       });
@@ -301,6 +307,7 @@ export async function liuyaoRoutes(app: FastifyInstance) {
           liuyaoDataJson: true,
           verifiedStatus: true,
           verifiedNotes: true,
+          pinnedAt: true,
           createdAt: true,
         },
       });
@@ -340,4 +347,3 @@ export async function liuyaoRoutes(app: FastifyInstance) {
     },
   );
 }
-

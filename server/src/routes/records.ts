@@ -50,6 +50,7 @@ const RecordBody = Type.Object({
   baziData: Type.Optional(BaZiData),
   verifiedStatus: Type.Optional(VerifiedStatus),
   verifiedNotes: Type.Optional(Type.String({ maxLength: 20_000 })),
+  pinnedAt: Type.Optional(Type.Union([Type.Number(), Type.Null()])),
 });
 
 const RecordPatchBody = Type.Partial(RecordBody);
@@ -66,6 +67,7 @@ const RecordPublic = Type.Object({
   baziData: Type.Optional(BaZiData),
   verifiedStatus: VerifiedStatus,
   verifiedNotes: Type.String(),
+  pinnedAt: Type.Union([Type.Number(), Type.Null()]),
   createdAt: Type.Number(),
 });
 
@@ -84,6 +86,7 @@ function serializeRecord(r: {
   baziDataJson: string | null;
   verifiedStatus: "unverified" | "accurate" | "inaccurate" | "partial";
   verifiedNotes: string;
+  pinnedAt: Date | null;
   createdAt: Date;
 }) {
   return {
@@ -98,8 +101,16 @@ function serializeRecord(r: {
     baziData: r.baziDataJson ? safeJsonParse<Static<typeof BaZiData> | undefined>(r.baziDataJson, undefined) : undefined,
     verifiedStatus: r.verifiedStatus,
     verifiedNotes: r.verifiedNotes ?? "",
+    pinnedAt: r.pinnedAt ? r.pinnedAt.getTime() : null,
     createdAt: r.createdAt.getTime(),
   };
+}
+
+function parsePinnedAtInput(value: number | null) {
+  if (value === null) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
 }
 
 export async function recordRoutes(app: FastifyInstance) {
@@ -129,7 +140,7 @@ export async function recordRoutes(app: FastifyInstance) {
           module: query.module ?? undefined,
           customerId: query.customerId ?? undefined,
         },
-        orderBy: { createdAt: "asc" },
+        orderBy: [{ pinnedAt: "desc" }, { createdAt: "desc" }],
       });
       return { records: records.map(serializeRecord) };
     },
@@ -185,6 +196,11 @@ export async function recordRoutes(app: FastifyInstance) {
         baziDataJson = toJsonString(computed);
       }
 
+      const pinnedAt = body.pinnedAt === undefined ? undefined : body.pinnedAt === null ? null : parsePinnedAtInput(body.pinnedAt);
+      if (body.pinnedAt !== undefined && body.pinnedAt !== null && pinnedAt == null) {
+        return reply.status(400).send({ code: "INVALID_INPUT", message: "无效 pinnedAt" });
+      }
+
       const record = await app.prisma.consultationRecord.create({
         data: {
           userId,
@@ -198,6 +214,7 @@ export async function recordRoutes(app: FastifyInstance) {
           baziDataJson,
           verifiedStatus: body.verifiedStatus ?? "unverified",
           verifiedNotes: body.verifiedNotes ?? "",
+          pinnedAt: pinnedAt === undefined ? undefined : pinnedAt,
         },
       });
 
@@ -285,6 +302,12 @@ export async function recordRoutes(app: FastifyInstance) {
         }
       }
 
+      const pinnedAt =
+        body.pinnedAt === undefined ? undefined : body.pinnedAt === null ? null : parsePinnedAtInput(body.pinnedAt);
+      if (body.pinnedAt !== undefined && body.pinnedAt !== null && pinnedAt == null) {
+        return reply.status(400).send({ code: "INVALID_INPUT", message: "无效 pinnedAt" });
+      }
+
       const updated = await app.prisma.consultationRecord.update({
         where: { id },
         data: {
@@ -298,6 +321,7 @@ export async function recordRoutes(app: FastifyInstance) {
           baziDataJson,
           verifiedStatus: body.verifiedStatus ?? undefined,
           verifiedNotes: body.verifiedNotes,
+          pinnedAt,
         },
       });
 

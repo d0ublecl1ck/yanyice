@@ -9,16 +9,12 @@ import { Plus, Search, Calendar, ChevronRight, Hash } from "lucide-react";
 import { ContextMenu } from "@/components/ContextMenu";
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
-import { useAuthStore } from "@/stores/useAuthStore";
-import { usePinnedRecordStore } from "@/stores/usePinnedRecordStore";
 import { useToastStore } from "@/stores/useToastStore";
 import { newCaseHref, recordAnalysisHref, recordEditHref } from "@/lib/caseLinks";
 import type { BaZiData } from "@/lib/types";
 import { zodiacInfoFromBranch } from "@/lib/zodiac";
 import { CreateBaziRecordModal } from "./CreateBaziRecordModal";
 import { CaseArchiveLayout } from "./CaseArchiveLayout";
-
-const EMPTY_PINNED_IDS: string[] = [];
 
 function BaziEightCharChops({ baziData }: { baziData?: BaZiData }) {
   if (!baziData) return null;
@@ -53,11 +49,8 @@ export function CaseBazi() {
   const searchParams = useSearchParams();
   const allRecords = useCaseStore((state) => state.records);
   const deleteRecord = useCaseStore((state) => state.deleteRecord);
+  const updateRecord = useCaseStore((state) => state.updateRecord);
   const customers = useCustomerStore((state) => state.customers);
-  const userId = useAuthStore((s) => s.user?.id) ?? "anon";
-  const pinnedIds = usePinnedRecordStore((s) => s.pinnedByUser[userId]?.bazi) ?? EMPTY_PINNED_IDS;
-  const togglePin = usePinnedRecordStore((s) => s.togglePin);
-  const unpin = usePinnedRecordStore((s) => s.unpin);
   const toast = useToastStore((s) => s.show);
   const [search, setSearch] = useState("");
   const [activeTag, setActiveTag] = useState<string | null>(null);
@@ -67,6 +60,7 @@ export function CaseBazi() {
     recordId: string;
     subject: string;
     editHref: string;
+    pinnedAt: number | null;
   } | null>(null);
 
   const records = useMemo(() => allRecords.filter((r) => r.module === "bazi"), [allRecords]);
@@ -110,18 +104,14 @@ export function CaseBazi() {
   }, [filteredRecords.length]);
 
   const sortedRecords = useMemo(() => {
-    const pinnedIndex = new Map(pinnedIds.map((id, idx) => [id, idx]));
     return [...filteredRecords].sort((a, b) => {
-      const aPinned = pinnedIndex.get(a.id);
-      const bPinned = pinnedIndex.get(b.id);
-      if (aPinned !== undefined || bPinned !== undefined) {
-        if (aPinned === undefined) return 1;
-        if (bPinned === undefined) return -1;
-        return aPinned - bPinned;
-      }
+      const aPinned = a.pinnedAt != null;
+      const bPinned = b.pinnedAt != null;
+      if (aPinned !== bPinned) return aPinned ? -1 : 1;
+      if (aPinned && bPinned) return (b.pinnedAt ?? 0) - (a.pinnedAt ?? 0);
       return b.createdAt - a.createdAt;
     });
-  }, [filteredRecords, pinnedIds]);
+  }, [filteredRecords]);
 
   const closeCreate = React.useCallback(() => {
     const qs = new URLSearchParams(searchParams.toString());
@@ -189,6 +179,7 @@ export function CaseBazi() {
                         recordId: record.id,
                         subject: record.subject,
                         editHref,
+                        pinnedAt: record.pinnedAt ?? null,
                       });
                     }}
                     onKeyDown={(e) => {
@@ -307,14 +298,17 @@ export function CaseBazi() {
           },
           {
             key: "pin",
-            label: contextMenu && pinnedIds.includes(contextMenu.recordId) ? "取消置顶" : "置顶",
-            onSelect: () => {
+            label: contextMenu?.pinnedAt != null ? "取消置顶" : "置顶",
+            onSelect: async () => {
               if (!contextMenu) return;
-              togglePin({ userId, module: "bazi", recordId: contextMenu.recordId });
-              toast(
-                pinnedIds.includes(contextMenu.recordId) ? "已取消置顶" : "已置顶",
-                "info",
-              );
+              const nextPinnedAt = contextMenu.pinnedAt != null ? null : Date.now();
+              try {
+                await updateRecord(contextMenu.recordId, { pinnedAt: nextPinnedAt });
+                setContextMenu((prev) => (prev ? { ...prev, pinnedAt: nextPinnedAt } : prev));
+                toast(nextPinnedAt == null ? "已取消置顶" : "已置顶", "info");
+              } catch (e) {
+                toast(e instanceof Error ? e.message : "置顶失败，请稍后重试", "error");
+              }
             },
           },
           {
@@ -329,7 +323,6 @@ export function CaseBazi() {
                 onAction: async () => {
                   try {
                     await deleteRecord(contextMenu.recordId);
-                    unpin({ userId, module: "bazi", recordId: contextMenu.recordId });
                     toast("已删除", "success");
                   } catch (e) {
                     toast(e instanceof Error ? e.message : "删除失败，请稍后重试", "error");
