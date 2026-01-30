@@ -119,6 +119,7 @@ export function CreateCustomerRecordModal({
             scrollAndFlash(phoneRef.current);
             scrollAndFlash(notesRef.current);
           }, 0);
+          return true;
         }}
       />
       <div className="space-y-2">

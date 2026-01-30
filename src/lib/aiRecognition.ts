@@ -18,10 +18,11 @@ export type AiRecognizeBaziResult = {
 };
 
 export type AiRecognizeLiuyaoResult = {
-  subject?: string;
-  lines: number[];
-  monthBranch?: string;
-  dayBranch?: string;
+  subject: string;
+  lines?: number[];
+  iso?: string;
+  solar?: { y: number; m: number; d: number; h: number; min: number };
+  fourPillars?: string;
 };
 
 export type AiRecognizeCustomerResult = {
@@ -31,4 +32,3 @@ export type AiRecognizeCustomerResult = {
   tags?: string[];
   notes?: string;
 };
-

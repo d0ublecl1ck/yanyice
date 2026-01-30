@@ -40,9 +40,10 @@ const instructionByTarget: Record<RecognizeBodyType["target"], string> = {
 你是一个专业的六爻排盘助手。你的任务是从用户的文本描述与/或卦例图片中提取出结构化的六爻数据。
 
 六爻数据包括：
-1) 问事主题（subject，可选）
-2) 6个爻的状态（lines）：0=少阳, 1=少阴, 2=老阳（动）, 3=老阴（动）。顺序必须是从下往上（初爻到上爻）。
-3) 月建（monthBranch，可选）与日辰（dayBranch，可选），如：寅、甲辰。
+1) 问事主题（subject，必填）
+2) 起卦时间（必填，精确到分钟）：优先输出 iso（如 2025-01-01T10:30:00+08:00），或输出 solar：y,m,d,h,min（二选一，至少一个）
+3) 6个爻的状态（lines，可选）：0=少阳, 1=少阴, 2=老阳（动）, 3=老阴（动）。顺序必须是从下往上（初爻到上爻）。
+4) 若仅识别到四柱，可输出 fourPillars（8字或带空格），但仍应尽量给出起卦时间到分钟。
 
 只输出 JSON，不要输出额外文字。
 `.trim(),
@@ -118,4 +119,3 @@ export async function aiRecognizeRoutes(app: FastifyInstance) {
     },
   );
 }
-

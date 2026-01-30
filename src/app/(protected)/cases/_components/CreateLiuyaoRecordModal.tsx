@@ -72,8 +72,6 @@ export function CreateLiuyaoRecordModal({
   ]);
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
-  const [overrideMonthBranch, setOverrideMonthBranch] = useState<string | null>(null);
-  const [overrideDayBranch, setOverrideDayBranch] = useState<string | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
 
   const subjectInputRef = useRef<HTMLInputElement | null>(null);
@@ -98,8 +96,6 @@ export function CreateLiuyaoRecordModal({
     ]);
     setTags([]);
     setNewTag("");
-    setOverrideMonthBranch(null);
-    setOverrideDayBranch(null);
     setAiOpen(false);
   }, [initialCustomerId, open]);
 
@@ -108,8 +104,8 @@ export function CreateLiuyaoRecordModal({
   const ganzhi = useMemo(() => calcLiuyaoGanzhiFromIso(recordIso), [recordIso]);
   const derivedMonthBranch = ganzhi?.monthBranch ?? "子";
   const derivedDayBranch = ganzhi?.dayGanzhi ?? "甲子";
-  const monthBranch = overrideMonthBranch ?? derivedMonthBranch;
-  const dayBranch = overrideDayBranch ?? derivedDayBranch;
+  const monthBranch = derivedMonthBranch;
+  const dayBranch = derivedDayBranch;
 
   const setLineAtIndex = (index: number, nextLine: LineType) => {
     setLines((prev) => {
@@ -213,23 +209,61 @@ export function CreateLiuyaoRecordModal({
         onClose={() => setAiOpen(false)}
         onRecognized={(result) => {
           const nextSubject = typeof result.subject === "string" ? result.subject.trim() : "";
-          if (nextSubject) setSubject(nextSubject);
+          if (!nextSubject) {
+            showToast("识别失败：未识别到问事主题（必填）", "error");
+            return false;
+          }
+          setSubject(nextSubject);
 
           const nextLines = Array.isArray(result.lines) ? result.lines : [];
           if (nextLines.length === 6 && nextLines.every((n) => Number.isInteger(n) && n >= 0 && n <= 3)) {
             setLines(nextLines as LineType[]);
           }
 
-          const nextMonth = typeof result.monthBranch === "string" ? result.monthBranch.trim() : "";
-          const nextDay = typeof result.dayBranch === "string" ? result.dayBranch.trim() : "";
-          setOverrideMonthBranch(nextMonth || null);
-          setOverrideDayBranch(nextDay || null);
+          const maybeIso = typeof result.iso === "string" ? result.iso.trim() : "";
+          const solar = (result as { solar?: unknown }).solar as
+            | { y: number; m: number; d: number; h: number; min: number }
+            | undefined;
+
+          let nextDateIso: string | null = null;
+          let nextTimeHHmm: string | null = null;
+
+          if (maybeIso) {
+            const d = new Date(maybeIso);
+            if (!Number.isNaN(d.getTime())) {
+              nextDateIso = d.toISOString();
+              nextTimeHHmm = isoTimeToHHmm(d.toISOString());
+            }
+          } else if (
+            solar &&
+            Number.isFinite(solar.y) &&
+            Number.isFinite(solar.m) &&
+            Number.isFinite(solar.d) &&
+            Number.isFinite(solar.h) &&
+            Number.isFinite(solar.min)
+          ) {
+            const d = new Date(solar.y, solar.m - 1, solar.d, solar.h, solar.min, 0, 0);
+            if (!Number.isNaN(d.getTime())) {
+              nextDateIso = d.toISOString();
+              nextTimeHHmm = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+            }
+          }
+
+          if (!nextDateIso || !nextTimeHHmm) {
+            showToast("识别失败：未识别到起卦时间（需精确到分钟）", "error");
+            return false;
+          }
+
+          setDateIso(nextDateIso);
+          setTimeHHmm(nextTimeHHmm);
 
           window.setTimeout(() => {
             scrollAndFlash(subjectInputRef.current);
             scrollAndFlash(monthDayRef.current);
             scrollAndFlash(linesSectionRef.current);
           }, 0);
+
+          return true;
         }}
       />
       <div className="space-y-8">

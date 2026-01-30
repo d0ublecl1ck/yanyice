@@ -57,6 +57,7 @@ export function CreateBaziRecordModal({
         onClose={() => setAiOpen(false)}
         onRecognized={(result) => {
           setAiPrefill({ ...result, _nonce: Date.now() });
+          return true;
         }}
       />
       <BaziEditView embedded aiPrefill={aiPrefill} />

@@ -25,7 +25,7 @@ type Props<T extends AiRecognizeTarget> = {
       : T extends "liuyao"
         ? AiRecognizeLiuyaoResult
         : AiRecognizeCustomerResult,
-  ) => void;
+  ) => boolean | Promise<boolean>;
 };
 
 const PAPER_TEXTURE_URL = "https://www.transparenttextures.com/patterns/natural-paper.png";
@@ -160,9 +160,11 @@ export function AiRecognitionModal<T extends AiRecognizeTarget>({
                         image,
                       }),
                     });
-                    onRecognized(json as never);
-                    toast.show("识别成功，已自动填充表单", "success");
-                    onClose();
+                    const accepted = await onRecognized(json as never);
+                    if (accepted) {
+                      toast.show("识别成功，已自动填充表单", "success");
+                      onClose();
+                    }
                   } catch {
                     toast.show("识别失败，请稍后重试", "error");
                   } finally {
