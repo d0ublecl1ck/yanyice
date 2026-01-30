@@ -4,9 +4,12 @@ import {
   DefaultEightCharProvider,
   type Gender,
   type HeavenStem,
+  type HideHeavenStem,
   LunarHour,
   LunarSect2EightCharProvider,
   type SixtyCycle,
+  SixtyCycleYear,
+  SolarTerm,
   SolarTime,
 } from "tyme4ts";
 
@@ -114,17 +117,104 @@ function buildDecadeFortune(solarTime: SolarTime, gender: Gender, me: HeavenStem
     branchHiddenStems: string[];
     startAge: number;
     endAge: number;
+    years: Array<{
+      year: number;
+      gz: string;
+      xun: string;
+      kongWang: string;
+      nayin: string;
+      stemTenGod: string;
+      branchTenGods: string[];
+      branchHiddenStems: string[];
+      months: Array<{
+        index: number;
+        gz: string;
+        termName: string;
+        termDate: string;
+        stemTenGod: string;
+        branchTenGods: string[];
+        branchHiddenStems: string[];
+      }>;
+    }>;
   }> = [];
+
+  const monthTermNames = [
+    "立春",
+    "惊蛰",
+    "清明",
+    "立夏",
+    "芒种",
+    "小暑",
+    "立秋",
+    "白露",
+    "寒露",
+    "立冬",
+    "大雪",
+    "小寒",
+  ];
+
+  function buildTenGodsFromHiddenStems(hiddenStems: HideHeavenStem[]) {
+    return {
+      tenGods: hiddenStems.map((hs) => me.getTenStar(hs.getHeavenStem()).getName()),
+      stems: hiddenStems.map((hs) => hs.toString()),
+    };
+  }
+
+  function buildYearFortune(year: number) {
+    const yearCycle = SixtyCycleYear.fromYear(year).getSixtyCycle();
+    const heavenStem = yearCycle.getHeavenStem();
+    const earthBranch = yearCycle.getEarthBranch();
+    const hidden = buildTenGodsFromHiddenStems(earthBranch.getHideHeavenStems());
+
+    const months = SixtyCycleYear.fromYear(year)
+      .getMonths()
+      .slice(0, 12)
+      .map((m, idx) => {
+        const monthCycle = m.getSixtyCycle();
+        const hs = monthCycle.getHeavenStem();
+        const eb = monthCycle.getEarthBranch();
+        const monthHidden = buildTenGodsFromHiddenStems(eb.getHideHeavenStems());
+
+        const termName = monthTermNames[idx] ?? "";
+        const term = termName ? SolarTerm.fromName(year, termName) : null;
+        const termDay = term?.getSolarDay();
+        const termDate = termDay ? `${termDay.getMonth()}/${termDay.getDay()}` : "";
+
+        return {
+          index: idx + 1,
+          gz: monthCycle.toString(),
+          termName,
+          termDate,
+          stemTenGod: me.getTenStar(hs).getName(),
+          branchTenGods: monthHidden.tenGods,
+          branchHiddenStems: monthHidden.stems,
+        };
+      });
+
+    return {
+      year,
+      gz: yearCycle.toString(),
+      xun: yearCycle.getTen().toString(),
+      kongWang: yearCycle.getExtraEarthBranches().join(""),
+      nayin: yearCycle.getSound().toString(),
+      stemTenGod: me.getTenStar(heavenStem).getName(),
+      branchTenGods: hidden.tenGods,
+      branchHiddenStems: hidden.stems,
+      months,
+    };
+  }
 
   for (let i = 0; i < 10; i++) {
     const sixtyCycle = decadeFortune.getSixtyCycle();
     const heavenStem = sixtyCycle.getHeavenStem();
     const earthBranch = sixtyCycle.getEarthBranch();
+    const startYear = decadeFortune.getStartSixtyCycleYear().getYear();
+    const endYear = decadeFortune.getEndSixtyCycleYear().getYear();
 
     list.push({
       gz: sixtyCycle.toString(),
-      startYear: decadeFortune.getStartSixtyCycleYear().getYear(),
-      endYear: decadeFortune.getEndSixtyCycleYear().getYear(),
+      startYear,
+      endYear,
       stemTenGod: me.getTenStar(heavenStem).getName(),
       branchTenGods: earthBranch
         .getHideHeavenStems()
@@ -132,6 +222,7 @@ function buildDecadeFortune(solarTime: SolarTime, gender: Gender, me: HeavenStem
       branchHiddenStems: earthBranch.getHideHeavenStems().map((hs) => hs.toString()),
       startAge: decadeFortune.getStartAge(),
       endAge: decadeFortune.getEndAge(),
+      years: Array.from({ length: endYear - startYear + 1 }, (_, idx) => buildYearFortune(startYear + idx)),
     });
 
     decadeFortune = decadeFortune.next(1);
@@ -274,4 +365,3 @@ export function computeBaziFromBirthDate(args: {
     derived,
   };
 }
-
