@@ -55,7 +55,6 @@ const BRANCH_TO_ZODIAC: Record<string, ZodiacKey> = {
   酉: "rooster",
   戌: "dog",
   亥: "pig",
-  西: "rooster",
 };
 
 export type ZodiacInfo = {
@@ -71,4 +70,3 @@ export function zodiacInfoFromBranch(branch?: string | null): ZodiacInfo | null 
   if (!key) return null;
   return { key, nameCn: ZODIAC_NAME_CN[key], iconSrc: ZODIAC_ICON_SRC[key] };
 }
-

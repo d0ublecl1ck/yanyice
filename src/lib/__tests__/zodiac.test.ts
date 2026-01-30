@@ -14,14 +14,13 @@ describe("zodiac", () => {
   });
 
   test("handles common input variants", () => {
-    expect(zodiacInfoFromBranch("西")?.key).toBe("rooster");
     expect(zodiacInfoFromBranch(" 酉 ")?.key).toBe("rooster");
   });
 
   test("returns null for empty or unknown branch", () => {
     expect(zodiacInfoFromBranch("")).toBeNull();
     expect(zodiacInfoFromBranch("甲")).toBeNull();
+    expect(zodiacInfoFromBranch("西")).toBeNull();
     expect(zodiacInfoFromBranch(undefined)).toBeNull();
   });
 });
-
