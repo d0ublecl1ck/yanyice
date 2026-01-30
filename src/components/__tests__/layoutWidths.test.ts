@@ -80,10 +80,12 @@ describe("layout width constraints", () => {
     expect(source).toContain('{id ? "保存" : "立即排盘"}');
   });
 
-  test("settings page uses a two-column grid on large screens", async () => {
+  test("settings page uses a three-column masonry layout on large screens", async () => {
     const source = await readFile("src/app/(protected)/settings/page.tsx", "utf8");
-    expect(source).toContain("grid-cols-1 lg:grid-cols-2");
-    expect(source).toContain("lg:col-span-2");
+    expect(source).toContain("columns-1 md:columns-2 lg:columns-3");
+    expect(source).toContain("[column-gap:2rem]");
+    expect(source).toContain("break-inside-avoid");
+    expect(source).not.toContain("lg:col-span-2");
   });
 
   test("bazi archives uses a two-column grid on medium screens", async () => {

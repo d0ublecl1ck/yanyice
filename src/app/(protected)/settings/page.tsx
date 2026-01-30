@@ -192,8 +192,8 @@ export default function Page() {
         <p className="text-slate-500 mt-1 chinese-font">管理您的账号安全与 AI 配置</p>
       </header>
 
-      <div className="max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <section className="bg-white p-8 border border-[#B37D56]/10 space-y-6">
+      <div className="max-w-6xl mx-auto columns-1 md:columns-2 lg:columns-3 [column-gap:2rem]">
+        <section className="mb-8 inline-block w-full break-inside-avoid bg-white p-8 border border-[#B37D56]/10 space-y-6">
           <div className="flex items-center justify-between gap-3 border-b border-[#B37D56]/10 pb-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-[#A62121]/5 text-[#A62121] rounded-none border border-[#A62121]/10">
@@ -225,7 +225,7 @@ export default function Page() {
           </div>
         </section>
 
-        <section className="bg-white p-8 border border-[#B37D56]/10 space-y-6">
+        <section className="mb-8 inline-block w-full break-inside-avoid bg-white p-8 border border-[#B37D56]/10 space-y-6">
           <div className="flex items-center justify-between gap-3 border-b border-[#B37D56]/10 pb-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-[#B37D56]/10 text-[#B37D56] rounded-none border border-[#B37D56]/20">
@@ -335,22 +335,7 @@ export default function Page() {
           </div>
         </section>
 
-        <ConfirmDialog
-          open={isClearOpen}
-          title="清除 API Key？"
-          description="清除后将无法调用对应厂家接口，后续可重新粘贴保存。"
-          confirmText="清除"
-          onCancel={() => setIsClearOpen(false)}
-          onConfirm={() => {
-            setIsClearOpen(false);
-            void clearApiKey().then(
-              () => toast("API Key 已清除", "info"),
-              () => toast("清除失败，请稍后重试", "warning"),
-            );
-          }}
-        />
-
-        <section className="bg-white p-8 border border-[#B37D56]/10 space-y-6">
+        <section className="mb-8 inline-block w-full break-inside-avoid bg-white p-8 border border-[#B37D56]/10 space-y-6">
           <div className="flex items-center justify-between gap-3 border-b border-[#B37D56]/10 pb-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-[#2F2F2F]/5 text-[#2F2F2F] rounded-none border border-[#2F2F2F]/10">
@@ -406,26 +391,7 @@ export default function Page() {
           </div>
         </section>
 
-        <ConfirmDialog
-          open={isResetQuotesOpen}
-          title="恢复系统名言？"
-          description="将恢复系统内置名言内容并启用（你自定义新增的名言不会删除）。"
-          confirmText="恢复"
-          onCancel={() => setIsResetQuotesOpen(false)}
-          onConfirm={() => {
-            setIsResetQuotesOpen(false);
-            void resetSystemQuotes()
-              .then(() => {
-                setHasEditedQuoteLines(false);
-                toast("系统名言已恢复", "info");
-              })
-              .catch((err) => {
-                toast(getToastErrorMessage(err), "warning");
-              });
-          }}
-        />
-
-        <section className="bg-white p-8 border border-[#B37D56]/10 space-y-6">
+        <section className="mb-8 inline-block w-full break-inside-avoid bg-white p-8 border border-[#B37D56]/10 space-y-6">
           <div className="flex items-center gap-3 border-b border-[#B37D56]/10 pb-4">
             <div className="p-2 bg-[#8DA399]/10 text-[#8DA399] rounded-none border border-[#8DA399]/20">
               <Shield size={20} />
@@ -463,13 +429,47 @@ export default function Page() {
             </div>
           </div>
         </section>
-
-        <section className="pt-8 lg:col-span-2">
-          <p className="text-center text-[10px] text-[#2F2F2F]/20 mt-4 uppercase tracking-[0.2em]">
-            Yan Yi Ce - Professional Astrology Workspace
-          </p>
-        </section>
       </div>
+
+      <section className="pt-2">
+        <p className="text-center text-[10px] text-[#2F2F2F]/20 mt-4 uppercase tracking-[0.2em]">
+          Yan Yi Ce - Professional Astrology Workspace
+        </p>
+      </section>
+
+      <ConfirmDialog
+        open={isClearOpen}
+        title="清除 API Key？"
+        description="清除后将无法调用对应厂家接口，后续可重新粘贴保存。"
+        confirmText="清除"
+        onCancel={() => setIsClearOpen(false)}
+        onConfirm={() => {
+          setIsClearOpen(false);
+          void clearApiKey().then(
+            () => toast("API Key 已清除", "info"),
+            () => toast("清除失败，请稍后重试", "warning"),
+          );
+        }}
+      />
+
+      <ConfirmDialog
+        open={isResetQuotesOpen}
+        title="恢复系统名言？"
+        description="将恢复系统内置名言内容并启用（你自定义新增的名言不会删除）。"
+        confirmText="恢复"
+        onCancel={() => setIsResetQuotesOpen(false)}
+        onConfirm={() => {
+          setIsResetQuotesOpen(false);
+          void resetSystemQuotes()
+            .then(() => {
+              setHasEditedQuoteLines(false);
+              toast("系统名言已恢复", "info");
+            })
+            .catch((err) => {
+              toast(getToastErrorMessage(err), "warning");
+            });
+        }}
+      />
     </div>
   );
 }
