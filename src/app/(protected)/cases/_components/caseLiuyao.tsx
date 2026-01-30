@@ -7,7 +7,7 @@ import { Plus, Search, Calendar, ChevronRight, FileText } from "lucide-react";
 
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
-import { newCaseHref, recordAnalysisHref, recordEditHref } from "@/lib/caseLinks";
+import { newCaseHref, recordEditHref } from "@/lib/caseLinks";
 
 export function CaseLiuyao() {
   const router = useRouter();
@@ -147,7 +147,6 @@ export function CaseLiuyao() {
                 const customer = customers.find((c) => c.id === record.customerId);
                 const displayCustomerName = record.customerName ?? customer?.name ?? "未知客户";
                 const editHref = recordEditHref(record.module, record.id);
-                const analysisHref = recordAnalysisHref("liuyao", record.id);
                 return (
                   <div
                     key={record.id}
@@ -187,45 +186,30 @@ export function CaseLiuyao() {
                       </div>
 
                       <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <Link
-                            href={analysisHref}
-                            className="text-[9px] px-2 py-0.5 border border-black/10 text-[#2F2F2F]/60 font-bold hover:border-[#A62121]/30 hover:text-[#A62121]"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            排盘
-                          </Link>
-                          <Link
-                            href={editHref}
-                            className="text-[9px] px-2 py-0.5 border border-[#B37D56]/20 text-[#2F2F2F]/30 font-bold hover:border-[#A62121]/30 hover:text-[#A62121]"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            编辑
-                          </Link>
+                        <div className="flex flex-wrap gap-1 min-w-0">
+                          {record.tags.length > 0 ? (
+                            <>
+                              {record.tags.slice(0, 3).map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="text-[9px] px-2 py-0.5 border border-[#B37D56]/10 bg-[#FAF7F2] text-[#2F2F2F]/60 font-bold tracking-widest rounded-[2px]"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                              {record.tags.length > 3 ? (
+                                <span className="text-[9px] px-2 py-0.5 border border-[#B37D56]/10 bg-white text-[#2F2F2F]/30 font-bold tracking-widest rounded-[2px]">
+                                  +{record.tags.length - 3}
+                                </span>
+                              ) : null}
+                            </>
+                          ) : null}
                         </div>
 	                        <ChevronRight
 	                          size={16}
 	                          className="text-[#2F2F2F]/10 group-hover:text-[#A62121] transition-all transform group-hover:translate-x-1"
 	                        />
 	                      </div>
-
-	                      {record.tags.length > 0 ? (
-	                        <div className="flex flex-wrap gap-1">
-	                          {record.tags.slice(0, 3).map((tag) => (
-	                            <span
-	                              key={tag}
-	                              className="text-[9px] px-2 py-0.5 border border-[#B37D56]/10 bg-[#FAF7F2] text-[#2F2F2F]/60 font-bold tracking-widest rounded-[2px]"
-	                            >
-	                              {tag}
-	                            </span>
-	                          ))}
-	                          {record.tags.length > 3 ? (
-	                            <span className="text-[9px] px-2 py-0.5 border border-[#B37D56]/10 bg-white text-[#2F2F2F]/30 font-bold tracking-widest rounded-[2px]">
-	                              +{record.tags.length - 3}
-	                            </span>
-	                          ) : null}
-	                        </div>
-	                      ) : null}
 	                    </div>
 	                  </div>
 	                );
