@@ -7,6 +7,7 @@ describe("bazi case cards", () => {
     expect(source).toContain("function BaziEightCharChops");
     expect(source).toContain("grid-cols-4");
     expect(source).toContain("rounded-full");
+    expect(source).toContain("flex flex-col items-end");
 
     expect(source).not.toContain("b?.yearStem");
     expect(source).not.toContain("b?.monthStem");
@@ -14,4 +15,3 @@ describe("bazi case cards", () => {
     expect(source).not.toContain("b?.hourStem");
   });
 });
-

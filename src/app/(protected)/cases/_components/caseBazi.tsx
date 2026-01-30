@@ -152,17 +152,20 @@ export function CaseBazi() {
                           <h4 className="font-bold text-[#2F2F2F] chinese-font group-hover:text-[#A62121] transition-colors truncate">
                             {record.subject}
                           </h4>
-                          <div className="flex items-start gap-2 mt-1 flex-wrap">
-                            <span className="text-[10px] font-bold text-[#B37D56] uppercase tracking-widest">
-                              {customer?.name || "散客"}
-                            </span>
-                            <span className="text-[10px] text-[#2F2F2F]/20">|</span>
-                            <BaziEightCharChops baziData={b} />
-                          </div>
+                          {customer?.name && customer.name !== record.subject ? (
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              <span className="text-[10px] font-bold text-[#B37D56] uppercase tracking-widest">
+                                {customer.name}
+                              </span>
+                            </div>
+                          ) : null}
                         </div>
-                        <div className="text-[11px] text-[#2F2F2F]/40 font-bold uppercase tracking-widest flex items-center gap-2 shrink-0">
-                          <Calendar size={12} />
-                          {new Date(record.createdAt).toLocaleDateString()}
+                        <div className="flex flex-col items-end gap-2 shrink-0">
+                          <div className="text-[11px] text-[#2F2F2F]/40 font-bold uppercase tracking-widest flex items-center gap-2">
+                            <Calendar size={12} />
+                            {new Date(record.createdAt).toLocaleDateString()}
+                          </div>
+                          <BaziEightCharChops baziData={b} />
                         </div>
                       </div>
 
