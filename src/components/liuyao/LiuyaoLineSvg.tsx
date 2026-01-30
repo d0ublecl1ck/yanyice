@@ -34,11 +34,13 @@ export function LiuyaoLineSvg({
   className,
   lineColor = "#2F2F2F",
   markColor = "#A62121",
+  showMark = true,
 }: {
   line: LineType;
   className?: string;
   lineColor?: string;
   markColor?: string;
+  showMark?: boolean;
 }) {
   const model = getLiuyaoLineSvgModel(line);
 
@@ -54,10 +56,10 @@ export function LiuyaoLineSvg({
         <rect key={idx} x={s.x} y={8} width={s.width} height={8} rx={0} fill={lineColor} />
       ))}
 
-      {model.mark === "O" && (
+      {showMark && model.mark === "O" && (
         <circle cx={108} cy={12} r={4} fill="none" stroke={markColor} strokeWidth={2} />
       )}
-      {model.mark === "X" && (
+      {showMark && model.mark === "X" && (
         <>
           <line x1={104} y1={8} x2={112} y2={16} stroke={markColor} strokeWidth={2} />
           <line x1={112} y1={8} x2={104} y2={16} stroke={markColor} strokeWidth={2} />

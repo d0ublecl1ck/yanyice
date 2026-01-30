@@ -217,7 +217,11 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                         className="h-6 w-full max-w-[180px]"
                         lineColor="#2F2F2F"
                         markColor="#A62121"
+                        showMark={false}
                       />
+                    </div>
+                    <div className="w-6 text-[10px] font-bold text-[#A62121] text-center">
+                      {line.isMoving ? line.moveMark : ""}
                     </div>
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
                       {line.isShi && (
