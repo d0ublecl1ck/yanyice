@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { Type, type Static } from "@sinclair/typebox";
+import { HeavenStem, type HideHeavenStem, SixtyCycleYear, SolarTerm } from "tyme4ts";
 
 import { ErrorResponse, safeJsonParse, toJsonString } from "./shared";
 import { computeBaziFromBirthDate } from "../bazi/computeBazi";
@@ -74,6 +75,128 @@ const RecordPublic = Type.Object({
 type RecordBodyType = Static<typeof RecordBody>;
 type RecordPatchBodyType = Static<typeof RecordPatchBody>;
 
+function safeNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    const n = Number(value);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+function safeString(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return "";
+}
+
+function backfillBaziFortunesIfMissing(baziData: unknown) {
+  if (!baziData || typeof baziData !== "object") return baziData;
+  const bd = baziData as Record<string, unknown>;
+  const derived = bd.derived;
+  if (!derived || typeof derived !== "object") return baziData;
+  const d = derived as Record<string, unknown>;
+  const decadeFortune = d.decadeFortune;
+  if (!decadeFortune || typeof decadeFortune !== "object") return baziData;
+  const df = decadeFortune as Record<string, unknown>;
+  const list = df.list;
+  if (!Array.isArray(list) || list.length === 0) return baziData;
+
+  const anyHasYears = list.some((item) => {
+    if (!item || typeof item !== "object") return false;
+    const years = (item as Record<string, unknown>).years;
+    return Array.isArray(years) && years.length > 0;
+  });
+  if (anyHasYears) return baziData;
+
+  const monthTermNames = [
+    "立春",
+    "惊蛰",
+    "清明",
+    "立夏",
+    "芒种",
+    "小暑",
+    "立秋",
+    "白露",
+    "寒露",
+    "立冬",
+    "大雪",
+    "小寒",
+  ];
+
+  const dayMaster = safeString(d.dayMaster);
+  let me: HeavenStem | null = null;
+  try {
+    me = dayMaster ? HeavenStem.fromName(dayMaster) : null;
+  } catch {
+    me = null;
+  }
+
+  const buildTenGodsFromHiddenStems = (hiddenStems: HideHeavenStem[]) => {
+    if (!me) return { tenGods: [] as string[], stems: hiddenStems.map((hs) => hs.toString()) };
+    return {
+      tenGods: hiddenStems.map((hs) => me!.getTenStar(hs.getHeavenStem()).getName()),
+      stems: hiddenStems.map((hs) => hs.toString()),
+    };
+  };
+
+  const buildYearFortune = (year: number) => {
+    const yearCycle = SixtyCycleYear.fromYear(year).getSixtyCycle();
+    const heavenStem = yearCycle.getHeavenStem();
+    const earthBranch = yearCycle.getEarthBranch();
+    const hidden = buildTenGodsFromHiddenStems(earthBranch.getHideHeavenStems());
+
+    const months = SixtyCycleYear.fromYear(year)
+      .getMonths()
+      .slice(0, 12)
+      .map((m, idx) => {
+        const monthCycle = m.getSixtyCycle();
+        const hs = monthCycle.getHeavenStem();
+        const eb = monthCycle.getEarthBranch();
+        const monthHidden = buildTenGodsFromHiddenStems(eb.getHideHeavenStems());
+
+        const termName = monthTermNames[idx] ?? "";
+        const term = termName ? SolarTerm.fromName(year, termName) : null;
+        const termDay = term?.getSolarDay();
+        const termDate = termDay ? `${termDay.getMonth()}/${termDay.getDay()}` : "";
+
+        return {
+          index: idx + 1,
+          gz: monthCycle.toString(),
+          termName,
+          termDate,
+          stemTenGod: me ? me.getTenStar(hs).getName() : "",
+          branchTenGods: monthHidden.tenGods,
+          branchHiddenStems: monthHidden.stems,
+        };
+      });
+
+    return {
+      year,
+      gz: yearCycle.toString(),
+      xun: yearCycle.getTen().toString(),
+      kongWang: yearCycle.getExtraEarthBranches().join(""),
+      nayin: yearCycle.getSound().toString(),
+      stemTenGod: me ? me.getTenStar(heavenStem).getName() : "",
+      branchTenGods: hidden.tenGods,
+      branchHiddenStems: hidden.stems,
+      months,
+    };
+  };
+
+  df.list = list.map((item) => {
+    if (!item || typeof item !== "object") return item;
+    const decade = item as Record<string, unknown>;
+    const startYear = safeNumber(decade.startYear);
+    if (startYear == null) return item;
+    const years = Array.from({ length: 10 }, (_, idx) => buildYearFortune(startYear + idx));
+    return { ...decade, years, endYear: startYear + 9 };
+  });
+
+  bd.derived = { ...d, decadeFortune: { ...df } };
+  return bd;
+}
+
 function serializeRecord(r: {
   id: string;
   customerId: string | null;
@@ -89,6 +212,8 @@ function serializeRecord(r: {
   pinnedAt: Date | null;
   createdAt: Date;
 }) {
+  const rawBazi = r.baziDataJson ? safeJsonParse<Record<string, unknown> | undefined>(r.baziDataJson, undefined) : undefined;
+  const baziData = rawBazi ? (backfillBaziFortunesIfMissing(rawBazi) as unknown) : undefined;
   return {
     id: r.id,
     customerId: r.customerId ?? "",
@@ -98,7 +223,7 @@ function serializeRecord(r: {
     notes: r.notes,
     tags: safeJsonParse<string[]>(r.tagsJson, []),
     liuyaoData: r.liuyaoDataJson ? safeJsonParse<Static<typeof LiuYaoData> | undefined>(r.liuyaoDataJson, undefined) : undefined,
-    baziData: r.baziDataJson ? safeJsonParse<Static<typeof BaZiData> | undefined>(r.baziDataJson, undefined) : undefined,
+    baziData: baziData as Static<typeof BaZiData> | undefined,
     verifiedStatus: r.verifiedStatus,
     verifiedNotes: r.verifiedNotes ?? "",
     pinnedAt: r.pinnedAt ? r.pinnedAt.getTime() : null,
