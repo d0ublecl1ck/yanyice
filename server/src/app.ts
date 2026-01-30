@@ -13,6 +13,7 @@ import { customerRoutes } from "./routes/customers";
 import { liuyaoRoutes } from "./routes/liuyao";
 import { recordRoutes } from "./routes/records";
 import { ruleRoutes } from "./routes/rules";
+import { quoteRoutes } from "./routes/quotes";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -79,6 +80,7 @@ export function buildApp(options?: { databaseUrl?: string; logger?: boolean }) {
   app.register(liuyaoRoutes, { prefix: "/api" });
   app.register(recordRoutes, { prefix: "/api" });
   app.register(ruleRoutes, { prefix: "/api" });
+  app.register(quoteRoutes, { prefix: "/api" });
 
   return app;
 }

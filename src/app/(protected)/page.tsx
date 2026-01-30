@@ -15,22 +15,44 @@ import {
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useRuleStore } from "@/stores/useRuleStore";
+import { useQuoteStore } from "@/stores/useQuoteStore";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useToastStore } from "@/stores/useToastStore";
 import { formatGanzhiYearMonth } from "@/lib/lunarGanzhi";
 import { getDashboardCounts } from "@/lib/dashboardMetrics";
 import { newCaseHref } from "@/lib/caseLinks";
+import { selectDailyQuotes } from "@/lib/quotes";
 
 export default function Page() {
   const customers = useCustomerStore((state) => state.customers);
   const records = useCaseStore((state) => state.records);
   const rules = useRuleStore((state) => state.rules);
+  const quotes = useQuoteStore((state) => state.quotes);
+  const quoteStatus = useQuoteStore((state) => state.status);
+  const bootstrapQuotes = useQuoteStore((state) => state.bootstrap);
+  const userId = useAuthStore((state) => state.user?.id ?? null);
+  const toast = useToastStore((s) => s.show);
   const [ganzhiYearMonth, setGanzhiYearMonth] = useState<string>("");
 
   useEffect(() => {
     setGanzhiYearMonth(formatGanzhiYearMonth(new Date()));
   }, []);
 
+  useEffect(() => {
+    void bootstrapQuotes().catch(() => {
+      toast("加载名言失败，请稍后重试", "warning");
+    });
+  }, [bootstrapQuotes, toast]);
+
   const recentRecords = records.slice(-5).reverse();
   const counts = getDashboardCounts({ customers, records, rules });
+  const todayKey = new Date().toDateString();
+  const dailyQuotes = selectDailyQuotes({
+    quotes,
+    date: new Date(todayKey),
+    userSeed: userId,
+    count: 3,
+  });
 
   return (
     <div className="space-y-12">
@@ -39,17 +61,24 @@ export default function Page() {
           <h2 className="text-4xl font-bold text-[#2F2F2F] chinese-font tracking-tight">
             工作台首页
           </h2>
-          <p className="text-[#B37D56] font-medium mt-3 chinese-font opacity-80">
-            欢迎回来，今日已记录{" "}
-            {
-              records.filter(
-                (r) =>
-                  new Date(r.createdAt).toDateString() ===
-                  new Date().toDateString(),
-              ).length
-            }{" "}
-            例咨询。
-          </p>
+          <div className="mt-3 space-y-2">
+            <p className="text-[10px] text-[#2F2F2F]/30 uppercase tracking-[0.3em] font-bold">
+              今日名言
+            </p>
+            {dailyQuotes.length > 0 ? (
+              <ul className="space-y-1">
+                {dailyQuotes.map((q) => (
+                  <li key={q.id} className="text-sm text-[#B37D56] chinese-font italic">
+                    {q.text}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-[#2F2F2F]/40 text-sm chinese-font italic">
+                {quoteStatus === "loading" ? "正在加载名言…" : "可在「个人设置」中配置名言列表。"}
+              </p>
+            )}
+          </div>
         </div>
         <div className="text-right">
           <p className="text-[10px] text-[#2F2F2F]/30 uppercase tracking-[0.3em] font-bold">
