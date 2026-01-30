@@ -17,7 +17,7 @@ import { useCaseStore } from "@/stores/useCaseStore";
 import { useRuleStore } from "@/stores/useRuleStore";
 import { formatGanzhiYearMonth } from "@/lib/lunarGanzhi";
 import { getDashboardCounts } from "@/lib/dashboardMetrics";
-import { newCaseHref } from "@/lib/caseLinks";
+import { newCaseHref, recordAnalysisHref } from "@/lib/caseLinks";
 
 export default function Page() {
   const customers = useCustomerStore((state) => state.customers);
@@ -148,7 +148,7 @@ export default function Page() {
               recentRecords.map((record) => (
                 <Link
                   key={record.id}
-                  href={`/cases/edit/${record.id}`}
+                  href={recordAnalysisHref(record.module, record.id)}
                   className="group flex items-center justify-between p-6 hover:bg-black/[0.02] border-b border-[#B37D56]/10 transition-all"
                 >
                   <div className="space-y-1">

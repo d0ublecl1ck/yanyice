@@ -1,8 +1,8 @@
-import { redirect } from "next/navigation";
+import { CaseEditView } from "../../../cases/_components/CaseEditView";
 
 type PageProps = { params: Promise<{ id: string }> | { id: string } };
 
 export default async function Page({ params }: PageProps) {
   const { id } = await params;
-  redirect(`/cases/edit/${encodeURIComponent(id)}?module=liuyao`);
+  return <CaseEditView id={id} />;
 }
