@@ -103,7 +103,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       const text = await geminiChat({
         systemInstruction,
         messages,
-        model: aiModel,
+        model: aiModel.trim() ? aiModel.trim() : undefined,
       });
       addMessage(id, { role: "model", text: text || "...", timestamp: Date.now() });
     } catch (e) {

@@ -4,14 +4,17 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shield, Info, User, LogOut, Sparkles } from "lucide-react";
 
+import { Select, type SelectOption } from "@/components/Select";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useToastStore } from "@/stores/useToastStore";
 import { useAiConfigStore } from "@/stores/useAiConfigStore";
 import {
   getDefaultAiConfig,
+  sanitizeAiApiKey,
   sanitizeAiModel,
   sanitizeAiVendor,
 } from "@/lib/aiConfig";
+import { AI_VENDORS, getAiVendorById } from "@/lib/aiVendors";
 
 export default function Page() {
   const { user, logout } = useAuthStore();
@@ -20,56 +23,74 @@ export default function Page() {
 
   const aiVendor = useAiConfigStore((s) => s.vendor);
   const aiModel = useAiConfigStore((s) => s.model);
+  const aiApiKey = useAiConfigStore((s) => s.apiKey);
   const aiHasHydrated = useAiConfigStore((s) => s.hasHydrated);
   const setAiVendor = useAiConfigStore((s) => s.setVendor);
   const setAiModel = useAiConfigStore((s) => s.setModel);
+  const setAiApiKey = useAiConfigStore((s) => s.setApiKey);
   const resetAiConfig = useAiConfigStore((s) => s.reset);
 
   const defaultAiConfig = useMemo(() => getDefaultAiConfig(), []);
 
   const [vendorDraft, setVendorDraft] = useState(aiVendor);
   const [modelDraft, setModelDraft] = useState(aiModel);
-  const [isDirty, setIsDirty] = useState(false);
+  const [apiKeyDraft, setApiKeyDraft] = useState(aiApiKey);
   const didInitRef = useRef(false);
 
   useEffect(() => {
     if (!aiHasHydrated) return;
-    if (didInitRef.current && isDirty) return;
+    if (didInitRef.current) return;
     didInitRef.current = true;
     setVendorDraft(aiVendor);
     setModelDraft(aiModel);
-  }, [aiHasHydrated, aiVendor, aiModel, isDirty]);
+    setApiKeyDraft(aiApiKey);
+  }, [aiHasHydrated, aiVendor, aiModel, aiApiKey]);
 
   const handleLogout = () => {
     logout();
     router.replace("/login");
   };
 
-  const handleSaveAiConfig = () => {
-    const nextVendor = sanitizeAiVendor(vendorDraft);
-    if (!nextVendor) {
-      toast("厂家不能为空，且最多 48 字", "warning");
-      return;
-    }
-
-    const nextModel = sanitizeAiModel(modelDraft);
-    if (!nextModel) {
-      toast("模型不能为空，且最多 80 字", "warning");
-      return;
-    }
-
-    setAiVendor(nextVendor);
-    setAiModel(nextModel);
-    setIsDirty(false);
-    toast("AI 配置已保存", "success");
-  };
-
   const handleResetAiConfig = () => {
     resetAiConfig();
     setVendorDraft(defaultAiConfig.vendor);
     setModelDraft(defaultAiConfig.model);
-    setIsDirty(false);
+    setApiKeyDraft(defaultAiConfig.apiKey);
     toast("已恢复默认 AI 配置", "info");
+  };
+
+  const vendorOptions = useMemo<Array<SelectOption<string>>>(
+    () => AI_VENDORS.map((v) => ({ value: v.id, label: v.label })),
+    [],
+  );
+
+  const selectedVendor = useMemo(() => getAiVendorById(vendorDraft), [vendorDraft]);
+  const modelPlaceholder = selectedVendor?.modelPlaceholder ?? "留空使用默认值";
+  const modelHint = selectedVendor?.modelRecommendedHint ?? "留空使用默认值";
+  const apiKeyHint = selectedVendor?.apiKeyHint ?? "在对应厂家控制台获取";
+
+  const commitModel = () => {
+    const next = sanitizeAiModel(modelDraft);
+    if (next === null) {
+      toast("模型最多 80 字", "warning");
+      setModelDraft(aiModel);
+      return;
+    }
+    setModelDraft(next);
+    setAiModel(next);
+    toast("模型已更新", "success");
+  };
+
+  const commitApiKey = () => {
+    const next = sanitizeAiApiKey(apiKeyDraft);
+    if (next === null) {
+      toast("API Key 过长", "warning");
+      setApiKeyDraft(aiApiKey);
+      return;
+    }
+    setApiKeyDraft(next);
+    setAiApiKey(next);
+    toast("API Key 已更新", "success");
   };
 
   return (
@@ -123,22 +144,13 @@ export default function Page() {
               <h3 className="font-bold text-lg text-[#2F2F2F] chinese-font">AI 配置</h3>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleResetAiConfig}
-                className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-[#B37D56]/20 text-[#2F2F2F] font-bold text-xs tracking-widest hover:bg-[#FAF7F2] transition-all chinese-font rounded-[2px]"
-                title="恢复默认 AI 配置"
-              >
-                恢复默认
-              </button>
-              <button
-                onClick={handleSaveAiConfig}
-                className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#A62121] border border-[#A62121] text-white font-bold text-xs tracking-widest hover:bg-[#8B1A1A] transition-all chinese-font rounded-[2px]"
-                title="保存 AI 配置"
-              >
-                保存
-              </button>
-            </div>
+            <button
+              onClick={handleResetAiConfig}
+              className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-[#B37D56]/20 text-[#2F2F2F] font-bold text-xs tracking-widest hover:bg-[#FAF7F2] transition-all chinese-font rounded-[2px]"
+              title="恢复默认 AI 配置"
+            >
+              恢复默认
+            </button>
           </div>
 
           <div className="space-y-4">
@@ -152,50 +164,67 @@ export default function Page() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label className="space-y-1">
-                <span className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
-                  厂家
-                </span>
-                <input
-                  value={vendorDraft}
-                  onChange={(e) => {
-                    setVendorDraft(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  placeholder="google / openai / anthropic / ..."
-                  className="w-full px-3 py-2 bg-white border border-[#B37D56]/20 text-sm chinese-font rounded-none focus:outline-none focus:border-[#B37D56]/50"
-                  autoComplete="off"
-                />
-              </label>
+            <div className="space-y-1">
+              <span className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+                提供商
+              </span>
+              <Select
+                value={vendorDraft}
+                options={vendorOptions}
+                variant="box"
+                onValueChange={(next) => {
+                  const nextVendor = sanitizeAiVendor(String(next));
+                  if (!nextVendor) {
+                    toast("厂家不能为空，且最多 48 字", "warning");
+                    return;
+                  }
+                  setVendorDraft(nextVendor);
+                  setAiVendor(nextVendor);
+                  setModelDraft("");
+                  setAiModel("");
+                }}
+              />
+            </div>
 
-              <label className="space-y-1">
-                <span className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
-                  模型
-                </span>
-                <input
-                  value={modelDraft}
-                  onChange={(e) => {
-                    setModelDraft(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  placeholder={defaultAiConfig.model}
-                  className="w-full px-3 py-2 bg-white border border-[#B37D56]/20 text-sm chinese-font rounded-none focus:outline-none focus:border-[#B37D56]/50"
-                  autoComplete="off"
-                />
-              </label>
+            <div className="space-y-1">
+              <span className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+                模型
+              </span>
+              <input
+                value={modelDraft}
+                onChange={(e) => setModelDraft(e.target.value)}
+                onBlur={commitModel}
+                placeholder={modelPlaceholder}
+                className="w-full px-3 py-2 bg-white border border-[#B37D56]/20 text-sm chinese-font rounded-none focus:outline-none focus:border-[#B37D56]/50"
+                autoComplete="off"
+              />
+              <p className="text-[10px] text-[#2F2F2F]/40">{modelHint}</p>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+                API Key
+              </span>
+              <input
+                value={apiKeyDraft}
+                onChange={(e) => setApiKeyDraft(e.target.value)}
+                onBlur={commitApiKey}
+                placeholder="********"
+                type="password"
+                className="w-full px-3 py-2 bg-white border border-[#B37D56]/20 text-sm chinese-font rounded-none focus:outline-none focus:border-[#B37D56]/50"
+                autoComplete="off"
+              />
+              <p className="text-[10px] text-[#2F2F2F]/40">{apiKeyHint}（当前暂未用于请求）</p>
             </div>
 
             <div className="flex items-center justify-between p-4 bg-[#FAF7F2]/50 border border-[#B37D56]/5">
               <div>
                 <p className="font-bold text-[#2F2F2F] chinese-font">当前生效</p>
                 <p className="text-xs text-[#2F2F2F]/40">
-                  厂家：{aiVendor}；模型：{aiModel}
+                  厂家：{aiVendor}；模型：{aiModel || "（默认）"}；API Key：{aiApiKey ? "已配置" : "未配置"}
                 </p>
               </div>
-              <div className="text-[10px] text-[#2F2F2F]/40 uppercase tracking-widest">
-                {isDirty ? "未保存" : "已同步"}
-              </div>
+              <div className="text-[10px] text-[#2F2F2F]/40 uppercase tracking-widest">自动保存</div>
             </div>
           </div>
         </section>

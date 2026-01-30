@@ -8,6 +8,7 @@ interface AiConfigState extends AiConfig {
   setHasHydrated: (hasHydrated: boolean) => void;
   setVendor: (vendor: string) => void;
   setModel: (model: string) => void;
+  setApiKey: (apiKey: string) => void;
   reset: () => void;
 }
 
@@ -19,6 +20,7 @@ export const useAiConfigStore = create<AiConfigState>()(
       setHasHydrated: (hasHydrated) => set({ hasHydrated }),
       setVendor: (vendor) => set({ vendor }),
       setModel: (model) => set({ model }),
+      setApiKey: (apiKey) => set({ apiKey }),
       reset: () => set(getDefaultAiConfig()),
     }),
     {
@@ -29,4 +31,3 @@ export const useAiConfigStore = create<AiConfigState>()(
     },
   ),
 );
-
