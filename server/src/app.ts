@@ -9,6 +9,8 @@ import { getCorsOrigin, getJwtSecret } from "./config";
 import { createPrismaBundle } from "./prisma";
 import { authRoutes } from "./routes/auth";
 import { aiConfigRoutes } from "./routes/aiConfig";
+import { aiChatRoutes } from "./routes/aiChat";
+import { aiRecognizeRoutes } from "./routes/aiRecognize";
 import { customerRoutes } from "./routes/customers";
 import { liuyaoRoutes } from "./routes/liuyao";
 import { recordRoutes } from "./routes/records";
@@ -76,6 +78,8 @@ export function buildApp(options?: { databaseUrl?: string; logger?: boolean }) {
 
   app.register(authRoutes, { prefix: "/api" });
   app.register(aiConfigRoutes, { prefix: "/api" });
+  app.register(aiChatRoutes, { prefix: "/api" });
+  app.register(aiRecognizeRoutes, { prefix: "/api" });
   app.register(customerRoutes, { prefix: "/api" });
   app.register(liuyaoRoutes, { prefix: "/api" });
   app.register(recordRoutes, { prefix: "/api" });
