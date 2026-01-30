@@ -22,6 +22,7 @@ export type YinYang = "yin" | "yang";
 
 export type LiuyaoLine = {
   indexFromBottom: number;
+  lineType: LineType;
   yinYang: YinYang;
   isMoving: boolean;
   symbol: string;
@@ -169,6 +170,7 @@ export function paipanLiuyao(data: LiuYaoData): LiuyaoPaipan {
 
     return {
       indexFromBottom: idxFromBottom,
+      lineType: line,
       yinYang: yy,
       isMoving,
       symbol: meta.base,

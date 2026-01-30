@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { ANIMALS } from "@/lib/constants";
 import { geminiChat, type ChatMessage } from "@/lib/geminiService";
 import { paipanLiuyao } from "@/lib/liuyao/paipan";
+import { LiuyaoLineSvg } from "@/components/liuyao/LiuyaoLineSvg";
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -210,11 +211,13 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                       <span>{line.relative}</span>
                       <span className="text-[9px] text-[#2F2F2F]/30">{line.najia.text}</span>
                     </div>
-                    <div className="text-xl font-mono leading-none">
-                      {line.symbol.replace(/ /g, "　")}
-                    </div>
-                    <div className="w-4 text-[10px] font-bold text-[#A62121]">
-                      {line.isMoving ? line.moveMark : ""}
+                    <div className="flex-1 flex justify-center min-w-0 px-2">
+                      <LiuyaoLineSvg
+                        line={line.lineType}
+                        className="h-6 w-full max-w-[180px]"
+                        lineColor="#2F2F2F"
+                        markColor="#A62121"
+                      />
                     </div>
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
                       {line.isShi && (

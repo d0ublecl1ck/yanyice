@@ -45,6 +45,7 @@ describe("liuyao paipan", () => {
 
     expect(p.lines[0]?.isYing).toBe(true);
     expect(p.lines[3]?.isShi).toBe(true);
+
+    expect(p.lines.map((l) => l.lineType)).toEqual(data.lines);
   });
 });
-
