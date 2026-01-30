@@ -238,8 +238,8 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
               const sixGodText = line.sixGod ?? ANIMALS[idxFromTop % 6];
               const movingMarkText = line.moveMark === "O" ? "○" : line.moveMark === "X" ? "×" : line.moveMark;
 
-              const baseShiying = `${line.isShi ? "世" : ""}${line.isYing ? "应" : ""}` || "—";
-              const changedShiying = `${line.changedIsShi ? "世" : ""}${line.changedIsYing ? "应" : ""}` || "—";
+              const baseShiying = `${line.isShi ? "世" : ""}${line.isYing ? "应" : ""}`;
+              const changedShiying = `${line.changedIsShi ? "世" : ""}${line.changedIsYing ? "应" : ""}`;
 
               return (
                 <React.Fragment key={idxFromTop}>
@@ -249,11 +249,8 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
                   <div className="flex items-center justify-end py-4 px-3 border-t border-[#B37D56]/5">
                     <div className="text-xs font-bold text-[#4A4A4A] chinese-font leading-tight text-right">
-                      <div>{line.relative}</div>
-                      <div className="text-[10px] text-[#6B6B6B]">
-                        {line.najia.text}
-                        {line.najia.element}
-                      </div>
+                      {line.relative} {line.najia.text}
+                      {line.najia.element}
                     </div>
                   </div>
 
@@ -268,9 +265,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                   </div>
 
                   <div className="flex items-center justify-center py-4 border-t border-[#B37D56]/5">
-                    {baseShiying === "—" ? (
-                      <span className="text-sm font-bold text-[#6B6B6B]">—</span>
-                    ) : (
+                    {baseShiying ? (
                       <div className="flex gap-1">
                         {line.isShi && (
                           <span className="text-xs font-bold text-[#A62121] chinese-font tracking-widest">世</span>
@@ -279,7 +274,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                           <span className="text-xs font-bold text-[#4A4A4A] chinese-font tracking-widest">应</span>
                         )}
                       </div>
-                    )}
+                    ) : null}
                   </div>
 
                   <div className="flex items-center justify-center py-4 border-t border-[#B37D56]/5">
@@ -287,11 +282,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                       <span className="inline-flex items-center justify-center w-8 h-8 border border-[#A62121] bg-[#FAF7F2] text-[#A62121] text-lg font-black rounded-[2px]">
                         {movingMarkText}
                       </span>
-                    ) : (
-                      <span className="inline-flex items-center justify-center w-8 h-8 text-[#6B6B6B] text-sm font-bold">
-                        —
-                      </span>
-                    )}
+                    ) : null}
                   </div>
 
                   <div className="flex items-center justify-center text-[11px] text-[#5A5A5A] font-bold py-4 border-t border-[#B37D56]/5">
@@ -300,11 +291,8 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
                   <div className="flex items-center justify-end py-4 px-3 border-t border-[#B37D56]/5">
                     <div className="text-xs font-bold text-[#4A4A4A] chinese-font leading-tight text-right">
-                      <div>{line.changedRelative}</div>
-                      <div className="text-[10px] text-[#6B6B6B]">
-                        {line.changedNajia.text}
-                        {line.changedNajia.element}
-                      </div>
+                      {line.changedRelative} {line.changedNajia.text}
+                      {line.changedNajia.element}
                     </div>
                   </div>
 
@@ -319,9 +307,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                   </div>
 
                   <div className="flex items-center justify-center py-4 border-t border-[#B37D56]/5">
-                    {changedShiying === "—" ? (
-                      <span className="text-sm font-bold text-[#6B6B6B]">—</span>
-                    ) : (
+                    {changedShiying ? (
                       <div className="flex gap-1">
                         {line.changedIsShi && (
                           <span className="text-xs font-bold text-[#A62121] chinese-font tracking-widest">世</span>
@@ -330,7 +316,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                           <span className="text-xs font-bold text-[#4A4A4A] chinese-font tracking-widest">应</span>
                         )}
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </React.Fragment>
               );
