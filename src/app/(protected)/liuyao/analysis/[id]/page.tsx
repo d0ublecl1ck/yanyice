@@ -205,29 +205,29 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       <div className="mt-10 grid grid-cols-1 lg:grid-cols-10 gap-8">
         <div className="lg:col-span-7 bg-white border border-[#B37D56]/15 p-8 space-y-8 rounded-none">
           <div className="grid grid-cols-[4rem_minmax(0,1fr)_2.5rem_minmax(0,1fr)] gap-0">
-            <div className="text-[10px] text-[#8B6A52] font-bold pb-4 uppercase tracking-widest text-center">
+            <div className="text-[10px] text-[#8B6A52] font-bold py-3 uppercase tracking-widest text-center">
               六神
             </div>
-            <div className="text-[10px] text-[#8B6A52] font-bold pb-4 uppercase tracking-widest text-center">
+            <div className="text-[10px] text-[#8B6A52] font-bold py-3 uppercase tracking-widest text-center">
               {baseTitle ?? "本卦"}
             </div>
-            <div className="text-[10px] text-[#8B6A52] font-bold pb-4 uppercase tracking-widest text-center">
+            <div className="text-[10px] text-[#8B6A52] font-bold py-3 uppercase tracking-widest text-center">
               动
             </div>
-            <div className="text-[10px] text-[#8B6A52] font-bold pb-4 uppercase tracking-widest text-center">
+            <div className="text-[10px] text-[#8B6A52] font-bold py-3 uppercase tracking-widest text-center">
               {changedTitle ?? "变卦"}
             </div>
 
-            <div className="pb-2" />
-            <div className="pb-2 px-3 border-b border-[#B37D56]/10">
+            <div className="border-b border-[#B37D56]/10" />
+            <div className="px-3 py-2 border-b border-[#B37D56]/10">
               <div className="flex justify-end">
                 <div className="w-28 text-[10px] text-[#8B6A52] font-bold tracking-widest text-right">
                   六亲
                 </div>
               </div>
             </div>
-            <div className="pb-2 border-b border-[#B37D56]/10" />
-            <div className="pb-2 px-3 border-b border-[#B37D56]/10">
+            <div className="border-b border-[#B37D56]/10" />
+            <div className="px-3 py-2 border-b border-[#B37D56]/10">
               <div className="flex justify-end">
                 <div className="w-28 text-[10px] text-[#8B6A52] font-bold tracking-widest text-right">
                   六亲
