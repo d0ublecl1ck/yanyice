@@ -973,12 +973,12 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
     return { date, time };
   }, [recordDate]);
 
-  return (
-    <div
-      className={`w-full max-w-none animate-in fade-in duration-500 ${
-        embedded ? "space-y-6 pb-6" : "space-y-8 pb-20"
-      }`}
-    >
+	  return (
+	    <div
+	      className={`w-full max-w-none animate-in fade-in duration-500 ${
+	        embedded ? "space-y-6" : "space-y-8 pb-20"
+	      }`}
+	    >
       {!embedded ? (
         <header className="flex items-center gap-4">
           <div className="w-10 h-10 bg-black text-white rounded-none flex items-center justify-center shrink-0 rotate-45">
@@ -995,18 +995,24 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
         </header>
       ) : null}
 
-      <div
-        className={`bg-white rounded-[4px] border border-[#B37D56]/20 shadow-none relative ${
-          embedded ? "p-6 md:p-8 space-y-8" : "p-10 space-y-12"
-        }`}
-      >
-        <div className="absolute top-0 right-0 w-24 h-24 border-r border-t border-[#B37D56]/10 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 border-l border-b border-[#B37D56]/10 pointer-events-none" />
-
-        <div
-          className={`grid items-end ${
-            embedded ? "grid-cols-1 gap-6" : "grid-cols-1 md:grid-cols-2 gap-8"
-          }`}
+	      <div
+	        className={
+	          embedded
+	            ? "space-y-8"
+	            : "bg-white rounded-[4px] border border-[#B37D56]/20 shadow-none relative p-10 space-y-12"
+	        }
+	      >
+	        {!embedded ? (
+	          <>
+	            <div className="absolute top-0 right-0 w-24 h-24 border-r border-t border-[#B37D56]/10 pointer-events-none" />
+	            <div className="absolute bottom-0 left-0 w-24 h-24 border-l border-b border-[#B37D56]/10 pointer-events-none" />
+	          </>
+	        ) : null}
+	
+	        <div
+	          className={`grid items-end ${
+	            embedded ? "grid-cols-1 gap-6" : "grid-cols-1 md:grid-cols-2 gap-8"
+	          }`}
         >
           <div className="space-y-2">
             <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest ml-1">
