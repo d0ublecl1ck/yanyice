@@ -8,6 +8,7 @@ import { Plus, Search, Calendar, ChevronRight, FileText } from "lucide-react";
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import { newCaseHref, recordAnalysisHref, recordEditHref } from "@/lib/caseLinks";
+import { CaseArchiveLayout } from "./CaseArchiveLayout";
 
 export function CaseLiuyao() {
   const router = useRouter();
@@ -31,7 +32,7 @@ export function CaseLiuyao() {
     return Array.from(tagCounts.entries()).sort(([aTag, aCount], [bTag, bCount]) => {
       if (bCount !== aCount) return bCount - aCount;
       return aTag.localeCompare(bTag);
-    });
+    }).map(([tag, count]) => ({ tag, count }));
   }, [records]);
 
   const filteredRecords = records.filter((record) => {
@@ -47,190 +48,113 @@ export function CaseLiuyao() {
   });
 
   return (
-    <div className="space-y-8">
-      <header className="flex justify-between items-end border-b border-[#B37D56]/10 pb-6">
-        <div>
-          <h2 className="text-3xl font-bold text-[#2F2F2F] chinese-font tracking-widest">
-            六爻卦例库
-          </h2>
-          <p className="text-xs text-[#B37D56] font-bold mt-1 uppercase tracking-widest">
-            Liuyao Archives ({filteredRecords.length})
-          </p>
-        </div>
-        <Link
-          href={newCaseHref("liuyao")}
-          className="flex items-center gap-2 px-6 py-2 bg-[#A62121] text-white font-bold text-sm tracking-widest hover:bg-[#8B1A1A] transition-all rounded-[2px]"
-        >
-          <Plus size={16} />
-          新建卦例
-        </Link>
-      </header>
-
-      <div className="relative group">
-        <Search
-          size={16}
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B37D56]/40 group-focus-within:text-[#A62121] transition-colors"
-        />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="搜索卦例主题或客户姓名..."
-          className="w-full bg-white border border-[#B37D56]/10 pl-12 pr-6 py-3 outline-none focus:border-[#A62121] transition-all text-sm rounded-none shadow-sm"
-        />
-      </div>
-
-      {availableTags.length > 0 ? (
-        <section className="space-y-2">
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
-              标签筛选
-            </p>
-            {activeTag != null ? (
-              <button
-                type="button"
-                onClick={() => setActiveTag(null)}
-                className="text-[10px] font-bold tracking-widest text-[#2F2F2F]/30 hover:text-[#A62121] transition-colors"
-              >
-                清除筛选
-              </button>
-            ) : null}
-          </div>
-
-          <div className="flex flex-wrap gap-2 items-center">
-            <button
-              type="button"
-              aria-pressed={activeTag == null}
-              onClick={() => setActiveTag(null)}
-              className={[
-                "text-[10px] px-2 py-1 border font-bold tracking-widest transition-colors rounded-[2px]",
-                activeTag == null
-                  ? "bg-black text-white border-black"
-                  : "bg-white text-[#2F2F2F]/60 border-[#B37D56]/10 hover:border-[#A62121]/30 hover:text-[#A62121]",
-              ].join(" ")}
-            >
-              全部
-            </button>
-
-            {availableTags.map(([tag, count]) => {
-              const isActive = activeTag === tag;
+    <CaseArchiveLayout
+      title="六爻卦例库"
+      subtitle="Liuyao Archives"
+      resultCount={filteredRecords.length}
+      actionHref={newCaseHref("liuyao")}
+      actionLabel="新建卦例"
+      actionClassName="flex items-center gap-2 px-6 py-2 bg-[#A62121] text-white font-bold text-sm tracking-widest hover:bg-[#8B1A1A] transition-all rounded-[2px]"
+      actionIcon={<Plus size={16} />}
+      searchIcon={<Search size={16} />}
+      search={search}
+      onSearchChange={setSearch}
+      searchPlaceholder="搜索卦例主题或客户姓名..."
+      tagOptions={availableTags}
+      activeTag={activeTag}
+      onActiveTagChange={setActiveTag}
+    >
+      {filteredRecords.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-px lg:grid-cols-4 xl:grid-cols-3">
+          {filteredRecords
+            .sort((a, b) => b.createdAt - a.createdAt)
+            .map((record) => {
+              const customer = customers.find((c) => c.id === record.customerId);
+              const displayCustomerName = record.customerName ?? customer?.name ?? "未知客户";
+              const editHref = recordEditHref(record.module, record.id);
+              const analysisHref = recordAnalysisHref("liuyao", record.id);
               return (
-                <button
-                  key={tag}
-                  type="button"
-                  aria-pressed={isActive}
-                  onClick={() => setActiveTag((prev) => (prev === tag ? null : tag))}
-                  className={[
-                    "text-[10px] px-2 py-1 border font-bold tracking-widest transition-colors flex items-center gap-1 rounded-[2px]",
-                    isActive
-                      ? "bg-[#A62121] text-white border-[#A62121]"
-                      : "bg-white text-[#2F2F2F]/60 border-[#B37D56]/10 hover:border-[#A62121]/30 hover:text-[#A62121]",
-                  ].join(" ")}
+                <div
+                  key={record.id}
+                  role="link"
+                  tabIndex={0}
+                  onClick={() => router.push(analysisHref)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") router.push(analysisHref);
+                  }}
+                  className="bg-white flex items-start gap-4 group hover:bg-[#FAF7F2] transition-all p-6"
                 >
-                  {tag}
-                  <span className={isActive ? "text-white/70" : "text-[#2F2F2F]/20"}>
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      ) : null}
+                  <div className="w-12 h-12 bg-[#B37D56]/5 flex items-center justify-center shrink-0">
+                    <FileText
+                      size={20}
+                      className="text-[#B37D56]/30 group-hover:text-[#A62121] transition-colors"
+                    />
+                  </div>
 
-      <div className="border border-[#B37D56]/10 rounded-none shadow-sm overflow-hidden bg-[#B37D56]/10">
-        {filteredRecords.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-px lg:grid-cols-4 xl:grid-cols-3">
-            {filteredRecords
-              .sort((a, b) => b.createdAt - a.createdAt)
-              .map((record) => {
-                const customer = customers.find((c) => c.id === record.customerId);
-                const displayCustomerName = record.customerName ?? customer?.name ?? "未知客户";
-                const editHref = recordEditHref(record.module, record.id);
-                const analysisHref = recordAnalysisHref("liuyao", record.id);
-                return (
-                  <div
-                    key={record.id}
-                    role="link"
-                    tabIndex={0}
-                    onClick={() => router.push(analysisHref)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") router.push(analysisHref);
-                    }}
-                    className="bg-white flex items-start gap-4 group hover:bg-[#FAF7F2] transition-all p-6"
-                  >
-                    <div className="w-12 h-12 bg-[#B37D56]/5 flex items-center justify-center shrink-0">
-                      <FileText
-                        size={20}
-                        className="text-[#B37D56]/30 group-hover:text-[#A62121] transition-colors"
-                      />
-                    </div>
-
-                    <div className="flex-1 min-w-0 space-y-4">
-                      <div className="flex items-start justify-between gap-6">
-                        <div className="min-w-0">
-                          <h4 className="font-bold text-[#2F2F2F] chinese-font group-hover:text-[#A62121] transition-colors truncate">
-                            {record.subject}
-                          </h4>
-                          <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <span className="text-[10px] font-bold text-[#B37D56] uppercase tracking-widest">
-                              {displayCustomerName}
-                            </span>
-                            <span className="text-[10px] text-[#2F2F2F]/20">|</span>
-                            <span className="text-[10px] text-[#2F2F2F]/30">文王六爻</span>
-                          </div>
-                        </div>
-                        <div className="text-[11px] text-[#2F2F2F]/40 font-bold uppercase tracking-widest flex items-center gap-2 shrink-0">
-                          <Calendar size={12} />
-                          {new Date(record.createdAt).toLocaleDateString()}
+                  <div className="flex-1 min-w-0 space-y-4">
+                    <div className="flex items-start justify-between gap-6">
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-[#2F2F2F] chinese-font group-hover:text-[#A62121] transition-colors truncate">
+                          {record.subject}
+                        </h4>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          <span className="text-[10px] font-bold text-[#B37D56] uppercase tracking-widest">
+                            {displayCustomerName}
+                          </span>
+                          <span className="text-[10px] text-[#2F2F2F]/20">|</span>
+                          <span className="text-[10px] text-[#2F2F2F]/30">文王六爻</span>
                         </div>
                       </div>
+                      <div className="text-[11px] text-[#2F2F2F]/40 font-bold uppercase tracking-widest flex items-center gap-2 shrink-0">
+                        <Calendar size={12} />
+                        {new Date(record.createdAt).toLocaleDateString()}
+                      </div>
+                    </div>
 
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex flex-wrap gap-1 min-w-0">
-                          {record.tags.length > 0 ? (
-                            <>
-                              {record.tags.slice(0, 3).map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="text-[9px] px-2 py-0.5 border border-[#B37D56]/10 bg-[#FAF7F2] text-[#2F2F2F]/60 font-bold tracking-widest rounded-[2px]"
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                              {record.tags.length > 3 ? (
-                                <span className="text-[9px] px-2 py-0.5 border border-[#B37D56]/10 bg-white text-[#2F2F2F]/30 font-bold tracking-widest rounded-[2px]">
-                                  +{record.tags.length - 3}
-                                </span>
-                              ) : null}
-                            </>
-                          ) : null}
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Link
-                            href={editHref}
-                            className="text-[9px] px-2 py-0.5 border border-[#B37D56]/20 text-[#2F2F2F]/30 font-bold hover:border-[#A62121]/30 hover:text-[#A62121] rounded-[2px]"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            编辑
-                          </Link>
-                          <ChevronRight
-                            size={16}
-                            className="text-[#2F2F2F]/10 group-hover:text-[#A62121] transition-all transform group-hover:translate-x-1"
-                          />
-                        </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex flex-wrap gap-1 min-w-0">
+                        {record.tags.length > 0 ? (
+                          <>
+                            {record.tags.slice(0, 3).map((tag) => (
+                              <span
+                                key={tag}
+                                className="text-[9px] px-2 py-0.5 border border-[#B37D56]/10 bg-[#FAF7F2] text-[#2F2F2F]/60 font-bold tracking-widest rounded-[2px]"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                            {record.tags.length > 3 ? (
+                              <span className="text-[9px] px-2 py-0.5 border border-[#B37D56]/10 bg-white text-[#2F2F2F]/30 font-bold tracking-widest rounded-[2px]">
+                                +{record.tags.length - 3}
+                              </span>
+                            ) : null}
+                          </>
+                        ) : null}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Link
+                          href={editHref}
+                          className="text-[9px] px-2 py-0.5 border border-[#B37D56]/20 text-[#2F2F2F]/30 font-bold hover:border-[#A62121]/30 hover:text-[#A62121] rounded-[2px]"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          编辑
+                        </Link>
+                        <ChevronRight
+                          size={16}
+                          className="text-[#2F2F2F]/10 group-hover:text-[#A62121] transition-all transform group-hover:translate-x-1"
+                        />
                       </div>
                     </div>
                   </div>
-                );
-              })}
-          </div>
-        ) : (
-          <div className="py-24 text-center">
-            <p className="text-[#2F2F2F]/20 chinese-font italic">未找到匹配的六爻卦例</p>
-          </div>
-        )}
-      </div>
-    </div>
+                </div>
+              );
+            })}
+        </div>
+      ) : (
+        <div className="py-24 text-center">
+          <p className="text-[#2F2F2F]/20 chinese-font italic">未找到匹配的六爻卦例</p>
+        </div>
+      )}
+    </CaseArchiveLayout>
   );
 }
