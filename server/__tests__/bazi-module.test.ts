@@ -130,11 +130,13 @@ describe("bazi module persistence", () => {
         id: string;
         module: string;
         customerId: string;
+        tags: string[];
         baziData: { birthDate: string; yearStem: string; yearBranch: string; derived?: unknown };
       };
     }).record;
     expect(record.module).toBe("bazi");
     expect(record.customerId).toBe(customer.id);
+    expect(record.tags).toEqual(["事业"]);
     expect(record.baziData.birthDate).toBe("1985-06-15T10:30:00+08:00");
 
     LunarHour.provider = new LunarSect2EightCharProvider();
@@ -150,19 +152,24 @@ describe("bazi module persistence", () => {
       headers: { authorization: `Bearer ${tokenA}` },
     });
     expect(listBazi.statusCode).toBe(200);
-    const listed = (listBazi.json() as { records: Array<{ id: string }> }).records;
-    expect(listed.some((r) => r.id === record.id)).toBe(true);
+    const listed = (listBazi.json() as { records: Array<{ id: string; tags: string[] }> }).records;
+    const listedRecord = listed.find((r) => r.id === record.id);
+    expect(listedRecord).toBeTruthy();
+    expect(listedRecord?.tags).toEqual(["事业"]);
 
     const updateRecord = await app.inject({
       method: "PUT",
       url: `/api/records/${record.id}`,
       headers: { authorization: `Bearer ${tokenA}` },
-      payload: { notes: "更新后的断语", verifiedStatus: "accurate" },
+      payload: { notes: "更新后的断语", verifiedStatus: "accurate", tags: ["事业", "重点"] },
     });
     expect(updateRecord.statusCode).toBe(200);
-    const updated = (updateRecord.json() as { record: { notes: string; verifiedStatus: string } }).record;
+    const updated = (updateRecord.json() as {
+      record: { notes: string; verifiedStatus: string; tags: string[] };
+    }).record;
     expect(updated.notes).toBe("更新后的断语");
     expect(updated.verifiedStatus).toBe("accurate");
+    expect(updated.tags).toEqual(["事业", "重点"]);
 
     const getRecord = await app.inject({
       method: "GET",
