@@ -62,9 +62,6 @@ export default function Page() {
             工作台首页
           </h2>
           <div className="mt-3 space-y-2">
-            <p className="text-[10px] text-[#2F2F2F]/30 uppercase tracking-[0.3em] font-bold">
-              今日名言
-            </p>
             {dailyQuotes.length > 0 ? (
               <ul className="space-y-1">
                 {dailyQuotes.map((q) => (
