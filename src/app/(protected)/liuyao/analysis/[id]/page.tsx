@@ -404,12 +404,9 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
               断语简析
             </h3>
             <div className="space-y-4 text-[15px] chinese-font leading-relaxed">
-              <p className="border-l border-[#B37D56]/30 pl-4 font-bold text-[#2F2F2F]">
-                （占断模板）以用神、世应、动变为纲，结合月建日辰定旺衰。
-              </p>
-              <p className="border-l border-black/10 pl-4 text-[#4A4A4A]">
-                {record.notes?.trim() ? record.notes : "（暂无备注）"}
-              </p>
+              {record.notes?.trim() ? (
+                <p className="border-l border-black/10 pl-4 text-[#4A4A4A]">{record.notes}</p>
+              ) : null}
             </div>
           </div>
         </div>
