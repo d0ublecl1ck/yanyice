@@ -2,6 +2,7 @@ import { GoogleGenAI, Type, type GenerateContentResponse } from "@google/genai";
 import { NextResponse } from "next/server";
 
 import { parseExtractRequestBody } from "@/server/gemini/extractRequest";
+import { DEFAULT_GEMINI_MODEL } from "@/server/gemini/defaults";
 
 export async function POST(req: Request) {
   const apiKey = process.env.API_KEY;
@@ -66,7 +67,7 @@ export async function POST(req: Request) {
 
   try {
     const response: GenerateContentResponse = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
+      model: parsedBody.model ?? DEFAULT_GEMINI_MODEL,
       contents,
       config: {
         systemInstruction,
@@ -85,4 +86,3 @@ export async function POST(req: Request) {
     );
   }
 }
-

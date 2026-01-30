@@ -1,6 +1,7 @@
 export type ChatRequestBody = {
   systemInstruction: string;
   messages: Array<{ role: "user" | "model"; text: string }>;
+  model?: string;
 };
 
 export function parseChatRequestBody(body: unknown): ChatRequestBody | null {
@@ -9,6 +10,14 @@ export function parseChatRequestBody(body: unknown): ChatRequestBody | null {
 
   if (typeof obj.systemInstruction !== "string") return null;
   if (!Array.isArray(obj.messages)) return null;
+
+  const model = obj.model;
+  if (typeof model !== "undefined") {
+    if (typeof model !== "string") return null;
+    const trimmed = model.trim();
+    if (!trimmed) return null;
+    if (trimmed.length > 80) return null;
+  }
 
   const parsed: Array<{ role: "user" | "model"; text: string }> = [];
   for (const msg of obj.messages) {
@@ -24,6 +33,6 @@ export function parseChatRequestBody(body: unknown): ChatRequestBody | null {
   return {
     systemInstruction: obj.systemInstruction,
     messages: parsed,
+    model: typeof obj.model === "string" ? obj.model.trim() : undefined,
   };
 }
-

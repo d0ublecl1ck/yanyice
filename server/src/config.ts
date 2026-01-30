@@ -1,5 +1,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import crypto from "node:crypto";
 
 export function getEnv(name: string): string | undefined {
   const value = process.env[name];
@@ -30,6 +31,26 @@ export function getDatabaseUrl(): string {
 
 export function getJwtSecret(): string {
   return getEnv("JWT_SECRET") ?? "dev-only-change-me";
+}
+
+export function getAiCredentialsMasterKey(): Buffer {
+  const raw = getEnv("AI_CREDENTIALS_MASTER_KEY");
+  if (!raw) {
+    return crypto.createHash("sha256").update("dev-only-ai-credentials-master-key").digest();
+  }
+
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return crypto.createHash("sha256").update("dev-only-ai-credentials-master-key").digest();
+  }
+
+  const base64 = Buffer.from(trimmed, "base64");
+  if (base64.length === 32) return base64;
+
+  const hex = Buffer.from(trimmed, "hex");
+  if (hex.length === 32) return hex;
+
+  throw new Error("Invalid AI_CREDENTIALS_MASTER_KEY: expected 32-byte base64 or hex");
 }
 
 export function getCorsOrigin(): string | string[] | true {

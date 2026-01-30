@@ -1,9 +1,15 @@
-export const extractLiuYaoData = async (input: string | File) => {
+export const extractLiuYaoData = async (
+  input: string | File,
+  options?: { model?: string },
+) => {
   try {
     const body =
       typeof input === "string"
-        ? { text: input }
-        : { image: { data: await fileToBase64(input), mimeType: input.type } };
+        ? { text: input, model: options?.model }
+        : {
+            image: { data: await fileToBase64(input), mimeType: input.type },
+            model: options?.model,
+          };
 
     const response = await fetch("/api/gemini/extract", {
       method: "POST",
@@ -27,6 +33,7 @@ export type ChatMessage = { role: "user" | "model"; text: string };
 export const geminiChat = async (params: {
   systemInstruction: string;
   messages: ChatMessage[];
+  model?: string;
 }) => {
   const response = await fetch("/api/gemini/chat", {
     method: "POST",
@@ -46,7 +53,7 @@ const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
-    reader.onload = () => resolve((reader.result as string).split(',')[1]);
-    reader.onerror = error => reject(error);
+    reader.onload = () => resolve((reader.result as string).split(",")[1]);
+    reader.onerror = (error) => reject(error);
   });
 };

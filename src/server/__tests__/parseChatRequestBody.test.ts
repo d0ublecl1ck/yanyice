@@ -10,6 +10,7 @@ describe("parseChatRequestBody", () => {
         { role: "user", text: "你好" },
         { role: "model", text: "请问想问什么？" },
       ],
+      model: "gemini-3-pro-preview",
     });
 
     expect(parsed).toEqual({
@@ -18,6 +19,7 @@ describe("parseChatRequestBody", () => {
         { role: "user", text: "你好" },
         { role: "model", text: "请问想问什么？" },
       ],
+      model: "gemini-3-pro-preview",
     });
   });
 
@@ -31,6 +33,7 @@ describe("parseChatRequestBody", () => {
 
     expect(parseChatRequestBody({ systemInstruction: 1, messages: [] })).toBeNull();
     expect(parseChatRequestBody({ systemInstruction: "x", messages: "nope" })).toBeNull();
+    expect(parseChatRequestBody({ systemInstruction: "x", messages: [], model: 123 })).toBeNull();
+    expect(parseChatRequestBody({ systemInstruction: "x", messages: [], model: "   " })).toBeNull();
   });
 });
-

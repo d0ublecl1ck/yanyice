@@ -1,18 +1,116 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Shield, Info, User, LogOut } from "lucide-react";
+import { Shield, Info, User, LogOut, Sparkles } from "lucide-react";
 
+import { Select, type SelectOption } from "@/components/Select";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useToastStore } from "@/stores/useToastStore";
+import { useAiConfigStore } from "@/stores/useAiConfigStore";
+import {
+  getDefaultAiConfig,
+  sanitizeAiApiKey,
+  sanitizeAiModel,
+  sanitizeAiVendor,
+} from "@/lib/aiConfig";
+import { AI_VENDORS, getAiVendorById } from "@/lib/aiVendors";
 
 export default function Page() {
   const { user, logout } = useAuthStore();
   const router = useRouter();
+  const toast = useToastStore((s) => s.show);
+
+  const aiVendor = useAiConfigStore((s) => s.vendor);
+  const aiModel = useAiConfigStore((s) => s.model);
+  const aiHasApiKey = useAiConfigStore((s) => s.hasApiKey);
+  const aiStatus = useAiConfigStore((s) => s.status);
+  const bootstrapAi = useAiConfigStore((s) => s.bootstrap);
+  const updateModel = useAiConfigStore((s) => s.updateModel);
+  const saveApiKey = useAiConfigStore((s) => s.saveApiKey);
+  const clearApiKey = useAiConfigStore((s) => s.clearApiKey);
+
+  const defaultAiConfig = useMemo(() => getDefaultAiConfig(), []);
+
+  const [vendorDraft, setVendorDraft] = useState(aiVendor);
+  const [modelDraft, setModelDraft] = useState(aiModel);
+  const [apiKeyDraft, setApiKeyDraft] = useState("");
+  const [isClearOpen, setIsClearOpen] = useState(false);
+  const lastServerRef = useRef<{ vendor: string; model: string } | null>(null);
+
+  useEffect(() => {
+    void bootstrapAi().catch(() => {
+      toast("加载 AI 配置失败，请稍后重试", "warning");
+    });
+  }, [bootstrapAi, toast]);
+
+  useEffect(() => {
+    const last = lastServerRef.current;
+    if (last && last.vendor === aiVendor && last.model === aiModel) return;
+    lastServerRef.current = { vendor: aiVendor, model: aiModel };
+    setVendorDraft(aiVendor);
+    setModelDraft(aiModel);
+  }, [aiVendor, aiModel]);
 
   const handleLogout = () => {
     logout();
     router.replace("/login");
+  };
+
+  const handleResetAiConfig = () => {
+    setVendorDraft(defaultAiConfig.vendor);
+    setModelDraft(defaultAiConfig.model);
+    setApiKeyDraft("");
+    void updateModel(defaultAiConfig.model).then(
+      () => toast("已恢复默认模型配置", "info"),
+      () => toast("恢复默认失败，请稍后重试", "warning"),
+    );
+  };
+
+  const vendorOptions = useMemo<Array<SelectOption<string>>>(
+    () => AI_VENDORS.map((v) => ({ value: v.id, label: v.label })),
+    [],
+  );
+
+  const selectedVendor = useMemo(() => getAiVendorById(vendorDraft), [vendorDraft]);
+  const modelPlaceholder = selectedVendor?.modelPlaceholder ?? "留空使用默认值";
+  const modelHint = selectedVendor?.modelRecommendedHint ?? "留空使用默认值";
+  const apiKeyHint = selectedVendor?.apiKeyHint ?? "在对应厂家控制台获取";
+
+  const commitModel = () => {
+    const next = sanitizeAiModel(modelDraft);
+    if (next === null) {
+      toast("模型最多 80 字", "warning");
+      setModelDraft(aiModel);
+      return;
+    }
+    if (next === aiModel) return;
+    setModelDraft(next);
+    void updateModel(next).then(
+      () => toast("模型已更新", "success"),
+      () => toast("模型更新失败，请稍后重试", "warning"),
+    );
+  };
+
+  const handleSaveApiKey = () => {
+    const next = sanitizeAiApiKey(apiKeyDraft);
+    if (next === null) {
+      toast("API Key 过长", "warning");
+      return;
+    }
+    if (!next) {
+      toast("请输入 API Key", "warning");
+      return;
+    }
+
+    void saveApiKey(next).then(
+      () => {
+        setApiKeyDraft("");
+        toast("API Key 已保存", "success");
+      },
+      () => toast("API Key 保存失败，请稍后重试", "warning"),
+    );
   };
 
   return (
@@ -56,6 +154,131 @@ export default function Page() {
             </div>
           </div>
         </section>
+
+        <section className="bg-white p-8 border border-[#B37D56]/10 space-y-6">
+          <div className="flex items-center justify-between gap-3 border-b border-[#B37D56]/10 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-[#B37D56]/10 text-[#B37D56] rounded-none border border-[#B37D56]/20">
+                <Sparkles size={20} />
+              </div>
+              <h3 className="font-bold text-lg text-[#2F2F2F] chinese-font">AI 配置</h3>
+            </div>
+
+            <button
+              onClick={handleResetAiConfig}
+              className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-[#B37D56]/20 text-[#2F2F2F] font-bold text-xs tracking-widest hover:bg-[#FAF7F2] transition-all chinese-font rounded-[2px]"
+              title="恢复默认 AI 配置"
+            >
+              恢复默认
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div className="bg-[#FAF7F2] p-4 rounded-none border border-[#B37D56]/5">
+              <p className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest mb-1">
+                提示
+              </p>
+              <p className="text-xs text-[#2F2F2F]/60 chinese-font">
+                当前仅支持智谱 BigModel。这里用于配置「厂家」与「模型」的默认值，为后期接入 AI 对话做准备。
+                配置保存到服务端账户下，API Key 不会在前端回显。
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+                提供商
+              </span>
+              <Select
+                value={vendorDraft}
+                options={vendorOptions}
+                variant="box"
+                disabled
+                onValueChange={(next) => {
+                  const nextVendor = sanitizeAiVendor(String(next));
+                  if (!nextVendor) {
+                    toast("厂家不能为空，且最多 48 字", "warning");
+                    return;
+                  }
+                  setVendorDraft(nextVendor);
+                  setModelDraft("");
+                }}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+                模型
+              </span>
+              <input
+                value={modelDraft}
+                onChange={(e) => setModelDraft(e.target.value)}
+                onBlur={commitModel}
+                placeholder={modelPlaceholder}
+                className="w-full px-3 py-2 bg-white border border-[#B37D56]/20 text-sm chinese-font rounded-none focus:outline-none focus:border-[#B37D56]/50"
+                autoComplete="off"
+                disabled={aiStatus === "loading"}
+              />
+              <p className="text-[10px] text-[#2F2F2F]/40">{modelHint}</p>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+                API Key
+              </span>
+              <div className="flex gap-2 items-center">
+                <input
+                  value={apiKeyDraft}
+                  onChange={(e) => setApiKeyDraft(e.target.value)}
+                  placeholder={aiHasApiKey ? "已配置（重新粘贴可覆盖）" : "********"}
+                  type="password"
+                  className="w-full px-3 py-2 bg-white border border-[#B37D56]/20 text-sm chinese-font rounded-none focus:outline-none focus:border-[#B37D56]/50"
+                  autoComplete="off"
+                  disabled={aiStatus === "loading"}
+                />
+                <button
+                  onClick={handleSaveApiKey}
+                  className="px-3 py-2 bg-[#A62121] text-white text-xs font-bold tracking-widest hover:bg-[#8B1A1A] transition-colors rounded-[2px] chinese-font"
+                  disabled={aiStatus === "loading"}
+                >
+                  保存
+                </button>
+                <button
+                  onClick={() => setIsClearOpen(true)}
+                  className="px-3 py-2 bg-white border border-[#A62121]/20 text-[#A62121] text-xs font-bold tracking-widest hover:bg-[#A62121] hover:text-white transition-all rounded-[2px] chinese-font"
+                  disabled={!aiHasApiKey || aiStatus === "loading"}
+                >
+                  清除
+                </button>
+              </div>
+              <p className="text-[10px] text-[#2F2F2F]/40">{apiKeyHint}</p>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-[#FAF7F2]/50 border border-[#B37D56]/5">
+              <div>
+                <p className="font-bold text-[#2F2F2F] chinese-font">当前生效</p>
+                <p className="text-xs text-[#2F2F2F]/40">
+                  厂家：{aiVendor}；模型：{aiModel || "（默认）"}；API Key：{aiHasApiKey ? "已配置" : "未配置"}
+                </p>
+              </div>
+              <div className="text-[10px] text-[#2F2F2F]/40 uppercase tracking-widest">自动保存</div>
+            </div>
+          </div>
+        </section>
+
+        <ConfirmDialog
+          open={isClearOpen}
+          title="清除 API Key？"
+          description="清除后将无法调用对应厂家接口，后续可重新粘贴保存。"
+          confirmText="清除"
+          onCancel={() => setIsClearOpen(false)}
+          onConfirm={() => {
+            setIsClearOpen(false);
+            void clearApiKey().then(
+              () => toast("API Key 已清除", "info"),
+              () => toast("清除失败，请稍后重试", "warning"),
+            );
+          }}
+        />
 
         <section className="bg-white p-8 border border-[#B37D56]/10 space-y-6">
           <div className="flex items-center gap-3 border-b border-[#B37D56]/10 pb-4">
