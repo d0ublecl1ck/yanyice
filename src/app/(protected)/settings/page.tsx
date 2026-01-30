@@ -157,7 +157,6 @@ export default function Page() {
   useEffect(() => {
     if (quoteStatus !== "ready") return;
     if (!hasEditedQuoteLines) return;
-    if (quoteStatus === "loading") return;
 
     const normalized = normalizeQuoteLines(quoteLinesDraft);
     const enabledLines = quotes.filter((q) => q.enabled).map((q) => q.text).join("\n");
