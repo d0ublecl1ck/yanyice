@@ -136,7 +136,7 @@ export default function Page() {
               最近咨询记录
             </h3>
             <Link
-              href="/cases"
+              href="/records"
               className="text-xs text-[#B37D56] hover:text-[#A62121] font-bold tracking-widest uppercase flex items-center gap-1 transition-colors"
             >
               查看全部 <ArrowRight size={12} />

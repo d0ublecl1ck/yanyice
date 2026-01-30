@@ -50,7 +50,7 @@ export function CaseAll({ initialFilter }: { initialFilter: CaseFilter }) {
         initialCustomerId={initialCustomerId}
         onClose={() => {
           setIsCreateOpen(false);
-          if (searchParams.get("create") === "liuyao") router.replace("/cases");
+          if (searchParams.get("create") === "liuyao") router.replace("/records");
         }}
       />
       <header className="flex justify-between items-end border-b border-[#B37D56]/10 pb-6">
