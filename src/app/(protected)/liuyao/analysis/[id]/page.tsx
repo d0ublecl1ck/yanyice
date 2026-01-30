@@ -257,12 +257,15 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                     {sixGodText}
                   </div>
 
-	                  <div className="flex items-center justify-end py-4 px-3 border-t border-[#B37D56]/5">
-	                    <div className="text-xs font-bold text-[#4A4A4A] chinese-font leading-tight text-right">
-	                      {line.relative} {line.najia.text}
-	                      <span style={{ color: getWuxingColor(line.najia.element) }}>{line.najia.element}</span>
-	                    </div>
-	                  </div>
+                  <div className="flex items-center justify-end py-4 px-3 border-t border-[#B37D56]/5">
+                    <div
+                      className="text-xs font-bold chinese-font leading-tight text-right"
+                      style={{ color: getWuxingColor(line.najia.element) }}
+                    >
+                      {line.relative} {line.najia.text}
+                      {line.najia.element}
+                    </div>
+                  </div>
 
                   <div className="flex items-center justify-center py-4 border-t border-[#B37D56]/5">
                     <LiuyaoLineSvg
@@ -299,14 +302,15 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                     {sixGodText}
                   </div>
 
-	                  <div className="flex items-center justify-end py-4 px-3 border-t border-[#B37D56]/5">
-	                    <div className="text-xs font-bold text-[#4A4A4A] chinese-font leading-tight text-right">
-	                      {line.changedRelative} {line.changedNajia.text}
-	                      <span style={{ color: getWuxingColor(line.changedNajia.element) }}>
-	                        {line.changedNajia.element}
-	                      </span>
-	                    </div>
-	                  </div>
+                  <div className="flex items-center justify-end py-4 px-3 border-t border-[#B37D56]/5">
+                    <div
+                      className="text-xs font-bold chinese-font leading-tight text-right"
+                      style={{ color: getWuxingColor(line.changedNajia.element) }}
+                    >
+                      {line.changedRelative} {line.changedNajia.text}
+                      {line.changedNajia.element}
+                    </div>
+                  </div>
 
                   <div className="flex items-center justify-center py-4 border-t border-[#B37D56]/5">
                     <LiuyaoLineSvg
