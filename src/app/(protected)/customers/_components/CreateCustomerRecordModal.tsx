@@ -45,7 +45,7 @@ export function CreateCustomerRecordModal({
   return (
     <Modal
       open={open}
-      title="登记新客户"
+      title="登记新缘主"
       onClose={onClose}
       size="md"
       showCloseButton
@@ -59,7 +59,7 @@ export function CreateCustomerRecordModal({
           ref={nameInputRef}
           value={createName}
           onChange={(e) => setCreateName(e.target.value)}
-          placeholder="请输入客户姓名"
+          placeholder="请输入缘主姓名"
           className="w-full bg-white border border-[#B37D56]/10 px-3 py-2 text-xs font-bold rounded-[2px] outline-none focus:border-[#A62121] transition-colors chinese-font"
         />
       </div>

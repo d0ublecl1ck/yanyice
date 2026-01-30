@@ -26,6 +26,8 @@ import {
   getBaziPickerYearItems,
   getBaziTimePickerOpenDefaults,
   getNowButtonResult,
+  parseQuickFourPillarsInput,
+  parseQuickSolarInput,
   tryDeriveSolarFromLunar,
 } from "@/lib/baziTimePicker";
 
@@ -386,6 +388,7 @@ const BaziTimePickerModal = ({
   onClose: () => void;
   onConfirm: (data: BaziTimePickerConfirmData) => void;
 }) => {
+  const toast = useToastStore();
   const [tab, setTab] = useState<"solar" | "lunar" | "fourPillars">("solar");
   const [solar, setSolar] = useState({ y: 1990, m: 1, d: 1, h: 0, min: 0 });
   const [lunar, setLunar] = useState({ y: 1989, m: "腊月", d: "初五", h: 0, min: 0 });
@@ -409,6 +412,7 @@ const BaziTimePickerModal = ({
   const [selectedCandidateIndex, setSelectedCandidateIndex] = useState(0);
   const wasOpenRef = React.useRef(false);
   const lastSolarSyncKeyRef = React.useRef<string | null>(null);
+  const [quickInput, setQuickInput] = useState("");
 
   const getSolarMaxDay = React.useCallback((y: number, m: number) => {
     const safeMonth = Math.min(12, Math.max(1, m));
@@ -425,6 +429,7 @@ const BaziTimePickerModal = ({
       setFourPillarsCandidates([]);
       setSelectedCandidateIndex(0);
       setPicking(null);
+      setQuickInput("");
     }
     wasOpenRef.current = isOpen;
   }, [isOpen]);
@@ -507,6 +512,38 @@ const BaziTimePickerModal = ({
     if (shouldAutoClose) onClose();
   };
 
+  const applyQuickInput = React.useCallback(() => {
+    const raw = quickInput.trim();
+    if (!raw) {
+      toast.show("请输入要识别的内容", "warning");
+      return;
+    }
+
+    const parsedSolar = parseQuickSolarInput(raw);
+    if (parsedSolar) {
+      setTab("solar");
+      setSolar(parsedSolar);
+      toast.show(
+        `已定位到 ${parsedSolar.y} / ${pad2(parsedSolar.m)} / ${pad2(parsedSolar.d)}  ${pad2(
+          parsedSolar.h,
+        )}:${pad2(parsedSolar.min)}`,
+        "success",
+      );
+      return;
+    }
+
+    const parsedFp = parseQuickFourPillarsInput(raw);
+    if (parsedFp) {
+      setTab("fourPillars");
+      setPicking(null);
+      setFourPillars(parsedFp);
+      toast.show("已识别四柱并更新匹配时间", "success");
+      return;
+    }
+
+    toast.show("未能识别：支持 199303270255 或 乙酉戊寅丙戌己丑", "warning");
+  }, [quickInput, toast]);
+
   if (!isOpen) return null;
 
   return (
@@ -545,6 +582,35 @@ const BaziTimePickerModal = ({
           </button>
         </div>
         <div className="p-8 min-h-[280px]">
+          <div className="mb-6">
+            <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest mb-2 block">
+              快捷识别
+            </label>
+            <div className="flex gap-2 items-stretch">
+              <div className="flex items-center gap-2 flex-1 bg-[#FAF7F2] border border-[#B37D56]/20 px-3 rounded-[2px]">
+                <Search size={14} className="text-[#B37D56]/50 shrink-0" />
+                <input
+                  value={quickInput}
+                  onChange={(e) => setQuickInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") applyQuickInput();
+                  }}
+                  placeholder="199303270255 或 乙酉戊寅丙戌己丑"
+                  className="w-full bg-transparent py-2 outline-none text-xs chinese-font font-bold text-[#2F2F2F] placeholder:text-[#2F2F2F]/30"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={applyQuickInput}
+                className="px-4 bg-[#2F2F2F] text-white font-bold chinese-font text-xs rounded-[2px] hover:bg-black transition-all"
+              >
+                识别
+              </button>
+            </div>
+            <p className="text-[10px] text-[#2F2F2F]/30 chinese-font mt-2">
+              数字支持：YYYYMMDDHHmm；四柱支持：年柱月柱日柱时柱（8 字）。
+            </p>
+          </div>
           {tab === "solar" && (
             <div className="flex justify-between">
               <PickerColumn
@@ -949,7 +1015,7 @@ export function BaziEditView({
         }
 
         const fallbackTitle = resolvedCustomerId
-          ? `${customers.find((c) => c.id === resolvedCustomerId)?.name || "客户"}的命例`
+          ? `${customers.find((c) => c.id === resolvedCustomerId)?.name || "缘主"}的命例`
           : "未命名命例";
         await addRecord({
           customerId: resolvedCustomerId,
@@ -1297,7 +1363,7 @@ export function BaziEditView({
                   >
                     {createCustomerAlso ? <Check size={10} className="text-white" /> : null}
                   </div>
-                  同时创建客户档案
+                  同时创建缘主档案
                 </button>
               ) : null}
             </div>

@@ -79,17 +79,17 @@ export function CaseLiuyao() {
 
   return (
     <CaseArchiveLayout
-      title="六爻卦例库"
+      title="六爻卦谱库"
       subtitle="Liuyao Archives"
       resultCount={filteredRecords.length}
       actionHref={newCaseHref("liuyao")}
-      actionLabel="新建卦例"
+      actionLabel="新建卦谱"
       actionClassName="flex items-center gap-2 px-6 py-2 bg-[#A62121] text-white font-bold text-sm tracking-widest hover:bg-[#8B1A1A] transition-all rounded-[2px]"
       actionIcon={<Plus size={16} />}
       searchIcon={<Search size={16} />}
       search={search}
       onSearchChange={setSearch}
-      searchPlaceholder="搜索卦例主题或客户姓名..."
+      searchPlaceholder="搜索卦谱主题或缘主姓名..."
       tagOptions={availableTags}
       activeTag={activeTag}
       onActiveTagChange={setActiveTag}
@@ -98,7 +98,7 @@ export function CaseLiuyao() {
         <div className={gridClassName}>
           {sortedRecords.map((record) => {
               const customer = customers.find((c) => c.id === record.customerId);
-              const displayCustomerName = record.customerName ?? customer?.name ?? "未知客户";
+              const displayCustomerName = record.customerName ?? customer?.name ?? "未知缘主";
               const editHref = recordEditHref(record.module, record.id);
               const analysisHref = recordAnalysisHref("liuyao", record.id);
               return (
@@ -193,7 +193,7 @@ export function CaseLiuyao() {
         </div>
       ) : (
         <div className="py-24 text-center">
-          <p className="text-[#2F2F2F]/20 chinese-font italic">未找到匹配的六爻卦例</p>
+          <p className="text-[#2F2F2F]/20 chinese-font italic">未找到匹配的六爻卦谱</p>
         </div>
       )}
 

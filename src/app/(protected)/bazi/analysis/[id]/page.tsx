@@ -7,6 +7,7 @@ import { Hash } from "lucide-react";
 
 import { geminiChat, type ChatMessage } from "@/lib/geminiService";
 import type { BaZiData } from "@/lib/types";
+import { calcMingJuRelations } from "@/lib/baziRelations";
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useChatStore, type Message } from "@/stores/useChatStore";
@@ -164,6 +165,18 @@ const transformToFullAnalysis = (params: {
       };
     };
 
+    const pillars = [
+      fromPillar("年柱", pd.year, shenSha.year),
+      fromPillar("月柱", pd.month, shenSha.month),
+      fromPillar("日柱", pd.day, shenSha.day, true),
+      fromPillar("时柱", pd.hour, shenSha.hour),
+    ];
+
+    const relations = calcMingJuRelations({
+      stems: pillars.map((p) => p.stem),
+      branches: pillars.map((p) => p.branch),
+    });
+
     return {
       subject: params.recordSubject,
       solarDate: formatBjIsoToZhText(d.birthDate),
@@ -173,16 +186,87 @@ const transformToFullAnalysis = (params: {
           : params.customerGender === "male"
             ? "乾造"
             : "命造",
-      pillars: [
-        fromPillar("年柱", pd.year, shenSha.year),
-        fromPillar("月柱", pd.month, shenSha.month),
-        fromPillar("日柱", pd.day, shenSha.day, true),
-        fromPillar("时柱", pd.hour, shenSha.hour),
-      ],
-      tgNotes: `日主：${String(derived?.dayMaster ?? "")}；八字：${String(derived?.baziText ?? "")}`,
-      dzNotes: `生肖：${String(derived?.zodiac ?? "")}；起运：${String(derived?.decadeFortune?.startDate ?? "")}`,
+      pillars,
+      tgNotes: relations.tianGan,
+      dzNotes: relations.diZhi,
     };
   }
+
+  const pillars = [
+    {
+      label: "年柱",
+      mainStar: "正印",
+      stem: d.yearStem,
+      stemEl: getElByStem(d.yearStem),
+      branch: d.yearBranch,
+      branchEl: getElByBranch(d.yearBranch),
+      hiddenStems: [{ s: "辛", g: "正财", e: "metal" }],
+      luck: "死",
+      sitting: "绝",
+      void: "午未",
+      nayyin: "泉中水",
+      sha: ["天乙贵人", "太极贵人"],
+    },
+    {
+      label: "月柱",
+      mainStar: "食神",
+      stem: d.monthStem,
+      stemEl: getElByStem(d.monthStem),
+      branch: d.monthBranch,
+      branchEl: getElByBranch(d.monthBranch),
+      hiddenStems: [
+        { s: "甲", g: "偏印", e: "wood" },
+        { s: "丙", g: "比肩", e: "fire" },
+        { s: "戊", g: "食神", e: "earth" },
+      ],
+      luck: "长生",
+      sitting: "长生",
+      void: "申酉",
+      nayyin: "城头土",
+      sha: ["福星贵人", "德秀贵人", "红艳煞", "劫煞", "元辰"],
+    },
+    {
+      label: "日柱",
+      mainStar: "日主",
+      stem: d.dayStem,
+      stemEl: getElByStem(d.dayStem),
+      branch: d.dayBranch,
+      branchEl: getElByBranch(d.dayBranch),
+      hiddenStems: [
+        { s: "戊", g: "食神", e: "earth" },
+        { s: "辛", g: "正财", e: "metal" },
+        { s: "丁", g: "劫财", e: "fire" },
+      ],
+      luck: "墓",
+      sitting: "墓",
+      void: "午未",
+      nayyin: "屋上土",
+      sha: ["月德贵人", "德秀贵人", "童子煞"],
+    },
+    {
+      label: "时柱",
+      mainStar: "伤官",
+      stem: d.hourStem,
+      stemEl: getElByStem(d.hourStem),
+      branch: d.hourBranch,
+      branchEl: getElByBranch(d.hourBranch),
+      hiddenStems: [
+        { s: "己", g: "伤官", e: "earth" },
+        { s: "癸", g: "正官", e: "water" },
+        { s: "辛", g: "正财", e: "metal" },
+      ],
+      luck: "养",
+      sitting: "墓",
+      void: "午未",
+      nayyin: "霹雳火",
+      sha: ["福星贵人", "国印贵人", "华盖", "天医", "血刃"],
+    },
+  ];
+
+  const relations = calcMingJuRelations({
+    stems: pillars.map((p) => p.stem),
+    branches: pillars.map((p) => p.branch),
+  });
 
   return {
     subject: params.recordSubject,
@@ -193,78 +277,9 @@ const transformToFullAnalysis = (params: {
         : params.customerGender === "male"
           ? "乾造"
           : "命造",
-    pillars: [
-      {
-        label: "年柱",
-        mainStar: "正印",
-        stem: d.yearStem,
-        stemEl: getElByStem(d.yearStem),
-        branch: d.yearBranch,
-        branchEl: getElByBranch(d.yearBranch),
-        hiddenStems: [{ s: "辛", g: "正财", e: "metal" }],
-        luck: "死",
-        sitting: "绝",
-        void: "午未",
-        nayyin: "泉中水",
-        sha: ["天乙贵人", "太极贵人"],
-      },
-      {
-        label: "月柱",
-        mainStar: "食神",
-        stem: d.monthStem,
-        stemEl: getElByStem(d.monthStem),
-        branch: d.monthBranch,
-        branchEl: getElByBranch(d.monthBranch),
-        hiddenStems: [
-          { s: "甲", g: "偏印", e: "wood" },
-          { s: "丙", g: "比肩", e: "fire" },
-          { s: "戊", g: "食神", e: "earth" },
-        ],
-        luck: "长生",
-        sitting: "长生",
-        void: "申酉",
-        nayyin: "城头土",
-        sha: ["福星贵人", "德秀贵人", "红艳煞", "劫煞", "元辰"],
-      },
-      {
-        label: "日柱",
-        mainStar: "日主",
-        stem: d.dayStem,
-        stemEl: getElByStem(d.dayStem),
-        branch: d.dayBranch,
-        branchEl: getElByBranch(d.dayBranch),
-        hiddenStems: [
-          { s: "戊", g: "食神", e: "earth" },
-          { s: "辛", g: "正财", e: "metal" },
-          { s: "丁", g: "劫财", e: "fire" },
-        ],
-        luck: "墓",
-        sitting: "墓",
-        void: "午未",
-        nayyin: "屋上土",
-        sha: ["月德贵人", "德秀贵人", "童子煞"],
-      },
-      {
-        label: "时柱",
-        mainStar: "伤官",
-        stem: d.hourStem,
-        stemEl: getElByStem(d.hourStem),
-        branch: d.hourBranch,
-        branchEl: getElByBranch(d.hourBranch),
-        hiddenStems: [
-          { s: "己", g: "伤官", e: "earth" },
-          { s: "癸", g: "正官", e: "water" },
-          { s: "辛", g: "正财", e: "metal" },
-        ],
-        luck: "养",
-        sitting: "墓",
-        void: "午未",
-        nayyin: "霹雳火",
-        sha: ["福星贵人", "国印贵人", "华盖", "天医", "血刃"],
-      },
-    ],
-    tgNotes: "原局天干顺生，五行流通，气势纯正。",
-    dzNotes: "地支合化，财官得位，注意午未空亡之影响。",
+    pillars,
+    tgNotes: relations.tianGan,
+    dzNotes: relations.diZhi,
   };
 };
 
@@ -455,6 +470,12 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-10">
         <div className="lg:col-span-5 bg-white border border-[#B37D56]/15 overflow-hidden rounded-none">
           <table className="w-full text-center border-collapse table-fixed">
+            <colgroup>
+              <col className="w-16" />
+              {analysis.pillars.map((p) => (
+                <col key={p.label} className="w-[calc((100%-4rem)/4)]" />
+              ))}
+            </colgroup>
             <thead>
               <tr className="bg-[#FAF7F2]/50 border-b border-[#B37D56]/10">
                 <th className="py-2 text-[14px] text-[#2F2F2F]/30 uppercase font-bold tracking-[0.3em] w-16">
@@ -463,7 +484,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                 {analysis.pillars.map((p) => (
                   <th
                     key={p.label}
-                    className="py-2 text-[14px] text-[#B37D56] font-bold chinese-font tracking-[0.5em]"
+                    className="py-2 text-[14px] text-[#B37D56] font-bold chinese-font"
                   >
                     {p.label}
                   </th>
@@ -472,7 +493,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             </thead>
             <tbody className="divide-y divide-[#B37D56]/10">
               <tr>
-                <td className="py-2 text-[14px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
+                <td className="w-16 py-2 text-[14px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
                   主星
                 </td>
                 {analysis.pillars.map((p, i) => (
@@ -482,7 +503,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                 ))}
               </tr>
               <tr>
-                <td className="py-3 text-[14px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
+                <td className="w-16 py-3 text-[14px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
                   天干
                 </td>
                 {analysis.pillars.map((p, i) => (
@@ -497,7 +518,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                 ))}
               </tr>
               <tr>
-                <td className="py-3 text-[14px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
+                <td className="w-16 py-3 text-[14px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
                   地支
                 </td>
                 {analysis.pillars.map((p, i) => (
@@ -512,7 +533,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                 ))}
               </tr>
               <tr>
-                <td className="py-2 text-[14px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
+                <td className="w-16 py-2 text-[14px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
                   藏干
                 </td>
                 {analysis.pillars.map((p, i) => (
@@ -532,7 +553,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                 ))}
               </tr>
               <tr>
-                <td className="py-2 text-[14px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
+                <td className="w-16 py-2 text-[14px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
                   副星
                 </td>
                 {analysis.pillars.map((p, i) => (
@@ -549,7 +570,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
               </tr>
               {EXTRA_ROWS.map((row) => (
                 <tr key={row.key}>
-                  <td className="py-2 text-[14px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
+                  <td className="w-16 py-2 text-[14px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
                     {row.label}
                   </td>
                   {analysis.pillars.map((p, i) => (
@@ -560,7 +581,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                 </tr>
               ))}
               <tr>
-                <td className="py-3 text-[14px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
+                <td className="w-16 py-3 text-[14px] text-[#2F2F2F]/30 font-bold uppercase tracking-widest bg-[#FAF7F2]/30">
                   神煞
                 </td>
                 {analysis.pillars.map((p, i) => (
@@ -581,30 +602,38 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         </div>
 
         <div className="lg:col-span-7 space-y-8">
-          <div className="bg-white border border-[#B37D56]/15 p-10 space-y-10 rounded-[4px] shadow-none">
-            <div className="space-y-6">
-              <h3 className="text-[10px] font-bold text-[#B37D56] uppercase tracking-[0.3em] border-b border-[#B37D56]/15 pb-2">
-                命局关系
-              </h3>
-              <div className="space-y-8">
-                <div className="space-y-2">
-                  <span className="text-[9px] font-bold text-[#B37D56]/40 uppercase tracking-widest">
-                    天干理法
-                  </span>
-                  <p className="text-[13px] text-[#2F2F2F] chinese-font leading-relaxed font-bold">
-                    {analysis.tgNotes}
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <span className="text-[9px] font-bold text-[#B37D56]/40 uppercase tracking-widest">
-                    地支神煞
-                  </span>
-                  <p className="text-[13px] text-[#2F2F2F] chinese-font leading-relaxed font-bold">
-                    {analysis.dzNotes}
-                  </p>
-                </div>
-              </div>
-            </div>
+	          <div className="bg-white border border-[#B37D56]/15 p-10 space-y-10 rounded-[4px] shadow-none">
+	            <div className="space-y-6">
+	              <h3 className="text-[10px] font-bold text-[#B37D56] uppercase tracking-[0.3em] border-b border-[#B37D56]/15 pb-2">
+	                命局关系
+	              </h3>
+	              <div className="space-y-8">
+	                <div className="space-y-2">
+	                  <span className="text-[9px] font-bold text-[#B37D56]/40 uppercase tracking-widest">
+	                    天干留意
+	                  </span>
+	                  <div className="text-[13px] text-[#2F2F2F] chinese-font leading-relaxed font-bold border-l border-[#B37D56]/15 pl-3 space-y-1">
+	                    {analysis.tgNotes.length ? (
+	                      analysis.tgNotes.map((note: string, idx: number) => <div key={idx}>{note}</div>)
+	                    ) : (
+	                      <div className="text-[#2F2F2F]/30">（暂无）</div>
+	                    )}
+	                  </div>
+	                </div>
+	                <div className="space-y-2">
+	                  <span className="text-[9px] font-bold text-[#B37D56]/40 uppercase tracking-widest">
+	                    地支留意
+	                  </span>
+	                  <div className="text-[13px] text-[#2F2F2F] chinese-font leading-relaxed font-bold border-l border-[#B37D56]/15 pl-3 space-y-1">
+	                    {analysis.dzNotes.length ? (
+	                      analysis.dzNotes.map((note: string, idx: number) => <div key={idx}>{note}</div>)
+	                    ) : (
+	                      <div className="text-[#2F2F2F]/30">（暂无）</div>
+	                    )}
+	                  </div>
+	                </div>
+	              </div>
+	            </div>
 
             <div className="space-y-3">
               <h3 className="text-[10px] font-bold text-[#B37D56] uppercase tracking-[0.3em] border-b border-[#B37D56]/15 pb-2">

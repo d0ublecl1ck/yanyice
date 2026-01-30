@@ -60,7 +60,7 @@ function CustomerViewPage({ id }: { id: string }) {
   if (!customer) {
     return (
       <div className="py-20 text-center">
-        <p className="text-[#2F2F2F]/40 chinese-font italic">未找到该客户资料</p>
+        <p className="text-[#2F2F2F]/40 chinese-font italic">未找到该缘主资料</p>
         <Link href="/customers" className="text-[#A62121] text-sm mt-4 inline-block font-bold">
           返回名录
         </Link>

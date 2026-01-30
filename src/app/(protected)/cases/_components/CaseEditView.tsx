@@ -507,11 +507,11 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
   const importFromCustomer = () => {
     const customer = customers.find(c => c.id === customerId);
     if (!customer) {
-      showToast('请先选择客户', 'warning');
+      showToast('请先选择缘主', 'warning');
       return;
     }
     if (!customer.birthDate) {
-      showToast('该客户未录入出生日期', 'warning');
+      showToast('该缘主未录入出生日期', 'warning');
       return;
     }
 
@@ -527,7 +527,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
       calendarType: prev.calendarType ?? 'solar',
     }));
     setBaziBirthTime(isoTimeToHHmm(iso) || rawTime);
-    showToast(`已导入客户 ${customer.name} 生辰信息`, 'success');
+    showToast(`已导入缘主 ${customer.name} 生辰信息`, 'success');
   };
 
   const handleSave = async () => {
@@ -536,7 +536,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
       return;
     }
     if (module === "bazi" && !customerId) {
-      showToast("请选择关联客户", "error");
+      showToast("请选择关联缘主", "error");
       return;
     }
 
@@ -613,7 +613,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
             <div className="p-6 border-b border-[#B37D56]/10 flex justify-between items-center">
               <p className="text-xs font-bold tracking-widest chinese-font text-[#2F2F2F] flex items-center gap-2">
                 <UserPlus size={16} />
-                快速创建客户
+                快速创建缘主
               </p>
               <button
                 onClick={() => setShowQuickCustomerModal(false)}
@@ -629,7 +629,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
                 <input
                   value={quickName}
                   onChange={(e) => setQuickName(e.target.value)}
-                  placeholder="请输入客户姓名"
+                  placeholder="请输入缘主姓名"
                   className="w-full bg-white border border-[#B37D56]/10 px-3 py-2 text-xs font-bold rounded-[2px] outline-none focus:border-[#A62121] transition-colors chinese-font"
                 />
               </div>
@@ -658,7 +658,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
                   void (async () => {
                     const name = quickName.trim();
                     if (!name) {
-                      showToast('请先填写客户姓名', 'warning');
+                      showToast('请先填写缘主姓名', 'warning');
                       return;
                     }
                     try {
@@ -673,7 +673,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
                       setQuickName('');
                       setQuickGender('male');
                       setShowQuickCustomerModal(false);
-                      showToast('客户已创建并已自动选择', 'success');
+                      showToast('缘主已创建并已自动选择', 'success');
                     } catch {
                       showToast('创建失败，请稍后重试', 'error');
                     }
@@ -727,7 +727,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
             <div className="grid grid-cols-2 gap-8">
               <div className="space-y-2 group">
                 <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest flex justify-between">
-                  关联客户
+                  关联缘主
                   <button onClick={() => setShowQuickCustomerModal(true)} className="text-[#A62121] hover:underline flex items-center gap-1">
                     <Plus size={10} /> 快速创建
                   </button>
@@ -737,7 +737,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
                   onChange={(e) => setCustomerId(e.target.value)}
                   className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-2 outline-none focus:border-[#A62121] transition-colors chinese-font font-bold rounded-none"
                 >
-                  <option value="">-- 请选择客户 --</option>
+                  <option value="">-- 请选择缘主 --</option>
                   {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
@@ -779,7 +779,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
                     onClick={importFromCustomer}
                     className="text-[10px] flex items-center gap-1 text-[#A62121] font-bold uppercase hover:underline"
                   >
-                    <RefreshCw size={10} /> 从客户生辰导入
+                    <RefreshCw size={10} /> 从缘主生辰导入
                   </button>
                 </div>
 
@@ -984,7 +984,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
                   rows={8}
                   value={aiInput}
                   onChange={e => setAiInput(e.target.value)}
-                  placeholder={module === 'liuyao' ? "输入六爻卦例文字..." : "输入八字命例文字..."}
+                  placeholder={module === 'liuyao' ? "输入六爻卦谱文字..." : "输入八字命例文字..."}
                   className="w-full p-4 border border-[#B37D56]/10 focus:border-[#A62121] outline-none chinese-font"
                 />
              </div>

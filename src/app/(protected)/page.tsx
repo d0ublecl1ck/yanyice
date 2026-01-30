@@ -15,67 +15,41 @@ import {
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useRuleStore } from "@/stores/useRuleStore";
-import { useQuoteStore } from "@/stores/useQuoteStore";
-import { useAuthStore } from "@/stores/useAuthStore";
-import { useToastStore } from "@/stores/useToastStore";
 import { formatGanzhiYearMonth } from "@/lib/lunarGanzhi";
 import { getDashboardCounts } from "@/lib/dashboardMetrics";
-import { newCaseHref } from "@/lib/caseLinks";
-import { selectDailyQuotes } from "@/lib/quotes";
+import { newCaseHref, recordAnalysisHref } from "@/lib/caseLinks";
 
 export default function Page() {
   const customers = useCustomerStore((state) => state.customers);
   const records = useCaseStore((state) => state.records);
   const rules = useRuleStore((state) => state.rules);
-  const quotes = useQuoteStore((state) => state.quotes);
-  const quoteStatus = useQuoteStore((state) => state.status);
-  const bootstrapQuotes = useQuoteStore((state) => state.bootstrap);
-  const userId = useAuthStore((state) => state.user?.id ?? null);
-  const toast = useToastStore((s) => s.show);
   const [ganzhiYearMonth, setGanzhiYearMonth] = useState<string>("");
 
   useEffect(() => {
     setGanzhiYearMonth(formatGanzhiYearMonth(new Date()));
   }, []);
 
-  useEffect(() => {
-    void bootstrapQuotes().catch(() => {
-      toast("加载名言失败，请稍后重试", "warning");
-    });
-  }, [bootstrapQuotes, toast]);
-
   const recentRecords = records.slice(-5).reverse();
   const counts = getDashboardCounts({ customers, records, rules });
-  const todayKey = new Date().toDateString();
-  const dailyQuotes = selectDailyQuotes({
-    quotes,
-    date: new Date(todayKey),
-    userSeed: userId,
-    count: 1,
-  });
 
   return (
     <div className="space-y-12">
       <header className="flex justify-between items-end">
         <div>
           <h2 className="text-4xl font-bold text-[#2F2F2F] chinese-font tracking-tight">
-            工作台首页
+            案头
           </h2>
-          <div className="mt-3 space-y-2">
-            {dailyQuotes.length > 0 ? (
-              <ul className="space-y-1">
-                {dailyQuotes.map((q) => (
-                  <li key={q.id} className="text-sm text-[#B37D56] chinese-font italic">
-                    {q.text}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-[#2F2F2F]/40 text-sm chinese-font italic">
-                {quoteStatus === "loading" ? "正在加载名言…" : "可在「个人设置」中配置名言列表。"}
-              </p>
-            )}
-          </div>
+          <p className="text-[#B37D56] font-medium mt-3 chinese-font opacity-80">
+            欢迎回来，今日已记录{" "}
+            {
+              records.filter(
+                (r) =>
+                  new Date(r.createdAt).toDateString() ===
+                  new Date().toDateString(),
+              ).length
+            }{" "}
+            例咨询。
+          </p>
         </div>
         <div className="text-right">
           <p className="text-[10px] text-[#2F2F2F]/30 uppercase tracking-[0.3em] font-bold">
@@ -90,7 +64,7 @@ export default function Page() {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
         {[
           {
-            title: "客户",
+            title: "缘主档案",
             subtitle: "Customers",
             val: counts.customers,
             icon: Users,
@@ -106,7 +80,7 @@ export default function Page() {
             color: "#2F2F2F",
           },
           {
-            title: "六爻卦例",
+            title: "六爻卦谱",
             subtitle: "I Ching Cases",
             val: counts.liuyaoRecords,
             icon: BookOpen,
@@ -174,7 +148,7 @@ export default function Page() {
               recentRecords.map((record) => (
                 <Link
                   key={record.id}
-                  href={`/cases/edit/${record.id}`}
+                  href={recordAnalysisHref(record.module, record.id)}
                   className="group flex items-center justify-between p-6 hover:bg-black/[0.02] border-b border-[#B37D56]/10 transition-all"
                 >
                   <div className="space-y-1">
@@ -267,7 +241,7 @@ export default function Page() {
               className="block p-8 bg-white border border-[#B37D56]/20 group hover:border-[#A62121] transition-all rounded-none"
             >
               <p className="text-xl font-bold text-[#2F2F2F] group-hover:text-[#A62121] transition-colors chinese-font mb-1 tracking-widest">
-                添加客户
+                添加缘主
               </p>
               <p className="text-[#2F2F2F]/40 text-[10px] chinese-font">
                 Register New Customer

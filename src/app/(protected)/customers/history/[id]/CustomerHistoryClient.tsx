@@ -76,7 +76,7 @@ function CustomerHistoryPage({ id }: { id: string }) {
   if (!customer) {
     return (
       <div className="py-20 text-center">
-        <p className="text-[#2F2F2F]/40 chinese-font italic">未找到该客户资料</p>
+        <p className="text-[#2F2F2F]/40 chinese-font italic">未找到该缘主资料</p>
         <Link href="/customers" className="text-[#A62121] text-sm mt-4 inline-block font-bold">
           返回名录
         </Link>
@@ -103,7 +103,7 @@ function CustomerHistoryPage({ id }: { id: string }) {
             </span>
           </div>
           <p className="text-xs text-[#2F2F2F]/40 chinese-font tracking-widest leading-loose">
-            纵观岁月起伏，记录因果流转。此卷详细记载了客户的人身大事与历次咨询推演。
+            纵观岁月起伏，记录因果流转。此卷详细记载了缘主的人身大事与历次咨询推演。
           </p>
         </div>
         <div className="hidden md:block text-right">
