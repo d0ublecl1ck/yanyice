@@ -5,8 +5,9 @@ const repoRoot = process.cwd();
 const prismaRoot = path.join(repoRoot, "node_modules", ".prisma");
 const packageJsonPath = path.join(prismaRoot, "package.json");
 const prismaClientRoot = path.join(repoRoot, "node_modules", "@prisma", "client");
-const prismaClientLinkPath = path.join(prismaClientRoot, ".prisma");
-const prismaClientLinkTarget = path.relative(prismaClientRoot, prismaRoot);
+const prismaClientNodeModules = path.join(prismaClientRoot, "node_modules");
+const prismaClientLinkPath = path.join(prismaClientNodeModules, ".prisma");
+const prismaClientLinkTarget = path.relative(prismaClientNodeModules, prismaRoot);
 
 try {
   await mkdir(prismaRoot, { recursive: true });
@@ -16,6 +17,12 @@ try {
 
 try {
   await mkdir(prismaClientRoot, { recursive: true });
+} catch {
+  // best-effort
+}
+
+try {
+  await mkdir(prismaClientNodeModules, { recursive: true });
 } catch {
   // best-effort
 }

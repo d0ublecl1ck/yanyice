@@ -6,8 +6,12 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Search, Calendar, ChevronRight, Hash } from "lucide-react";
 
+import { ContextMenu } from "@/components/ContextMenu";
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { usePinnedRecordStore } from "@/stores/usePinnedRecordStore";
+import { useToastStore } from "@/stores/useToastStore";
 import { newCaseHref, recordAnalysisHref, recordEditHref } from "@/lib/caseLinks";
 import type { BaZiData } from "@/lib/types";
 import { zodiacInfoFromBranch } from "@/lib/zodiac";
@@ -46,9 +50,22 @@ export function CaseBazi() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const allRecords = useCaseStore((state) => state.records);
+  const deleteRecord = useCaseStore((state) => state.deleteRecord);
   const customers = useCustomerStore((state) => state.customers);
+  const userId = useAuthStore((s) => s.user?.id) ?? "anon";
+  const pinnedIds = usePinnedRecordStore((s) => s.pinnedByUser[userId]?.bazi ?? []);
+  const togglePin = usePinnedRecordStore((s) => s.togglePin);
+  const unpin = usePinnedRecordStore((s) => s.unpin);
+  const toast = useToastStore((s) => s.show);
   const [search, setSearch] = useState("");
   const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    recordId: string;
+    subject: string;
+    editHref: string;
+  } | null>(null);
 
   const records = useMemo(() => allRecords.filter((r) => r.module === "bazi"), [allRecords]);
   const isCreateOpen = searchParams.get("new") === "1";
@@ -89,6 +106,20 @@ export function CaseBazi() {
     if (count === 2) return "grid grid-cols-1 md:grid-cols-2 gap-px";
     return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-3 gap-px";
   }, [filteredRecords.length]);
+
+  const sortedRecords = useMemo(() => {
+    const pinnedIndex = new Map(pinnedIds.map((id, idx) => [id, idx]));
+    return [...filteredRecords].sort((a, b) => {
+      const aPinned = pinnedIndex.get(a.id);
+      const bPinned = pinnedIndex.get(b.id);
+      if (aPinned !== undefined || bPinned !== undefined) {
+        if (aPinned === undefined) return 1;
+        if (bPinned === undefined) return -1;
+        return aPinned - bPinned;
+      }
+      return b.createdAt - a.createdAt;
+    });
+  }, [filteredRecords, pinnedIds]);
 
   const closeCreate = React.useCallback(() => {
     const qs = new URLSearchParams(searchParams.toString());
@@ -135,9 +166,7 @@ export function CaseBazi() {
       >
         {filteredRecords.length > 0 ? (
           <div className={gridClassName}>
-            {filteredRecords
-              .sort((a, b) => b.createdAt - a.createdAt)
-              .map((record) => {
+            {sortedRecords.map((record) => {
                 const customer = customers.find((c) => c.id === record.customerId);
                 const b = record.baziData;
                 const zodiac = zodiacInfoFromBranch(b?.yearBranch);
@@ -149,6 +178,17 @@ export function CaseBazi() {
                     role="link"
                     tabIndex={0}
                     onClick={() => router.push(analysisHref)}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setContextMenu({
+                        x: e.clientX,
+                        y: e.clientY,
+                        recordId: record.id,
+                        subject: record.subject,
+                        editHref,
+                      });
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") router.push(analysisHref);
                     }}
@@ -219,6 +259,7 @@ export function CaseBazi() {
                             href={analysisHref}
                             className="text-[9px] px-2 py-0.5 border border-black/10 text-[#2F2F2F]/60 font-bold hover:border-[#A62121]/30 hover:text-[#A62121] rounded-[2px]"
                             onClick={(e) => e.stopPropagation()}
+                            onContextMenu={(e) => e.preventDefault()}
                           >
                             排盘
                           </Link>
@@ -226,6 +267,7 @@ export function CaseBazi() {
                             href={editHref}
                             className="text-[9px] px-2 py-0.5 border border-[#B37D56]/20 text-[#2F2F2F]/30 font-bold hover:border-[#A62121]/30 hover:text-[#A62121] rounded-[2px]"
                             onClick={(e) => e.stopPropagation()}
+                            onContextMenu={(e) => e.preventDefault()}
                           >
                             编辑
                           </Link>
@@ -246,6 +288,56 @@ export function CaseBazi() {
           </div>
         )}
       </CaseArchiveLayout>
+
+      <ContextMenu
+        open={contextMenu != null}
+        x={contextMenu?.x ?? 0}
+        y={contextMenu?.y ?? 0}
+        onClose={() => setContextMenu(null)}
+        items={[
+          {
+            key: "edit",
+            label: "编辑",
+            onSelect: () => {
+              if (!contextMenu) return;
+              router.push(contextMenu.editHref);
+            },
+          },
+          {
+            key: "pin",
+            label: contextMenu && pinnedIds.includes(contextMenu.recordId) ? "取消置顶" : "置顶",
+            onSelect: () => {
+              if (!contextMenu) return;
+              togglePin({ userId, module: "bazi", recordId: contextMenu.recordId });
+              toast(
+                pinnedIds.includes(contextMenu.recordId) ? "已取消置顶" : "已置顶",
+                "info",
+              );
+            },
+          },
+          {
+            key: "delete",
+            label: "删除",
+            destructive: true,
+            onSelect: () => {
+              if (!contextMenu) return;
+              toast(`确认删除「${contextMenu.subject}」？`, "warning", {
+                actionLabel: "删除",
+                durationMs: 8000,
+                onAction: async () => {
+                  try {
+                    await deleteRecord(contextMenu.recordId);
+                    unpin({ userId, module: "bazi", recordId: contextMenu.recordId });
+                    toast("已删除", "success");
+                  } catch (e) {
+                    toast(e instanceof Error ? e.message : "删除失败，请稍后重试", "error");
+                  }
+                },
+              });
+            },
+          },
+        ]}
+      />
 
 	      <CreateBaziRecordModal open={isCreateOpen} onClose={closeCreate} />
 	    </div>
