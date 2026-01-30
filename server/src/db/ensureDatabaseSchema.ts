@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 
 import { createClient } from "@libsql/client";
 
+import { ensureSqliteDirectory } from "./ensureSqliteDirectory";
+
 async function hasTable(databaseUrl: string, tableName: string): Promise<boolean> {
   const client = createClient({ url: databaseUrl });
   try {
@@ -33,6 +35,8 @@ function runPrismaMigrateDeploy(databaseUrl: string) {
 
 export async function ensureDatabaseSchema(databaseUrl: string): Promise<void> {
   if (process.env.AUTO_MIGRATE !== "1") return;
+
+  ensureSqliteDirectory(databaseUrl);
 
   const alreadyInitialized = await hasTable(databaseUrl, "User");
   if (alreadyInitialized) return;
