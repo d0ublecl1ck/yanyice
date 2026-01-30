@@ -22,4 +22,13 @@ describe("baziRelations", () => {
     expect(tianGan).toEqual(["乙己相克"]);
     expect(diZhi).toEqual(["丑寅暗合"]);
   });
+
+  test("shows liuhe as 合", () => {
+    const { diZhi } = calcMingJuRelations({
+      stems: [],
+      branches: ["子", "丑"],
+    });
+
+    expect(diZhi).toEqual(["子丑合"]);
+  });
 });

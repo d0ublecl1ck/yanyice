@@ -212,7 +212,7 @@ export function calcDiZhiNotes(branches: string[]): string[] {
     for (let j = i + 1; j < uniq.length; j++) {
       const a = uniq[i]!;
       const b = uniq[j]!;
-      if (hasPair(BRANCH_LIUHE, a, b)) addPair(a, b, "六合", 70);
+      if (hasPair(BRANCH_LIUHE, a, b)) addPair(a, b, "合", 70);
       if (hasPair(BRANCH_ANHE, a, b)) addPair(a, b, "暗合", 60);
       if (hasPair(BRANCH_CHONG, a, b)) addPair(a, b, "相冲", 50);
       if (hasPair(BRANCH_XING_EDGES, a, b)) addPair(a, b, "相刑", 40);
@@ -240,4 +240,3 @@ export function calcMingJuRelations(params: { stems: string[]; branches: string[
   const diZhi = calcDiZhiNotes(params.branches);
   return { tianGan, diZhi };
 }
-
