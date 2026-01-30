@@ -19,6 +19,7 @@ describe("dashboardMetrics", () => {
         tags: [],
         verifiedStatus: "unverified",
         verifiedNotes: "",
+        pinnedAt: null,
         createdAt: 1,
       },
       {
@@ -30,6 +31,7 @@ describe("dashboardMetrics", () => {
         tags: [],
         verifiedStatus: "unverified",
         verifiedNotes: "",
+        pinnedAt: null,
         createdAt: 2,
       },
       {
@@ -41,6 +43,7 @@ describe("dashboardMetrics", () => {
         tags: [],
         verifiedStatus: "unverified",
         verifiedNotes: "",
+        pinnedAt: null,
         createdAt: 3,
       },
     ] as const;
@@ -62,4 +65,3 @@ describe("dashboardMetrics", () => {
     });
   });
 });
-

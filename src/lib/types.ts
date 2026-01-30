@@ -85,6 +85,7 @@ export interface ConsultationRecord {
   baziData?: BaZiData;
   verifiedStatus: 'unverified' | 'accurate' | 'inaccurate' | 'partial';
   verifiedNotes: string;
+  pinnedAt: number | null;
   createdAt: number;
 }
 

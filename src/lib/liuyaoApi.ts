@@ -23,6 +23,7 @@ type LiuyaoRecordDto = {
   liuyaoData: LiuYaoData;
   verifiedStatus: ConsultationRecord["verifiedStatus"];
   verifiedNotes: string;
+  pinnedAt: number | null;
   createdAt: number;
 };
 
@@ -38,6 +39,7 @@ function toRecord(dto: LiuyaoRecordDto): ConsultationRecord {
     liuyaoData: dto.liuyaoData,
     verifiedStatus: dto.verifiedStatus,
     verifiedNotes: dto.verifiedNotes,
+    pinnedAt: dto.pinnedAt ?? null,
     createdAt: dto.createdAt,
   };
 }
@@ -81,4 +83,3 @@ export async function deleteLiuyaoRecord(accessToken: string, id: string): Promi
     accessToken,
   });
 }
-

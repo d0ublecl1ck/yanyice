@@ -306,9 +306,9 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                 "爻",
                 "世应",
               ] as const
-            ).map((label) => (
+            ).map((label, idx) => (
               <div
-                key={label}
+                key={`${label}-${idx}`}
                 className="text-[10px] text-[#8B6A52] font-bold py-3 uppercase tracking-widest text-center border-b border-[#B37D56]/10"
               >
                 {label}
