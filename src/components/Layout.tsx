@@ -139,24 +139,32 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         }`}
       >
         <div className={`flex flex-col items-center relative ${isSidebarCollapsed ? 'p-6' : 'p-10'}`}>
-          <div 
+          <button
+            type="button"
             onClick={toggleSidebar}
-            className="absolute -right-3 top-10 w-6 h-6 bg-[#FAF7F2] border border-[#B37D56]/20 rounded-full flex items-center justify-center cursor-pointer hover:bg-[#A62121] hover:text-white transition-all shadow-sm z-20 group"
+            aria-label={isSidebarCollapsed ? "展开侧边栏" : "收起侧边栏"}
+            className="absolute -right-3 top-10 w-6 h-6 bg-[#FAF7F2] border border-[#B37D56]/20 rounded-full flex items-center justify-center cursor-pointer hover:bg-[#A62121] hover:text-white transition-all shadow-sm z-20 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A62121]/40"
           >
             {isSidebarCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
-          </div>
+          </button>
 
-          <div className="w-10 h-10 border border-[#A62121] flex items-center justify-center rotate-45 mb-4 group hover:bg-[#A62121] transition-all cursor-pointer rounded-none">
-            <BookOpen className="text-[#A62121] group-hover:text-white -rotate-45" size={16} />
-          </div>
-          
-          {!isSidebarCollapsed && (
-            <>
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            aria-label={isSidebarCollapsed ? "展开侧边栏" : "收起侧边栏"}
+            title={isSidebarCollapsed ? "点击展开侧边栏" : "点击收起侧边栏"}
+            className="group flex flex-col items-center bg-transparent select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A62121]/40"
+          >
+            <div className="w-10 h-10 border border-[#A62121] flex items-center justify-center rotate-45 mb-4 group-hover:bg-[#A62121] transition-all cursor-pointer rounded-none">
+              <BookOpen className="text-[#A62121] group-hover:text-white -rotate-45" size={16} />
+            </div>
+
+            {!isSidebarCollapsed && (
               <h1 className="text-lg font-bold tracking-[0.3em] text-[#2F2F2F] chinese-font whitespace-nowrap animate-in fade-in duration-500">
                 研易册
               </h1>
-            </>
-          )}
+            )}
+          </button>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-2">
