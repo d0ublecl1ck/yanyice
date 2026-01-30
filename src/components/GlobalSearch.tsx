@@ -66,7 +66,7 @@ export const GlobalSearch: React.FC<Props> = ({ isOpen, onClose }) => {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="搜索客户、咨询记录、断语笔记..."
+            placeholder="搜索缘主、咨询记录、断语笔记..."
             className="flex-1 bg-transparent border-none outline-none text-lg chinese-font placeholder:text-[#2F2F2F]/20"
           />
           <div className="flex items-center gap-2">
@@ -92,7 +92,7 @@ export const GlobalSearch: React.FC<Props> = ({ isOpen, onClose }) => {
               {/* Customers Section */}
               {filteredCustomers.length > 0 && (
                 <div className="p-4">
-                  <h3 className="px-4 text-[10px] font-bold text-[#B37D56] uppercase tracking-[0.3em] mb-2">匹配客户</h3>
+	                  <h3 className="px-4 text-[10px] font-bold text-[#B37D56] uppercase tracking-[0.3em] mb-2">匹配缘主</h3>
                   {filteredCustomers.map(c => (
                     <button
                       key={c.id}

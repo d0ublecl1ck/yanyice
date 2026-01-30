@@ -35,7 +35,7 @@ export default function Page() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
-          { label: "在册客户", val: customerCount, unit: "位" },
+          { label: "在册缘主", val: customerCount, unit: "位" },
           { label: "咨询卷宗", val: recordCount, unit: "卷" },
           { label: "断诀规则", val: ruleCount, unit: "条" },
         ].map((stat, i) => (
@@ -67,7 +67,7 @@ export default function Page() {
         </div>
 
         <p className="text-xs text-[#2F2F2F]/50 leading-loose chinese-font">
-          导出内容包含客户资料、咨询记录与规则系统。导出后会生成一个加密 ZIP 文件，建议离线存储并定期备份。
+          导出内容包含缘主资料、咨询记录与规则系统。导出后会生成一个加密 ZIP 文件，建议离线存储并定期备份。
         </p>
 
         <button

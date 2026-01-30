@@ -1015,7 +1015,7 @@ export function BaziEditView({
         }
 
         const fallbackTitle = resolvedCustomerId
-          ? `${customers.find((c) => c.id === resolvedCustomerId)?.name || "客户"}的命例`
+          ? `${customers.find((c) => c.id === resolvedCustomerId)?.name || "缘主"}的命例`
           : "未命名命例";
         await addRecord({
           customerId: resolvedCustomerId,
@@ -1363,7 +1363,7 @@ export function BaziEditView({
                   >
                     {createCustomerAlso ? <Check size={10} className="text-white" /> : null}
                   </div>
-                  同时创建客户档案
+                  同时创建缘主档案
                 </button>
               ) : null}
             </div>

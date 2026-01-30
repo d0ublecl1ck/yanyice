@@ -188,13 +188,13 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   if (!record || !analysis) {
     return (
       <div className="py-24 text-center">
-        <p className="text-[#6B6B6B] chinese-font italic text-sm">未找到该六爻卦例</p>
+        <p className="text-[#6B6B6B] chinese-font italic text-sm">未找到该六爻卦谱</p>
         <div className="mt-6">
           <button
             onClick={() => router.push("/liuyao")}
             className="px-4 py-2 border border-[#B37D56]/20 text-xs font-bold tracking-widest rounded-[2px] hover:bg-[#B37D56]/5"
           >
-            返回卦例库
+            返回卦谱库
           </button>
         </div>
       </div>

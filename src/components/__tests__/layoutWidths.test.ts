@@ -42,7 +42,7 @@ describe("layout width constraints", () => {
       "src/app/(protected)/bazi/_components/BaziEditView.tsx",
       "utf8",
     );
-    expect(source).toContain("同时创建客户档案");
+    expect(source).toContain("同时创建缘主档案");
     expect(source).toContain("createCustomerAlso");
     expect(source).toContain("addCustomer");
   });
