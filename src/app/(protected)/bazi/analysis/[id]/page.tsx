@@ -382,7 +382,7 @@ function BaziFortunePanel({ derived, birthDate }: { derived: DerivedBazi | null;
                   key={`${termName}-${idx}`}
                   className="px-2 py-3 text-left border border-[#B37D56]/10 bg-white rounded-[2px]"
                 >
-                  <div className="flex flex-col items-center gap-0.5 border-b border-[#B37D56]/10 pb-2">
+                  <div className="flex items-baseline justify-between gap-2">
                     <div className="text-[10px] text-[#2F2F2F] font-bold tracking-widest">{termName || "—"}</div>
                     <div className="text-[10px] text-[#2F2F2F] font-bold tracking-widest uppercase">{termDate}</div>
                   </div>
