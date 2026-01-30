@@ -10,11 +10,13 @@ export type LiuyaoShenSha = {
 };
 
 function isStem(ch: string | null | undefined): ch is string {
-  return Boolean(ch) && ch.length === 1 && STEMS.includes(ch);
+  if (typeof ch !== "string") return false;
+  return ch.length === 1 && STEMS.includes(ch);
 }
 
 function isBranch(ch: string | null | undefined): ch is string {
-  return Boolean(ch) && ch.length === 1 && BRANCHES.includes(ch);
+  if (typeof ch !== "string") return false;
+  return ch.length === 1 && BRANCHES.includes(ch);
 }
 
 function prevBranch(branch: string): string {
