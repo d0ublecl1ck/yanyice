@@ -445,10 +445,10 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
   useEffect(() => {
     if (id) {
       const record = records.find(r => r.id === id);
-      if (record) {
-        if (record.module === 'bazi') {
+        if (record) {
+          if (record.module === 'bazi') {
           setIsRedirecting(true);
-          router.replace(`/bazi/edit/${id}`);
+          router.replace(`/bazi?edit=${encodeURIComponent(id)}`);
           return;
         }
         setModule(record.module);

@@ -173,7 +173,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             label="八字案卷"
             active={
               pathname === "/bazi" ||
-              pathname.startsWith("/bazi/edit") ||
               pathname.startsWith("/bazi/analysis")
             }
             collapsed={isSidebarCollapsed}

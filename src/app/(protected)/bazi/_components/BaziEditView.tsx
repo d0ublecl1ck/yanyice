@@ -798,7 +798,17 @@ const BaziTimePickerModal = ({
   );
 };
 
-export function BaziEditView({ id, embedded = false }: { id?: string; embedded?: boolean }) {
+export function BaziEditView({
+  id,
+  embedded = false,
+  onSaved,
+  redirectTo,
+}: {
+  id?: string;
+  embedded?: boolean;
+  onSaved?: () => void;
+  redirectTo?: string | null;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToastStore();
@@ -953,7 +963,9 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
         });
         toast.show("录入成功", "success");
       }
-      router.push("/bazi");
+      onSaved?.();
+      if (redirectTo === null) return;
+      router.push(redirectTo ?? "/bazi");
     } catch {
       toast.show("保存失败，请稍后重试", "error");
     }

@@ -10,8 +10,9 @@ describe("caseLinks", () => {
 
   test("recordEditHref routes by module and encodes id", () => {
     expect(recordEditHref("liuyao", "abc")).toBe("/liuyao/edit/abc");
-    expect(recordEditHref("bazi", "abc")).toBe("/bazi/edit/abc");
+    expect(recordEditHref("bazi", "abc")).toBe("/bazi?edit=abc");
     expect(recordEditHref("liuyao", "a/b")).toBe("/liuyao/edit/a%2Fb");
+    expect(recordEditHref("bazi", "a/b")).toBe("/bazi?edit=a%2Fb");
   });
 
   test("recordAnalysisHref routes by module and encodes id", () => {
