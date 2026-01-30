@@ -209,7 +209,8 @@ function buildDecadeFortune(solarTime: SolarTime, gender: Gender, me: HeavenStem
     const heavenStem = sixtyCycle.getHeavenStem();
     const earthBranch = sixtyCycle.getEarthBranch();
     const startYear = decadeFortune.getStartSixtyCycleYear().getYear();
-    const endYear = decadeFortune.getEndSixtyCycleYear().getYear();
+    const decadeYears = Array.from({ length: 10 }, (_, idx) => buildYearFortune(startYear + idx));
+    const endYear = startYear + decadeYears.length - 1;
 
     list.push({
       gz: sixtyCycle.toString(),
@@ -222,7 +223,7 @@ function buildDecadeFortune(solarTime: SolarTime, gender: Gender, me: HeavenStem
       branchHiddenStems: earthBranch.getHideHeavenStems().map((hs) => hs.toString()),
       startAge: decadeFortune.getStartAge(),
       endAge: decadeFortune.getEndAge(),
-      years: Array.from({ length: endYear - startYear + 1 }, (_, idx) => buildYearFortune(startYear + idx)),
+      years: decadeYears,
     });
 
     decadeFortune = decadeFortune.next(1);

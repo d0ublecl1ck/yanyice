@@ -16,7 +16,7 @@ describe("computeBaziFromBirthDate fortunes", () => {
     for (const d of decades) {
       expect(d.startYear).toBeTypeOf("number");
       expect(d.endYear).toBeTypeOf("number");
-      expect(d.years.length).toBe(d.endYear - d.startYear + 1);
+      expect(d.years.length).toBe(10);
 
       for (const y of d.years) {
         expect(y.year).toBeTypeOf("number");
@@ -47,4 +47,3 @@ describe("computeBaziFromBirthDate fortunes", () => {
     expect(lastMonth.termDate).toMatch(/^\d{1,2}\/\d{1,2}$/);
   });
 });
-

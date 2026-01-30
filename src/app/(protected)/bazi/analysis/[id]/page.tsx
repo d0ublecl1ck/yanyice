@@ -224,8 +224,8 @@ function BaziFortunePanel({ derived }: { derived: DerivedBazi | null }) {
               : ""}
           </span>
         </div>
-        <div className="overflow-x-auto hideScrollbar border border-[#B37D56]/10 rounded-none">
-          <div className="min-w-max grid grid-flow-col auto-cols-[90px] bg-[#FAF7F2]/20">
+        <div className="border border-[#B37D56]/10 rounded-none bg-[#FAF7F2]/20 p-2">
+          <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-2">
             {decadeList.map((d, idx) => {
               const active = idx === selectedDecadeIndex;
               const labelTop = `${safeString(d.startAge)}-${safeString(d.endAge)}岁`;
@@ -237,7 +237,7 @@ function BaziFortunePanel({ derived }: { derived: DerivedBazi | null }) {
                   type="button"
                   onClick={() => setSelectedDecadeIndex(idx)}
                   className={[
-                    "px-2 py-3 text-left border-r border-[#B37D56]/10 transition-colors rounded-[2px]",
+                    "px-2 py-3 text-left border border-[#B37D56]/10 transition-colors rounded-[2px]",
                     active ? "bg-white" : "bg-transparent hover:bg-white/60",
                   ].join(" ")}
                 >
@@ -260,8 +260,8 @@ function BaziFortunePanel({ derived }: { derived: DerivedBazi | null }) {
             {safeString(selectedYear?.year)} {safeString(selectedYear?.gz) ? `· ${safeString(selectedYear?.gz)}` : ""}
           </span>
         </div>
-        <div className="overflow-x-auto hideScrollbar border border-[#B37D56]/10 rounded-none">
-          <div className="min-w-max grid grid-flow-col auto-cols-[78px] bg-[#FAF7F2]/20">
+        <div className="border border-[#B37D56]/10 rounded-none bg-[#FAF7F2]/20 p-2">
+          <div className="grid grid-cols-5 lg:grid-cols-10 gap-2">
             {years.map((y, idx) => {
               const active = idx === selectedYearIndex;
               const yearNum = safeString(y.year);
@@ -273,7 +273,7 @@ function BaziFortunePanel({ derived }: { derived: DerivedBazi | null }) {
                   type="button"
                   onClick={() => setSelectedYearIndex(idx)}
                   className={[
-                    "px-2 py-3 text-left border-r border-[#B37D56]/10 transition-colors rounded-[2px]",
+                    "px-2 py-3 text-left border border-[#B37D56]/10 transition-colors rounded-[2px]",
                     active ? "bg-white" : "bg-transparent hover:bg-white/60",
                   ].join(" ")}
                 >
@@ -301,8 +301,8 @@ function BaziFortunePanel({ derived }: { derived: DerivedBazi | null }) {
           <span className="text-[9px] font-bold text-[#B37D56]/40 uppercase tracking-widest">流月</span>
           <span className="text-[9px] text-[#2F2F2F]/30 chinese-font">立春起月 · 12节</span>
         </div>
-        <div className="overflow-x-auto hideScrollbar border border-[#B37D56]/10 rounded-none">
-          <div className="min-w-max grid grid-flow-col auto-cols-[92px] bg-[#FAF7F2]/20">
+        <div className="border border-[#B37D56]/10 rounded-none bg-[#FAF7F2]/20 p-2">
+          <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-2">
             {months.map((m, idx) => {
               const termName = safeString(m.termName);
               const termDate = safeString(m.termDate);
@@ -311,7 +311,7 @@ function BaziFortunePanel({ derived }: { derived: DerivedBazi | null }) {
               return (
                 <div
                   key={`${termName}-${idx}`}
-                  className="px-2 py-3 text-left border-r border-[#B37D56]/10 rounded-none"
+                  className="px-2 py-3 text-left border border-[#B37D56]/10 bg-white/70 rounded-[2px]"
                 >
                   <div className="flex items-baseline justify-between gap-2">
                     <div className="text-[10px] text-[#2F2F2F]/40 font-bold tracking-widest">{termName || "—"}</div>
