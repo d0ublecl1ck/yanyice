@@ -102,3 +102,10 @@ export interface User {
   id: string;
   email: string;
 }
+
+export interface Quote {
+  id: string;
+  text: string;
+  enabled: boolean;
+  isSystem: boolean;
+}
