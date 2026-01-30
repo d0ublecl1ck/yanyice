@@ -1100,7 +1100,11 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
           <p className="text-[10px] text-[#2F2F2F]/30 chinese-font ml-1">最多 50 个，每个最多 32 字。</p>
         </div>
 
-        <div className={`w-full flex flex-col md:flex-row md:items-stretch gap-4 ${embedded ? "" : ""}`}>
+        <div
+          className={`w-full flex flex-col gap-4 ${
+            embedded ? "" : "md:flex-row md:items-stretch"
+          }`}
+        >
           <div
             role="button"
             tabIndex={0}
@@ -1135,7 +1139,7 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
                     ))}
                   </div>
                 ) : (
-                  <>
+                  <div className={`${embedded ? "flex flex-col gap-1" : "flex items-center gap-4"}`}>
                     <span
                       className={`font-bold text-[#2F2F2F] chinese-font tracking-tight shrink-0 ${
                         embedded ? "text-xl" : "text-2xl"
@@ -1146,13 +1150,15 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
                     <span className="text-base font-bold text-[#B37D56] chinese-font opacity-60 shrink-0">
                       {dateParts.time}
                     </span>
-                  </>
+                  </div>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 md:w-[260px] md:shrink-0 items-center">
+          <div
+            className={`md:shrink-0 ${embedded ? "flex flex-col gap-2" : "grid grid-cols-2 gap-3 md:w-[260px] items-center"}`}
+          >
             <button
               type="button"
               onClick={() => setBazi({ ...bazi, isDst: !bazi.isDst })}

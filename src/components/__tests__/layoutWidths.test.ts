@@ -66,6 +66,10 @@ describe("layout width constraints", () => {
     const source = await readFile("src/app/(protected)/bazi/_components/BaziEditView.tsx", "utf8");
     expect(source).toContain('embedded ? "grid-cols-1 gap-6" : "grid-cols-1 md:grid-cols-2 gap-8"');
     expect(source).toContain('embedded ? "" : "md:grid-cols-2"');
+    expect(source).toContain('embedded ? "flex flex-col gap-1" : "flex items-center gap-4"');
+    expect(source).toContain(
+      'embedded ? "flex flex-col gap-2" : "grid grid-cols-2 gap-3 md:w-[260px] items-center"',
+    );
   });
 
   test("bazi edit/new primary button label differs", async () => {
