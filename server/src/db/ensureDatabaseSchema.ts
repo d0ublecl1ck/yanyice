@@ -38,9 +38,6 @@ export async function ensureDatabaseSchema(databaseUrl: string): Promise<void> {
 
   ensureSqliteDirectory(databaseUrl);
 
-  const alreadyInitialized = await hasTable(databaseUrl, "User");
-  if (alreadyInitialized) return;
-
   runPrismaMigrateDeploy(databaseUrl);
 
   const nowInitialized = await hasTable(databaseUrl, "User");
