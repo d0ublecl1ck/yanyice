@@ -186,13 +186,6 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             {customerName ? <span>{customerName}</span> : null}
             {customerName ? <span className="text-[#B37D56]/30">·</span> : null}
             <span>{analysis.solarDate}</span>
-            <span className="text-[#B37D56]/30">·</span>
-            <span className="inline-flex items-center gap-1 px-2 py-1 border border-[#B37D56]/20 bg-[#FAF7F2] text-[#2F2F2F] font-bold rounded-[2px]">
-              月建<span className="text-[#A62121]">{analysis.monthBranch}</span>
-            </span>
-            <span className="inline-flex items-center gap-1 px-2 py-1 border border-[#B37D56]/20 bg-[#FAF7F2] text-[#2F2F2F] font-bold rounded-[2px]">
-              日辰<span className="text-[#A62121]">{analysis.dayBranch}</span>
-            </span>
           </div>
           {paipan?.base.name && (
             <p className="text-xs text-[#8B6A52] chinese-font tracking-widest uppercase mt-1">
@@ -222,6 +215,14 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
       <div className="mt-10 grid grid-cols-1 lg:grid-cols-10 gap-8">
         <div className="lg:col-span-7 bg-white border border-[#B37D56]/15 p-8 space-y-8 rounded-none">
+          <div className="flex items-center justify-start gap-2">
+            <span className="inline-flex items-center gap-1 px-2 py-1 border border-[#B37D56]/20 bg-[#FAF7F2] text-[#2F2F2F] font-bold rounded-[2px] text-xs chinese-font tracking-widest uppercase">
+              月建<span className="text-[#A62121]">{analysis.monthBranch}</span>
+            </span>
+            <span className="inline-flex items-center gap-1 px-2 py-1 border border-[#B37D56]/20 bg-[#FAF7F2] text-[#2F2F2F] font-bold rounded-[2px] text-xs chinese-font tracking-widest uppercase">
+              日辰<span className="text-[#A62121]">{analysis.dayBranch}</span>
+            </span>
+          </div>
           <div className="grid grid-cols-[4rem_7rem_minmax(0,1fr)_3rem_2.5rem_4rem_7rem_minmax(0,1fr)_3rem] gap-0">
             <div className="col-span-4 text-[11px] text-[#8B6A52] font-bold py-2 tracking-widest text-center">
               {baseTitle ?? "本卦"}
