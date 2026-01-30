@@ -9,8 +9,37 @@ import { Plus, Search, Calendar, ChevronRight, Hash, X } from "lucide-react";
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import { newCaseHref, recordAnalysisHref, recordEditHref } from "@/lib/caseLinks";
+import type { BaZiData } from "@/lib/types";
 import { zodiacInfoFromBranch } from "@/lib/zodiac";
 import { BaziEditView } from "../../bazi/_components/BaziEditView";
+
+function BaziEightCharChops({ baziData }: { baziData?: BaZiData }) {
+  if (!baziData) return null;
+
+  const pillars = [
+    { top: baziData.yearStem, bottom: baziData.yearBranch, label: "年柱" },
+    { top: baziData.monthStem, bottom: baziData.monthBranch, label: "月柱" },
+    { top: baziData.dayStem, bottom: baziData.dayBranch, label: "日柱" },
+    { top: baziData.hourStem, bottom: baziData.hourBranch, label: "时柱" },
+  ];
+
+  const eightChars = pillars.map((p) => `${p.top}${p.bottom}`).join(" ");
+  const chipClass =
+    "w-7 h-7 rounded-full bg-[#B37D56]/70 text-white chinese-font font-bold text-[12px] leading-none flex items-center justify-center border border-black/5 group-hover:bg-[#A62121]/80 transition-colors";
+
+  return (
+    <div className="shrink-0" aria-label={`八字：${eightChars}`}>
+      <div className="grid grid-cols-4 gap-x-1.5 gap-y-1">
+        {pillars.map((p) => (
+          <div key={p.label} className="flex flex-col items-center gap-1" aria-label={p.label}>
+            <span className={chipClass}>{p.top}</span>
+            <span className={chipClass}>{p.bottom}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function CaseBazi() {
   const router = useRouter();
@@ -93,7 +122,7 @@ export function CaseBazi() {
 
       <div className="border border-[#B37D56]/10 rounded-none shadow-sm overflow-hidden bg-[#B37D56]/10">
         {filteredRecords.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-px">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px">
             {filteredRecords
               .sort((a, b) => b.createdAt - a.createdAt)
               .map((record) => {
@@ -136,23 +165,20 @@ export function CaseBazi() {
                           <h4 className="font-bold text-[#2F2F2F] chinese-font group-hover:text-[#A62121] transition-colors truncate">
                             {record.subject}
                           </h4>
-                          <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <span className="text-[10px] font-bold text-[#B37D56] uppercase tracking-widest">
-                              {customer?.name || "散客"}
-                            </span>
-                            <span className="text-[10px] text-[#2F2F2F]/20">|</span>
-                            <span className="text-[10px] text-[#2F2F2F]/30">
-                              {b?.yearStem}
-                              {b?.yearBranch} {b?.monthStem}
-                              {b?.monthBranch} {b?.dayStem}
-                              {b?.dayBranch} {b?.hourStem}
-                              {b?.hourBranch}
-                            </span>
-                          </div>
+                          {customer?.name && customer.name !== record.subject ? (
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              <span className="text-[10px] font-bold text-[#B37D56] uppercase tracking-widest">
+                                {customer.name}
+                              </span>
+                            </div>
+                          ) : null}
                         </div>
-                        <div className="text-[11px] text-[#2F2F2F]/40 font-bold uppercase tracking-widest flex items-center gap-2 shrink-0">
-                          <Calendar size={12} />
-                          {new Date(record.createdAt).toLocaleDateString()}
+                        <div className="flex flex-col items-end gap-2 shrink-0">
+                          <div className="text-[11px] text-[#2F2F2F]/40 font-bold uppercase tracking-widest flex items-center gap-2">
+                            <Calendar size={12} />
+                            {new Date(record.createdAt).toLocaleDateString()}
+                          </div>
+                          <BaziEightCharChops baziData={b} />
                         </div>
                       </div>
 

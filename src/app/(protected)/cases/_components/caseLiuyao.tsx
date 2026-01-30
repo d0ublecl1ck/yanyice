@@ -7,7 +7,7 @@ import { Plus, Search, Calendar, ChevronRight, FileText } from "lucide-react";
 
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
-import { newCaseHref, recordEditHref } from "@/lib/caseLinks";
+import { newCaseHref, recordAnalysisHref, recordEditHref } from "@/lib/caseLinks";
 
 export function CaseLiuyao() {
   const router = useRouter();
@@ -140,13 +140,14 @@ export function CaseLiuyao() {
 
       <div className="border border-[#B37D56]/10 rounded-none shadow-sm overflow-hidden bg-[#B37D56]/10">
         {filteredRecords.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-px">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-px lg:grid-cols-4">
             {filteredRecords
               .sort((a, b) => b.createdAt - a.createdAt)
               .map((record) => {
                 const customer = customers.find((c) => c.id === record.customerId);
                 const displayCustomerName = record.customerName ?? customer?.name ?? "未知客户";
                 const editHref = recordEditHref(record.module, record.id);
+                const analysisHref = recordAnalysisHref("liuyao", record.id);
                 return (
                   <div
                     key={record.id}
@@ -166,11 +167,11 @@ export function CaseLiuyao() {
                     </div>
 
                     <div className="flex-1 min-w-0 space-y-4">
-	                      <div className="flex items-start justify-between gap-6">
-	                        <div className="min-w-0">
-	                          <h4 className="font-bold text-[#2F2F2F] chinese-font group-hover:text-[#A62121] transition-colors truncate">
-	                            {record.subject}
-	                          </h4>
+                      <div className="flex items-start justify-between gap-6">
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-[#2F2F2F] chinese-font group-hover:text-[#A62121] transition-colors truncate">
+                            {record.subject}
+                          </h4>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
                             <span className="text-[10px] font-bold text-[#B37D56] uppercase tracking-widest">
                               {displayCustomerName}
@@ -205,15 +206,24 @@ export function CaseLiuyao() {
                             </>
                           ) : null}
                         </div>
-	                        <ChevronRight
-	                          size={16}
-	                          className="text-[#2F2F2F]/10 group-hover:text-[#A62121] transition-all transform group-hover:translate-x-1"
-	                        />
-	                      </div>
-	                    </div>
-	                  </div>
-	                );
-	              })}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Link
+                            href={editHref}
+                            className="text-[9px] px-2 py-0.5 border border-[#B37D56]/20 text-[#2F2F2F]/30 font-bold hover:border-[#A62121]/30 hover:text-[#A62121] rounded-[2px]"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            编辑
+                          </Link>
+                          <ChevronRight
+                            size={16}
+                            className="text-[#2F2F2F]/10 group-hover:text-[#A62121] transition-all transform group-hover:translate-x-1"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         ) : (
           <div className="py-24 text-center">
