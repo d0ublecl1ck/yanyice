@@ -48,7 +48,10 @@ describe("layout width constraints", () => {
   });
 
   test("bazi create modal avoids page-wide max width", async () => {
-    const source = await readFile("src/app/(protected)/cases/_components/caseBazi.tsx", "utf8");
+    const source = await readFile(
+      "src/app/(protected)/cases/_components/CreateBaziRecordModal.tsx",
+      "utf8",
+    );
     expect(source).toContain("max-w-md");
     expect(source).not.toContain("max-w-4xl");
     expect(source).not.toContain("max-w-6xl");
