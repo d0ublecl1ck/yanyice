@@ -61,6 +61,12 @@ describe("layout width constraints", () => {
     expect(source).toContain("addTagsFromText");
   });
 
+  test("bazi embedded new is single-column layout", async () => {
+    const source = await readFile("src/app/(protected)/bazi/_components/BaziEditView.tsx", "utf8");
+    expect(source).toContain('embedded ? "grid-cols-1 gap-6" : "grid-cols-1 md:grid-cols-2 gap-8"');
+    expect(source).toContain('embedded ? "" : "md:grid-cols-2"');
+  });
+
   test("bazi edit/new primary button label differs", async () => {
     const source = await readFile("src/app/(protected)/bazi/_components/BaziEditView.tsx", "utf8");
     expect(source).toContain('{id ? "保存" : "立即排盘"}');

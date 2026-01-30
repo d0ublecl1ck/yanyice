@@ -1003,7 +1003,11 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
         <div className="absolute top-0 right-0 w-24 h-24 border-r border-t border-[#B37D56]/10 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-24 h-24 border-l border-b border-[#B37D56]/10 pointer-events-none" />
 
-        <div className={`grid grid-cols-1 md:grid-cols-2 items-end ${embedded ? "gap-6" : "gap-8"}`}>
+        <div
+          className={`grid items-end ${
+            embedded ? "grid-cols-1 gap-6" : "grid-cols-1 md:grid-cols-2 gap-8"
+          }`}
+        >
           <div className="space-y-2">
             <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest ml-1">
               姓名
@@ -1198,7 +1202,11 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
         </div>
 
         <div className={`pt-6 ${embedded ? "mt-2" : "pt-8"} border-t border-[#B37D56]/10`}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+          <div
+            className={`grid grid-cols-1 gap-4 items-start ${
+              embedded ? "" : "md:grid-cols-2"
+            }`}
+          >
             <div className={`grid gap-3 ${id ? "grid-cols-1" : "grid-cols-2"} items-center`}>
               <div className="relative w-full">
                 <select
