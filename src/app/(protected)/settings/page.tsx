@@ -192,7 +192,7 @@ export default function Page() {
         <p className="text-slate-500 mt-1 chinese-font">管理您的账号安全与 AI 配置</p>
       </header>
 
-      <div className="max-w-6xl mx-auto columns-1 md:columns-2 lg:columns-3 [column-gap:2rem]">
+      <div className="w-full max-w-none columns-1 md:columns-2 lg:columns-3 lg:[column-fill:balance] [column-gap:2rem]">
         <section className="mb-8 inline-block w-full break-inside-avoid bg-white p-8 border border-[#B37D56]/10 space-y-6">
           <div className="flex items-center justify-between gap-3 border-b border-[#B37D56]/10 pb-4">
             <div className="flex items-center gap-3">
