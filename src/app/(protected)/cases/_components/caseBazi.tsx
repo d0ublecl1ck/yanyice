@@ -122,7 +122,7 @@ export function CaseBazi() {
 
       <div className="border border-[#B37D56]/10 rounded-none shadow-sm overflow-hidden bg-[#B37D56]/10">
         {filteredRecords.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-3 gap-px">
             {filteredRecords
               .sort((a, b) => b.createdAt - a.createdAt)
               .map((record) => {
