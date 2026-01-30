@@ -10,7 +10,7 @@ import {
 describe("aiConfig", () => {
   test("getDefaultAiConfig returns stable defaults", () => {
     expect(getDefaultAiConfig()).toEqual({
-      vendor: "google",
+      vendor: "zhipu",
       model: "",
       apiKey: "",
     });

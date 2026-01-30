@@ -1,4 +1,4 @@
-export const DEFAULT_AI_VENDOR = "google";
+export const DEFAULT_AI_VENDOR = "zhipu";
 export const DEFAULT_AI_MODEL = "";
 export const DEFAULT_AI_API_KEY = "";
 

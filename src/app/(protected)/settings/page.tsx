@@ -159,8 +159,8 @@ export default function Page() {
                 提示
               </p>
               <p className="text-xs text-[#2F2F2F]/60 chinese-font">
-                这里用于配置「厂家」与「模型」的默认值，为后期接入 AI 对话与多厂家适配做准备。
-                当前仅会影响 Gemini 路由的模型选择。
+                当前仅支持智谱 BigModel。这里用于配置「厂家」与「模型」的默认值，为后期接入 AI 对话做准备。
+                目前配置仅在本地保存，API Key 暂未用于请求。
               </p>
             </div>
 
