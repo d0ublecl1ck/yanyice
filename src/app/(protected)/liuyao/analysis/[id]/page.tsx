@@ -124,7 +124,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   if (isLoading) {
     return (
       <div className="py-24 text-center">
-        <p className="text-[#6B6B6B] chinese-font italic">加载中…</p>
+        <p className="text-[#6B6B6B] chinese-font italic text-sm">加载中…</p>
       </div>
     );
   }
@@ -132,7 +132,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   if (!record || !analysis) {
     return (
       <div className="py-24 text-center">
-        <p className="text-[#6B6B6B] chinese-font italic">未找到该六爻卦例</p>
+        <p className="text-[#6B6B6B] chinese-font italic text-sm">未找到该六爻卦例</p>
         <div className="mt-6">
           <button
             onClick={() => router.push("/liuyao")}
@@ -172,12 +172,12 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             </button>
           </div>
           <h2 className="text-2xl font-bold text-[#2F2F2F] chinese-font">{analysis.subject}</h2>
-          <p className="text-[10px] text-[#5A5A5A] chinese-font tracking-widest uppercase">
+          <p className="text-xs text-[#5A5A5A] chinese-font tracking-widest uppercase">
             {customerName ? `${customerName} · ` : ""}
             {analysis.solarDate} · 月建{analysis.monthBranch} · 日辰{analysis.dayBranch}
           </p>
           {paipan?.base.name && (
-            <p className="text-[10px] text-[#8B6A52] chinese-font tracking-widest uppercase mt-1">
+            <p className="text-xs text-[#8B6A52] chinese-font tracking-widest uppercase mt-1">
               本卦{paipan.base.name}
               {paipan.changed.name ? ` · 变卦${paipan.changed.name}` : ""}
               {paipan.palace.name && paipan.palace.generation
@@ -189,13 +189,13 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         <div className="flex gap-3">
           <button
             onClick={() => setIsPanelOpen(true)}
-            className="text-[#B37D56] text-[10px] font-bold tracking-[0.2em] uppercase border border-[#B37D56]/20 px-4 py-2 rounded-[2px] hover:bg-[#B37D56]/5"
+            className="text-[#B37D56] text-xs font-bold tracking-[0.2em] uppercase border border-[#B37D56]/20 px-4 py-2 rounded-[2px] hover:bg-[#B37D56]/5"
           >
             助手
           </button>
           <Link
             href={`/liuyao/edit/${encodeURIComponent(id)}`}
-            className="bg-[#A62121] text-white px-5 py-2 text-[10px] font-bold tracking-[0.2em] uppercase rounded-[2px] hover:bg-[#8B1A1A]"
+            className="bg-[#A62121] text-white px-5 py-2 text-xs font-bold tracking-[0.2em] uppercase rounded-[2px] hover:bg-[#8B1A1A]"
           >
             修改
           </Link>
@@ -205,16 +205,16 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       <div className="mt-10 grid grid-cols-1 lg:grid-cols-10 gap-8">
         <div className="lg:col-span-7 bg-white border border-[#B37D56]/15 p-8 space-y-8 rounded-none">
           <div className="grid grid-cols-[4rem_minmax(0,1fr)_2.5rem_minmax(0,1fr)] gap-0">
-            <div className="text-[9px] text-[#8B6A52] font-bold pb-4 uppercase tracking-widest text-center">
+            <div className="text-[10px] text-[#8B6A52] font-bold pb-4 uppercase tracking-widest text-center">
               六神
             </div>
-            <div className="text-[9px] text-[#8B6A52] font-bold pb-4 uppercase tracking-widest text-center">
+            <div className="text-[10px] text-[#8B6A52] font-bold pb-4 uppercase tracking-widest text-center">
               {baseTitle ?? "本卦"}
             </div>
-            <div className="text-[9px] text-[#8B6A52] font-bold pb-4 uppercase tracking-widest text-center">
+            <div className="text-[10px] text-[#8B6A52] font-bold pb-4 uppercase tracking-widest text-center">
               动
             </div>
-            <div className="text-[9px] text-[#8B6A52] font-bold pb-4 uppercase tracking-widest text-center">
+            <div className="text-[10px] text-[#8B6A52] font-bold pb-4 uppercase tracking-widest text-center">
               {changedTitle ?? "变卦"}
             </div>
 
@@ -223,15 +223,18 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
               return (
                 <React.Fragment key={idxFromTop}>
-                  <div className="flex items-center justify-center text-[10px] text-[#5A5A5A] font-bold py-4 border-t border-[#B37D56]/5">
+                  <div className="flex items-center justify-center text-[11px] text-[#5A5A5A] font-bold py-4 border-t border-[#B37D56]/5">
                     {sixGodText}
                   </div>
 
                   <div className="relative py-4 border-t border-[#B37D56]/5">
                     <div className="flex items-center gap-4 px-3">
-                      <div className="w-28 text-[10px] font-bold text-[#4A4A4A] chinese-font leading-tight text-right">
+                      <div className="w-28 text-xs font-bold text-[#4A4A4A] chinese-font leading-tight text-right">
                         <div>{line.relative}</div>
-                        <div className="text-[9px] text-[#6B6B6B]">{line.najia.text}{line.najia.element}</div>
+                        <div className="text-[10px] text-[#6B6B6B]">
+                          {line.najia.text}
+                          {line.najia.element}
+                        </div>
                       </div>
                       <div className="flex-1 flex justify-center min-w-0">
                         <LiuyaoLineSvg
@@ -245,27 +248,27 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                     </div>
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
                       {line.isShi && (
-                        <span className="text-[10px] font-bold text-[#A62121] chinese-font tracking-widest">
+                        <span className="text-xs font-bold text-[#A62121] chinese-font tracking-widest">
                           世
                         </span>
                       )}
                       {line.isYing && (
-                        <span className="text-[10px] font-bold text-[#4A4A4A] chinese-font tracking-widest">
+                        <span className="text-xs font-bold text-[#4A4A4A] chinese-font tracking-widest">
                           应
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-center text-[10px] font-bold text-[#A62121] py-4 border-t border-[#B37D56]/5">
+                  <div className="flex items-center justify-center text-xs font-bold text-[#A62121] py-4 border-t border-[#B37D56]/5">
                     {line.isMoving ? line.moveMark : ""}
                   </div>
 
                   <div className="relative py-4 border-t border-[#B37D56]/5">
                     <div className="flex items-center gap-4 px-3">
-                      <div className="w-28 text-[10px] font-bold text-[#4A4A4A] chinese-font leading-tight text-right">
+                      <div className="w-28 text-xs font-bold text-[#4A4A4A] chinese-font leading-tight text-right">
                         <div>{line.changedRelative}</div>
-                        <div className="text-[9px] text-[#6B6B6B]">
+                        <div className="text-[10px] text-[#6B6B6B]">
                           {line.changedNajia.text}
                           {line.changedNajia.element}
                         </div>
@@ -282,12 +285,12 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                     </div>
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
                       {line.changedIsShi && (
-                        <span className="text-[10px] font-bold text-[#A62121] chinese-font tracking-widest">
+                        <span className="text-xs font-bold text-[#A62121] chinese-font tracking-widest">
                           世
                         </span>
                       )}
                       {line.changedIsYing && (
-                        <span className="text-[10px] font-bold text-[#4A4A4A] chinese-font tracking-widest">
+                        <span className="text-xs font-bold text-[#4A4A4A] chinese-font tracking-widest">
                           应
                         </span>
                       )}
@@ -300,10 +303,10 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         </div>
 
         <div className="lg:col-span-3 bg-white border border-[#B37D56]/15 p-8 space-y-8 rounded-[4px] shadow-none">
-          <h3 className="text-[10px] font-bold text-[#B37D56] uppercase border-b border-[#B37D56]/15 pb-2 tracking-[0.3em]">
+          <h3 className="text-xs font-bold text-[#B37D56] uppercase border-b border-[#B37D56]/15 pb-2 tracking-[0.3em]">
             断语简析
           </h3>
-          <div className="space-y-4 text-sm chinese-font leading-relaxed">
+          <div className="space-y-4 text-[15px] chinese-font leading-relaxed">
             <p className="border-l border-[#B37D56]/30 pl-4 font-bold text-[#2F2F2F]">
               （占断模板）以用神、世应、动变为纲，结合月建日辰定旺衰。
             </p>
@@ -319,7 +322,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           <div className="w-[360px] bg-white border-l border-[#B37D56]/20 flex flex-col h-full shadow-none">
             <div className="p-5 border-b border-[#B37D56]/10 bg-[#FAF7F2] flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <span className="text-xs font-bold chinese-font text-[#2F2F2F] tracking-widest">
+                <span className="text-sm font-bold chinese-font text-[#2F2F2F] tracking-widest">
                   易理探讨
                 </span>
                 <button
@@ -327,14 +330,14 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                     clearHistory(id);
                     showToast("已清空对话", "info");
                   }}
-                  className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#6B6B6B] hover:text-[#A62121]"
+                  className="text-[11px] font-bold tracking-[0.2em] uppercase text-[#6B6B6B] hover:text-[#A62121]"
                 >
                   清空
                 </button>
               </div>
               <button
                 onClick={() => setIsPanelOpen(false)}
-                className="text-[#6B6B6B] uppercase text-[10px] hover:text-[#A62121]"
+                className="text-[#6B6B6B] uppercase text-[11px] hover:text-[#A62121]"
               >
                 Close
               </button>
@@ -343,7 +346,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
               {history.map((msg, idx) => (
                 <div
                   key={idx}
-                  className={`p-3 text-xs border chinese-font leading-relaxed ${
+                  className={`p-3 text-sm border chinese-font leading-relaxed ${
                     msg.role === "user"
                       ? "bg-[#FAF7F2] border-[#B37D56]/20 ml-8"
                       : "bg-white border-black/10 mr-8"
@@ -353,7 +356,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                 </div>
               ))}
               {isTyping && (
-                <div className="p-3 text-xs border border-black/10 mr-8 text-[#6B6B6B]">
+                <div className="p-3 text-sm border border-black/10 mr-8 text-[#6B6B6B]">
                   正在推演...
                 </div>
               )}
@@ -368,7 +371,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                   if (e.key === "Enter") void handleSend();
                 }}
                 placeholder="咨询..."
-                className="w-full bg-[#FAF7F2] border border-[#B37D56]/20 px-3 py-2 text-xs outline-none rounded-[2px]"
+                className="w-full bg-[#FAF7F2] border border-[#B37D56]/20 px-3 py-2 text-sm outline-none rounded-[2px]"
               />
               <button
                 onClick={() => void handleSend()}
