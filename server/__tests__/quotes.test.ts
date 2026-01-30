@@ -135,12 +135,68 @@ describe("quote module", () => {
     expect(deleteRes.statusCode).toBe(204);
   });
 
+  it("supports bulk updating via lines", async () => {
+    const email = `u${Date.now()}@example.com`;
+    const password = "password123";
+
+    const registerRes = await app.inject({
+      method: "POST",
+      url: "/api/auth/register",
+      payload: { email, password },
+    });
+    expect(registerRes.statusCode).toBe(201);
+    const { accessToken } = registerRes.json() as { accessToken: string };
+
+    const listRes = await app.inject({
+      method: "GET",
+      url: "/api/quotes",
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    expect(listRes.statusCode).toBe(200);
+    const listBody = listRes.json() as {
+      quotes: Array<{ id: string; text: string; enabled: boolean; isSystem: boolean }>;
+    };
+    expect(listBody.quotes.length).toBe(DEFAULT_QUOTES.length);
+
+    const bulkRes = await app.inject({
+      method: "PUT",
+      url: "/api/quotes/bulk",
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { lines: "第一条\n第二条\n第二条\n\n第三条" },
+    });
+    expect(bulkRes.statusCode).toBe(204);
+
+    const afterBulk = await app.inject({
+      method: "GET",
+      url: "/api/quotes",
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    expect(afterBulk.statusCode).toBe(200);
+    const afterBody = afterBulk.json() as {
+      quotes: Array<{ id: string; text: string; enabled: boolean; isSystem: boolean }>;
+    };
+
+    const enabledTexts = afterBody.quotes.filter((q) => q.enabled).map((q) => q.text);
+    expect(enabledTexts).toEqual(["第一条", "第二条", "第三条"]);
+
+    const disabledSystemCount = afterBody.quotes.filter((q) => q.isSystem && !q.enabled).length;
+    expect(disabledSystemCount).toBeGreaterThan(0);
+
+    const emptyRes = await app.inject({
+      method: "PUT",
+      url: "/api/quotes/bulk",
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { lines: "\n\n   \n" },
+    });
+    expect(emptyRes.statusCode).toBe(400);
+  });
+
   it("exposes OpenAPI paths for quotes", async () => {
     const res = await app.inject({ method: "GET", url: "/openapi.json" });
     expect(res.statusCode).toBe(200);
     const body = res.json() as { paths?: Record<string, unknown> };
     expect(body.paths?.["/api/quotes"]).toBeDefined();
+    expect(body.paths?.["/api/quotes/bulk"]).toBeDefined();
     expect(body.paths?.["/api/quotes/reset"]).toBeDefined();
   });
 });
-

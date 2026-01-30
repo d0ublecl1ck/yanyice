@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Shield, Info, User, LogOut, Sparkles, ScrollText, RotateCcw, Trash2 } from "lucide-react";
+import { Shield, Info, User, LogOut, Sparkles, ScrollText, RotateCcw } from "lucide-react";
 
 import { Select, type SelectOption } from "@/components/Select";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -35,9 +35,7 @@ export default function Page() {
   const quotes = useQuoteStore((s) => s.quotes);
   const quoteStatus = useQuoteStore((s) => s.status);
   const bootstrapQuotes = useQuoteStore((s) => s.bootstrap);
-  const addQuote = useQuoteStore((s) => s.addQuote);
-  const updateQuote = useQuoteStore((s) => s.updateQuote);
-  const deleteQuote = useQuoteStore((s) => s.deleteQuote);
+  const saveQuoteLines = useQuoteStore((s) => s.saveQuoteLines);
   const resetSystemQuotes = useQuoteStore((s) => s.resetSystemQuotes);
 
   const defaultAiConfig = useMemo(() => getDefaultAiConfig(), []);
@@ -46,9 +44,8 @@ export default function Page() {
   const [modelDraft, setModelDraft] = useState(aiModel);
   const [apiKeyDraft, setApiKeyDraft] = useState("");
   const [isClearOpen, setIsClearOpen] = useState(false);
-  const [quoteDraft, setQuoteDraft] = useState("");
-  const [quoteEdits, setQuoteEdits] = useState<Record<string, string>>({});
-  const [quoteDeleteId, setQuoteDeleteId] = useState<string | null>(null);
+  const [quoteLinesDraft, setQuoteLinesDraft] = useState("");
+  const [hasEditedQuoteLines, setHasEditedQuoteLines] = useState(false);
   const lastServerRef = useRef<{ vendor: string; model: string } | null>(null);
 
   useEffect(() => {
@@ -62,6 +59,13 @@ export default function Page() {
       toast("加载名言失败，请稍后重试", "warning");
     });
   }, [bootstrapQuotes, toast]);
+
+  useEffect(() => {
+    if (quoteStatus !== "ready") return;
+    if (hasEditedQuoteLines) return;
+    const enabledLines = quotes.filter((q) => q.enabled).map((q) => q.text).join("\n");
+    setQuoteLinesDraft(enabledLines);
+  }, [hasEditedQuoteLines, quoteStatus, quotes]);
 
   useEffect(() => {
     const last = lastServerRef.current;
@@ -131,19 +135,13 @@ export default function Page() {
     );
   };
 
-  const handleAddQuote = () => {
-    const next = quoteDraft.trim();
-    if (!next) {
-      toast("请输入名言内容", "warning");
-      return;
-    }
-
-    void addQuote(next).then(
+  const handleSaveQuoteLines = () => {
+    void saveQuoteLines(quoteLinesDraft).then(
       () => {
-        setQuoteDraft("");
-        toast("名言已添加", "success");
+        setHasEditedQuoteLines(false);
+        toast("名言列表已保存", "success");
       },
-      () => toast("添加失败，请稍后重试", "warning"),
+      () => toast("保存失败，请稍后重试", "warning"),
     );
   };
 
@@ -326,7 +324,10 @@ export default function Page() {
             <button
               onClick={() => {
                 void resetSystemQuotes().then(
-                  () => toast("系统名言已恢复", "info"),
+                  () => {
+                    setHasEditedQuoteLines(false);
+                    toast("系统名言已恢复", "info");
+                  },
                   () => toast("恢复失败，请稍后重试", "warning"),
                 );
               }}
@@ -345,125 +346,36 @@ export default function Page() {
                 提示
               </p>
               <p className="text-xs text-[#2F2F2F]/60 chinese-font">
-                工作台首页会展示这里启用的名言。你可以新增、编辑、禁用或删除。
+                每行一条名言；点击保存后会启用这些名言，未包含的名言会被自动禁用。首页只展示一条。
               </p>
             </div>
 
-            <div className="flex gap-2 items-center">
-              <input
-                value={quoteDraft}
-                onChange={(e) => setQuoteDraft(e.target.value)}
-                placeholder="输入一条新的名言…"
-                className="w-full px-3 py-2 bg-white border border-[#B37D56]/20 text-sm chinese-font rounded-none focus:outline-none focus:border-[#B37D56]/50"
-                autoComplete="off"
-                disabled={quoteStatus === "loading"}
-              />
+            <textarea
+              value={quoteLinesDraft}
+              onChange={(e) => {
+                setHasEditedQuoteLines(true);
+                setQuoteLinesDraft(e.target.value);
+              }}
+              placeholder="每行输入一条名言…"
+              rows={10}
+              className="w-full px-3 py-2 bg-white border border-[#B37D56]/20 text-sm chinese-font rounded-none focus:outline-none focus:border-[#B37D56]/50 resize-y"
+              disabled={quoteStatus === "loading"}
+            />
+
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[10px] text-[#2F2F2F]/40">
+                {quoteStatus === "loading" ? "正在加载…" : "支持重复行自动去重；空行会被忽略"}
+              </p>
               <button
-                onClick={handleAddQuote}
+                onClick={handleSaveQuoteLines}
                 className="px-3 py-2 bg-[#2F2F2F] text-white text-xs font-bold tracking-widest hover:bg-black transition-colors rounded-[2px] chinese-font"
                 disabled={quoteStatus === "loading"}
               >
-                添加
+                保存
               </button>
-            </div>
-
-            <div className="border border-[#B37D56]/10 bg-white">
-              {quotes.length > 0 ? (
-                quotes.map((q) => {
-                  const draft = quoteEdits[q.id] ?? q.text;
-                  const isDirty = draft.trim() !== q.text.trim();
-                  return (
-                    <div key={q.id} className="p-4 border-b border-[#B37D56]/10 space-y-2">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <label className="flex items-center gap-2 text-xs text-[#2F2F2F]/60">
-                            <input
-                              type="checkbox"
-                              checked={q.enabled}
-                              onChange={(e) => {
-                                void updateQuote(q.id, { enabled: e.target.checked }).then(
-                                  () => toast(q.enabled ? "已禁用" : "已启用", "success"),
-                                  () => toast("更新失败，请稍后重试", "warning"),
-                                );
-                              }}
-                            />
-                            启用
-                          </label>
-                          {q.isSystem ? (
-                            <span className="text-[10px] px-2 py-0.5 border border-[#B37D56]/30 text-[#B37D56] font-bold tracking-widest">
-                              系统
-                            </span>
-                          ) : null}
-                        </div>
-
-                        <button
-                          onClick={() => setQuoteDeleteId(q.id)}
-                          className="inline-flex items-center gap-1 px-2 py-1 text-xs font-bold tracking-widest text-[#A62121] border border-[#A62121]/20 hover:bg-[#A62121] hover:text-white transition-all rounded-[2px] chinese-font"
-                          title="删除该名言"
-                        >
-                          <Trash2 size={14} />
-                          删除
-                        </button>
-                      </div>
-
-                      <textarea
-                        value={draft}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          setQuoteEdits((prev) => ({ ...prev, [q.id]: v }));
-                        }}
-                        onBlur={() => {
-                          const next = (quoteEdits[q.id] ?? q.text).trim();
-                          if (!next) {
-                            setQuoteEdits((prev) => {
-                              const nextEdits = { ...prev };
-                              delete nextEdits[q.id];
-                              return nextEdits;
-                            });
-                            toast("名言不能为空", "warning");
-                            return;
-                          }
-                          if (!isDirty) return;
-                          void updateQuote(q.id, { text: next }).then(
-                            () => toast("名言已更新", "success"),
-                            () => toast("更新失败，请稍后重试", "warning"),
-                          );
-                        }}
-                        rows={2}
-                        className="w-full px-3 py-2 bg-white border border-[#B37D56]/20 text-sm chinese-font rounded-none focus:outline-none focus:border-[#B37D56]/50 resize-y"
-                        disabled={quoteStatus === "loading"}
-                      />
-                      {isDirty ? (
-                        <p className="text-[10px] text-[#2F2F2F]/40">编辑后失焦自动保存</p>
-                      ) : null}
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="p-8 text-center">
-                  <p className="text-sm text-[#2F2F2F]/30 chinese-font">暂无名言</p>
-                </div>
-              )}
             </div>
           </div>
         </section>
-
-        <ConfirmDialog
-          open={Boolean(quoteDeleteId)}
-          title="删除名言？"
-          description="删除后无法恢复（可用“恢复系统名言”找回系统内置内容）。"
-          confirmText="删除"
-          onCancel={() => setQuoteDeleteId(null)}
-          onConfirm={() => {
-            const id = quoteDeleteId;
-            setQuoteDeleteId(null);
-            if (!id) return;
-            void deleteQuote(id).then(
-              () => toast("名言已删除", "info"),
-              () => toast("删除失败，请稍后重试", "warning"),
-            );
-          }}
-        />
 
         <section className="bg-white p-8 border border-[#B37D56]/10 space-y-6">
           <div className="flex items-center gap-3 border-b border-[#B37D56]/10 pb-4">

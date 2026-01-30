@@ -51,7 +51,7 @@ export default function Page() {
     quotes,
     date: new Date(todayKey),
     userSeed: userId,
-    count: 3,
+    count: 1,
   });
 
   return (

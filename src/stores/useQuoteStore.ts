@@ -21,6 +21,7 @@ interface QuoteState {
   addQuote: (text: string) => Promise<string>;
   updateQuote: (id: string, updates: Partial<Pick<Quote, "text" | "enabled">>) => Promise<void>;
   deleteQuote: (id: string) => Promise<void>;
+  saveQuoteLines: (lines: string) => Promise<void>;
   resetSystemQuotes: () => Promise<void>;
 }
 
@@ -128,6 +129,19 @@ export const useQuoteStore = create<QuoteState>()(
         }));
       },
 
+      saveQuoteLines: async (lines) => {
+        const auth = getAuthContext();
+        if (!auth) throw new Error("未登录");
+
+        await apiFetch<null>("/api/quotes/bulk", {
+          method: "PUT",
+          accessToken: auth.accessToken,
+          body: JSON.stringify({ lines }),
+        });
+
+        await get().refreshQuotes();
+      },
+
       resetSystemQuotes: async () => {
         const auth = getAuthContext();
         if (!auth) throw new Error("未登录");
@@ -153,4 +167,3 @@ export const useQuoteStore = create<QuoteState>()(
     },
   ),
 );
-

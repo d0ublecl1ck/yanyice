@@ -22,8 +22,13 @@ const CreateQuoteBody = Type.Object({
 
 const UpdateQuoteBody = Type.Partial(CreateQuoteBody);
 
+const UpdateQuoteLinesBody = Type.Object({
+  lines: Type.String({ maxLength: 50_000 }),
+});
+
 type CreateQuoteBodyType = Static<typeof CreateQuoteBody>;
 type UpdateQuoteBodyType = Static<typeof UpdateQuoteBody>;
+type UpdateQuoteLinesBodyType = Static<typeof UpdateQuoteLinesBody>;
 
 function toQuoteDto(row: { id: string; text: string; enabled: boolean; seedKey: string | null }): Static<typeof QuoteDto> {
   return {
@@ -81,6 +86,81 @@ export async function quoteRoutes(app: FastifyInstance) {
       });
 
       return reply.status(201).send({ quote: toQuoteDto(created) });
+    },
+  );
+
+  app.put(
+    "/quotes/bulk",
+    {
+      schema: {
+        tags: ["quotes"],
+        security: [{ bearerAuth: [] }],
+        body: UpdateQuoteLinesBody,
+        response: { 204: Type.Null(), 400: ErrorResponse, 401: ErrorResponse },
+      },
+      onRequest: [app.authenticate],
+    },
+    async (request, reply) => {
+      const userId = request.user.sub;
+      const body = request.body as UpdateQuoteLinesBodyType;
+
+      const lines = body.lines
+        .split(/\r?\n/g)
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+      const deduped: string[] = [];
+      const seen = new Set<string>();
+      for (const line of lines) {
+        if (seen.has(line)) continue;
+        seen.add(line);
+        deduped.push(line);
+      }
+
+      if (deduped.length === 0) {
+        return reply.status(400).send({ code: "EMPTY_QUOTES", message: "请至少保留一条名言" });
+      }
+
+      if (deduped.some((text) => text.length > 300)) {
+        return reply.status(400).send({ code: "QUOTE_TOO_LONG", message: "单条名言最多 300 字" });
+      }
+
+      await ensureDefaultQuotes(app.prisma, userId);
+
+      const existing = await app.prisma.quote.findMany({
+        where: { userId },
+        select: { id: true, text: true },
+      });
+
+      const existingByText = new Map(existing.map((q) => [q.text, q.id] as const));
+
+      const enableIds: string[] = [];
+      const createTexts: string[] = [];
+      for (const text of deduped) {
+        const existingId = existingByText.get(text);
+        if (existingId) enableIds.push(existingId);
+        else createTexts.push(text);
+      }
+
+      await app.prisma.$transaction(async (tx) => {
+        await tx.quote.updateMany({
+          where: { userId, id: { in: enableIds } },
+          data: { enabled: true },
+        });
+
+        await tx.quote.updateMany({
+          where: { userId, id: { notIn: enableIds } },
+          data: { enabled: false },
+        });
+
+        if (createTexts.length > 0) {
+          await tx.quote.createMany({
+            data: createTexts.map((text) => ({ userId, text, enabled: true })),
+          });
+        }
+      });
+
+      return reply.status(204).send();
     },
   );
 
@@ -161,4 +241,3 @@ export async function quoteRoutes(app: FastifyInstance) {
     },
   );
 }
-
