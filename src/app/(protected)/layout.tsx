@@ -9,6 +9,7 @@ import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useRuleStore } from "@/stores/useRuleStore";
 import { useToastStore } from "@/stores/useToastStore";
+import { useAiConfigStore } from "@/stores/useAiConfigStore";
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -48,6 +49,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     void useCaseStore.getState().bootstrap();
     void useCustomerStore.getState().bootstrap();
     void useRuleStore.getState().bootstrap();
+    void useAiConfigStore.getState().bootstrap();
     if (!accessToken) return;
     void syncLiuyaoFromApi(accessToken).catch(() => {
       showToast("六爻记录同步失败（可稍后重试）", "warning");

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Shield, Info, User, LogOut, Sparkles } from "lucide-react";
 
 import { Select, type SelectOption } from "@/components/Select";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useToastStore } from "@/stores/useToastStore";
 import { useAiConfigStore } from "@/stores/useAiConfigStore";
@@ -23,28 +24,34 @@ export default function Page() {
 
   const aiVendor = useAiConfigStore((s) => s.vendor);
   const aiModel = useAiConfigStore((s) => s.model);
-  const aiApiKey = useAiConfigStore((s) => s.apiKey);
-  const aiHasHydrated = useAiConfigStore((s) => s.hasHydrated);
-  const setAiVendor = useAiConfigStore((s) => s.setVendor);
-  const setAiModel = useAiConfigStore((s) => s.setModel);
-  const setAiApiKey = useAiConfigStore((s) => s.setApiKey);
-  const resetAiConfig = useAiConfigStore((s) => s.reset);
+  const aiHasApiKey = useAiConfigStore((s) => s.hasApiKey);
+  const aiStatus = useAiConfigStore((s) => s.status);
+  const bootstrapAi = useAiConfigStore((s) => s.bootstrap);
+  const updateModel = useAiConfigStore((s) => s.updateModel);
+  const saveApiKey = useAiConfigStore((s) => s.saveApiKey);
+  const clearApiKey = useAiConfigStore((s) => s.clearApiKey);
 
   const defaultAiConfig = useMemo(() => getDefaultAiConfig(), []);
 
   const [vendorDraft, setVendorDraft] = useState(aiVendor);
   const [modelDraft, setModelDraft] = useState(aiModel);
-  const [apiKeyDraft, setApiKeyDraft] = useState(aiApiKey);
-  const didInitRef = useRef(false);
+  const [apiKeyDraft, setApiKeyDraft] = useState("");
+  const [isClearOpen, setIsClearOpen] = useState(false);
+  const lastServerRef = useRef<{ vendor: string; model: string } | null>(null);
 
   useEffect(() => {
-    if (!aiHasHydrated) return;
-    if (didInitRef.current) return;
-    didInitRef.current = true;
+    void bootstrapAi().catch(() => {
+      toast("加载 AI 配置失败，请稍后重试", "warning");
+    });
+  }, [bootstrapAi, toast]);
+
+  useEffect(() => {
+    const last = lastServerRef.current;
+    if (last && last.vendor === aiVendor && last.model === aiModel) return;
+    lastServerRef.current = { vendor: aiVendor, model: aiModel };
     setVendorDraft(aiVendor);
     setModelDraft(aiModel);
-    setApiKeyDraft(aiApiKey);
-  }, [aiHasHydrated, aiVendor, aiModel, aiApiKey]);
+  }, [aiVendor, aiModel]);
 
   const handleLogout = () => {
     logout();
@@ -52,11 +59,13 @@ export default function Page() {
   };
 
   const handleResetAiConfig = () => {
-    resetAiConfig();
     setVendorDraft(defaultAiConfig.vendor);
     setModelDraft(defaultAiConfig.model);
-    setApiKeyDraft(defaultAiConfig.apiKey);
-    toast("已恢复默认 AI 配置", "info");
+    setApiKeyDraft("");
+    void updateModel(defaultAiConfig.model).then(
+      () => toast("已恢复默认模型配置", "info"),
+      () => toast("恢复默认失败，请稍后重试", "warning"),
+    );
   };
 
   const vendorOptions = useMemo<Array<SelectOption<string>>>(
@@ -76,21 +85,32 @@ export default function Page() {
       setModelDraft(aiModel);
       return;
     }
+    if (next === aiModel) return;
     setModelDraft(next);
-    setAiModel(next);
-    toast("模型已更新", "success");
+    void updateModel(next).then(
+      () => toast("模型已更新", "success"),
+      () => toast("模型更新失败，请稍后重试", "warning"),
+    );
   };
 
-  const commitApiKey = () => {
+  const handleSaveApiKey = () => {
     const next = sanitizeAiApiKey(apiKeyDraft);
     if (next === null) {
       toast("API Key 过长", "warning");
-      setApiKeyDraft(aiApiKey);
       return;
     }
-    setApiKeyDraft(next);
-    setAiApiKey(next);
-    toast("API Key 已更新", "success");
+    if (!next) {
+      toast("请输入 API Key", "warning");
+      return;
+    }
+
+    void saveApiKey(next).then(
+      () => {
+        setApiKeyDraft("");
+        toast("API Key 已保存", "success");
+      },
+      () => toast("API Key 保存失败，请稍后重试", "warning"),
+    );
   };
 
   return (
@@ -160,7 +180,7 @@ export default function Page() {
               </p>
               <p className="text-xs text-[#2F2F2F]/60 chinese-font">
                 当前仅支持智谱 BigModel。这里用于配置「厂家」与「模型」的默认值，为后期接入 AI 对话做准备。
-                目前配置仅在本地保存，API Key 暂未用于请求。
+                配置保存到服务端账户下，API Key 不会在前端回显。
               </p>
             </div>
 
@@ -172,6 +192,7 @@ export default function Page() {
                 value={vendorDraft}
                 options={vendorOptions}
                 variant="box"
+                disabled
                 onValueChange={(next) => {
                   const nextVendor = sanitizeAiVendor(String(next));
                   if (!nextVendor) {
@@ -179,9 +200,7 @@ export default function Page() {
                     return;
                   }
                   setVendorDraft(nextVendor);
-                  setAiVendor(nextVendor);
                   setModelDraft("");
-                  setAiModel("");
                 }}
               />
             </div>
@@ -197,6 +216,7 @@ export default function Page() {
                 placeholder={modelPlaceholder}
                 className="w-full px-3 py-2 bg-white border border-[#B37D56]/20 text-sm chinese-font rounded-none focus:outline-none focus:border-[#B37D56]/50"
                 autoComplete="off"
+                disabled={aiStatus === "loading"}
               />
               <p className="text-[10px] text-[#2F2F2F]/40">{modelHint}</p>
             </div>
@@ -205,29 +225,60 @@ export default function Page() {
               <span className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
                 API Key
               </span>
-              <input
-                value={apiKeyDraft}
-                onChange={(e) => setApiKeyDraft(e.target.value)}
-                onBlur={commitApiKey}
-                placeholder="********"
-                type="password"
-                className="w-full px-3 py-2 bg-white border border-[#B37D56]/20 text-sm chinese-font rounded-none focus:outline-none focus:border-[#B37D56]/50"
-                autoComplete="off"
-              />
-              <p className="text-[10px] text-[#2F2F2F]/40">{apiKeyHint}（当前暂未用于请求）</p>
+              <div className="flex gap-2 items-center">
+                <input
+                  value={apiKeyDraft}
+                  onChange={(e) => setApiKeyDraft(e.target.value)}
+                  placeholder={aiHasApiKey ? "已配置（重新粘贴可覆盖）" : "********"}
+                  type="password"
+                  className="w-full px-3 py-2 bg-white border border-[#B37D56]/20 text-sm chinese-font rounded-none focus:outline-none focus:border-[#B37D56]/50"
+                  autoComplete="off"
+                  disabled={aiStatus === "loading"}
+                />
+                <button
+                  onClick={handleSaveApiKey}
+                  className="px-3 py-2 bg-[#A62121] text-white text-xs font-bold tracking-widest hover:bg-[#8B1A1A] transition-colors rounded-[2px] chinese-font"
+                  disabled={aiStatus === "loading"}
+                >
+                  保存
+                </button>
+                <button
+                  onClick={() => setIsClearOpen(true)}
+                  className="px-3 py-2 bg-white border border-[#A62121]/20 text-[#A62121] text-xs font-bold tracking-widest hover:bg-[#A62121] hover:text-white transition-all rounded-[2px] chinese-font"
+                  disabled={!aiHasApiKey || aiStatus === "loading"}
+                >
+                  清除
+                </button>
+              </div>
+              <p className="text-[10px] text-[#2F2F2F]/40">{apiKeyHint}</p>
             </div>
 
             <div className="flex items-center justify-between p-4 bg-[#FAF7F2]/50 border border-[#B37D56]/5">
               <div>
                 <p className="font-bold text-[#2F2F2F] chinese-font">当前生效</p>
                 <p className="text-xs text-[#2F2F2F]/40">
-                  厂家：{aiVendor}；模型：{aiModel || "（默认）"}；API Key：{aiApiKey ? "已配置" : "未配置"}
+                  厂家：{aiVendor}；模型：{aiModel || "（默认）"}；API Key：{aiHasApiKey ? "已配置" : "未配置"}
                 </p>
               </div>
               <div className="text-[10px] text-[#2F2F2F]/40 uppercase tracking-widest">自动保存</div>
             </div>
           </div>
         </section>
+
+        <ConfirmDialog
+          open={isClearOpen}
+          title="清除 API Key？"
+          description="清除后将无法调用对应厂家接口，后续可重新粘贴保存。"
+          confirmText="清除"
+          onCancel={() => setIsClearOpen(false)}
+          onConfirm={() => {
+            setIsClearOpen(false);
+            void clearApiKey().then(
+              () => toast("API Key 已清除", "info"),
+              () => toast("清除失败，请稍后重试", "warning"),
+            );
+          }}
+        />
 
         <section className="bg-white p-8 border border-[#B37D56]/10 space-y-6">
           <div className="flex items-center gap-3 border-b border-[#B37D56]/10 pb-4">
