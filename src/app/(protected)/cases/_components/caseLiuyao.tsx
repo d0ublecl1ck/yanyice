@@ -7,25 +7,43 @@ import { Plus, Search, Calendar, ChevronRight, FileText } from "lucide-react";
 
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
-import { newCaseHref, recordAnalysisHref, recordEditHref } from "@/lib/caseLinks";
+import { newCaseHref, recordEditHref } from "@/lib/caseLinks";
 
 export function CaseLiuyao() {
   const router = useRouter();
   const allRecords = useCaseStore((state) => state.records);
   const customers = useCustomerStore((state) => state.customers);
   const [search, setSearch] = useState("");
+  const [activeTag, setActiveTag] = useState<string | null>(null);
 
   const records = useMemo(() => allRecords.filter((r) => r.module === "liuyao"), [allRecords]);
+
+  const availableTags = useMemo(() => {
+    const tagCounts = new Map<string, number>();
+    for (const record of records) {
+      for (const tag of record.tags ?? []) {
+        const normalized = tag.trim();
+        if (!normalized) continue;
+        tagCounts.set(normalized, (tagCounts.get(normalized) ?? 0) + 1);
+      }
+    }
+
+    return Array.from(tagCounts.entries()).sort(([aTag, aCount], [bTag, bCount]) => {
+      if (bCount !== aCount) return bCount - aCount;
+      return aTag.localeCompare(bTag);
+    });
+  }, [records]);
 
   const filteredRecords = records.filter((record) => {
     const customer = customers.find((c) => c.id === record.customerId);
     const customerName = record.customerName ?? customer?.name ?? "";
     const q = search.trim().toLowerCase();
-    return (
+    const matchesTag = activeTag == null || (record.tags ?? []).includes(activeTag);
+    const matchesSearch =
       q.length === 0 ||
       record.subject.toLowerCase().includes(q) ||
-      customerName.toLowerCase().includes(q)
-    );
+      customerName.toLowerCase().includes(q);
+    return matchesTag && matchesSearch;
   });
 
   return (
@@ -62,16 +80,73 @@ export function CaseLiuyao() {
         />
       </div>
 
-      <div className="bg-white border border-[#B37D56]/10 rounded-none shadow-sm overflow-hidden">
+      {availableTags.length > 0 ? (
+        <section className="space-y-2">
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+              标签筛选
+            </p>
+            {activeTag != null ? (
+              <button
+                type="button"
+                onClick={() => setActiveTag(null)}
+                className="text-[10px] font-bold tracking-widest text-[#2F2F2F]/30 hover:text-[#A62121] transition-colors"
+              >
+                清除筛选
+              </button>
+            ) : null}
+          </div>
+
+          <div className="flex flex-wrap gap-2 items-center">
+            <button
+              type="button"
+              aria-pressed={activeTag == null}
+              onClick={() => setActiveTag(null)}
+              className={[
+                "text-[10px] px-2 py-1 border font-bold tracking-widest transition-colors rounded-[2px]",
+                activeTag == null
+                  ? "bg-black text-white border-black"
+                  : "bg-white text-[#2F2F2F]/60 border-[#B37D56]/10 hover:border-[#A62121]/30 hover:text-[#A62121]",
+              ].join(" ")}
+            >
+              全部
+            </button>
+
+            {availableTags.map(([tag, count]) => {
+              const isActive = activeTag === tag;
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => setActiveTag((prev) => (prev === tag ? null : tag))}
+                  className={[
+                    "text-[10px] px-2 py-1 border font-bold tracking-widest transition-colors flex items-center gap-1 rounded-[2px]",
+                    isActive
+                      ? "bg-[#A62121] text-white border-[#A62121]"
+                      : "bg-white text-[#2F2F2F]/60 border-[#B37D56]/10 hover:border-[#A62121]/30 hover:text-[#A62121]",
+                  ].join(" ")}
+                >
+                  {tag}
+                  <span className={isActive ? "text-white/70" : "text-[#2F2F2F]/20"}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+
+      <div className="border border-[#B37D56]/10 rounded-none shadow-sm overflow-hidden bg-[#B37D56]/10">
         {filteredRecords.length > 0 ? (
-          <div className="divide-y divide-[#B37D56]/5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-px">
             {filteredRecords
               .sort((a, b) => b.createdAt - a.createdAt)
               .map((record) => {
                 const customer = customers.find((c) => c.id === record.customerId);
                 const displayCustomerName = record.customerName ?? customer?.name ?? "未知客户";
                 const editHref = recordEditHref(record.module, record.id);
-                const analysisHref = recordAnalysisHref("liuyao", record.id);
                 return (
                   <div
                     key={record.id}
@@ -81,7 +156,7 @@ export function CaseLiuyao() {
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") router.push(analysisHref);
                     }}
-                    className="flex items-center group hover:bg-[#FAF7F2] transition-all p-6"
+                    className="bg-white flex items-start gap-4 group hover:bg-[#FAF7F2] transition-all p-6"
                   >
                     <div className="w-12 h-12 bg-[#B37D56]/5 flex items-center justify-center shrink-0">
                       <FileText
@@ -89,47 +164,56 @@ export function CaseLiuyao() {
                         className="text-[#B37D56]/30 group-hover:text-[#A62121] transition-colors"
                       />
                     </div>
-                    <div className="ml-6 flex-1 grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-                      <div className="md:col-span-2">
-                        <h4 className="font-bold text-[#2F2F2F] chinese-font group-hover:text-[#A62121] transition-colors">
-                          {record.subject}
-                        </h4>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[10px] font-bold text-[#B37D56] uppercase tracking-widest">
-                            {displayCustomerName}
-                          </span>
-                          <span className="text-[10px] text-[#2F2F2F]/20">|</span>
-                          <span className="text-[10px] text-[#2F2F2F]/30">文王六爻</span>
+
+                    <div className="flex-1 min-w-0 space-y-4">
+	                      <div className="flex items-start justify-between gap-6">
+	                        <div className="min-w-0">
+	                          <h4 className="font-bold text-[#2F2F2F] chinese-font group-hover:text-[#A62121] transition-colors truncate">
+	                            {record.subject}
+	                          </h4>
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <span className="text-[10px] font-bold text-[#B37D56] uppercase tracking-widest">
+                              {displayCustomerName}
+                            </span>
+                            <span className="text-[10px] text-[#2F2F2F]/20">|</span>
+                            <span className="text-[10px] text-[#2F2F2F]/30">文王六爻</span>
+                          </div>
+                        </div>
+                        <div className="text-[11px] text-[#2F2F2F]/40 font-bold uppercase tracking-widest flex items-center gap-2 shrink-0">
+                          <Calendar size={12} />
+                          {new Date(record.createdAt).toLocaleDateString()}
                         </div>
                       </div>
-                      <div className="text-[11px] text-[#2F2F2F]/40 font-bold uppercase tracking-widest flex items-center gap-2">
-                        <Calendar size={12} />
-                        {new Date(record.createdAt).toLocaleDateString()}
-                      </div>
-                      <div className="text-right flex items-center justify-end gap-2">
-                        <Link
-                          href={analysisHref}
-                          className="text-[9px] px-2 py-0.5 border border-black/10 text-[#2F2F2F]/60 font-bold hover:border-[#A62121]/30 hover:text-[#A62121]"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          排盘
-                        </Link>
-                        <Link
-                          href={editHref}
-                          className="text-[9px] px-2 py-0.5 border border-[#B37D56]/20 text-[#2F2F2F]/30 font-bold hover:border-[#A62121]/30 hover:text-[#A62121]"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          编辑
-                        </Link>
-                      </div>
-                    </div>
-                    <ChevronRight
-                      size={16}
-                      className="ml-6 text-[#2F2F2F]/10 group-hover:text-[#A62121] transition-all transform group-hover:translate-x-1"
-                    />
-                  </div>
-                );
-              })}
+
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex flex-wrap gap-1 min-w-0">
+                          {record.tags.length > 0 ? (
+                            <>
+                              {record.tags.slice(0, 3).map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="text-[9px] px-2 py-0.5 border border-[#B37D56]/10 bg-[#FAF7F2] text-[#2F2F2F]/60 font-bold tracking-widest rounded-[2px]"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                              {record.tags.length > 3 ? (
+                                <span className="text-[9px] px-2 py-0.5 border border-[#B37D56]/10 bg-white text-[#2F2F2F]/30 font-bold tracking-widest rounded-[2px]">
+                                  +{record.tags.length - 3}
+                                </span>
+                              ) : null}
+                            </>
+                          ) : null}
+                        </div>
+	                        <ChevronRight
+	                          size={16}
+	                          className="text-[#2F2F2F]/10 group-hover:text-[#A62121] transition-all transform group-hover:translate-x-1"
+	                        />
+	                      </div>
+	                    </div>
+	                  </div>
+	                );
+	              })}
           </div>
         ) : (
           <div className="py-24 text-center">
