@@ -26,16 +26,16 @@ function BaziEightCharChops({ baziData }: { baziData?: BaZiData }) {
 
   const eightChars = pillars.map((p) => `${p.top}${p.bottom}`).join(" ");
   const chipClass =
-    "w-7 h-7 rounded-full bg-[#B37D56]/70 text-white chinese-font font-bold text-[12px] leading-none flex items-center justify-center border border-black/5 group-hover:bg-[#A62121]/80 transition-colors";
+    "w-7 h-7 rounded-full bg-[#B37D56]/70 text-white chinese-font font-bold text-[11px] leading-none flex items-center justify-center border border-black/5 group-hover:bg-[#A62121]/80 transition-colors";
 
   return (
     <div className="shrink-0" aria-label={`八字：${eightChars}`}>
-      <div className="grid grid-cols-4 gap-x-1.5 gap-y-1">
+      <div className="grid grid-cols-4 gap-x-1.5">
         {pillars.map((p) => (
-          <div key={p.label} className="flex flex-col items-center gap-1" aria-label={p.label}>
-            <span className={chipClass}>{p.top}</span>
-            <span className={chipClass}>{p.bottom}</span>
-          </div>
+          <span key={p.label} className={chipClass} aria-label={p.label}>
+            {p.top}
+            {p.bottom}
+          </span>
         ))}
       </div>
     </div>
@@ -83,6 +83,13 @@ export function CaseBazi() {
     );
   });
 
+  const gridClassName = useMemo(() => {
+    const count = filteredRecords.length;
+    if (count === 1) return "grid grid-cols-1 gap-px";
+    if (count === 2) return "grid grid-cols-1 md:grid-cols-2 gap-px";
+    return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-3 gap-px";
+  }, [filteredRecords.length]);
+
   const closeCreate = React.useCallback(() => {
     const qs = new URLSearchParams(searchParams.toString());
     qs.delete("new");
@@ -127,7 +134,7 @@ export function CaseBazi() {
         onActiveTagChange={setActiveTag}
       >
         {filteredRecords.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-3 gap-px">
+          <div className={gridClassName}>
             {filteredRecords
               .sort((a, b) => b.createdAt - a.createdAt)
               .map((record) => {
@@ -178,8 +185,8 @@ export function CaseBazi() {
                             </div>
                           ) : null}
                         </div>
-                        <div className="flex flex-col items-end gap-2 shrink-0">
-                          <div className="text-[11px] text-[#2F2F2F]/40 font-bold uppercase tracking-widest flex items-center gap-2">
+                        <div className="flex items-center gap-3 shrink-0">
+                          <div className="text-[11px] text-[#2F2F2F]/40 font-bold uppercase tracking-widest flex items-center gap-2 shrink-0">
                             <Calendar size={12} />
                             {new Date(record.createdAt).toLocaleDateString()}
                           </div>
