@@ -82,7 +82,36 @@ type DerivedBazi = {
     hour?: DerivedPillarDetail;
   };
   shenSha?: { year?: unknown; month?: unknown; day?: unknown; hour?: unknown };
-  decadeFortune?: { startDate?: string };
+  decadeFortune?: {
+    startDate?: string;
+    startAge?: number;
+    list?: Array<{
+      gz?: string;
+      startYear?: number;
+      endYear?: number;
+      startAge?: number;
+      endAge?: number;
+      years?: Array<{
+        year?: number;
+        gz?: string;
+        xun?: string;
+        kongWang?: string;
+        nayin?: string;
+        stemTenGod?: string;
+        branchTenGods?: string[];
+        branchHiddenStems?: string[];
+        months?: Array<{
+          index?: number;
+          gz?: string;
+          termName?: string;
+          termDate?: string;
+          stemTenGod?: string;
+          branchTenGods?: string[];
+          branchHiddenStems?: string[];
+        }>;
+      }>;
+    }>;
+  };
 };
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -96,6 +125,210 @@ function isDerivedPillarDetail(v: unknown): v is DerivedPillarDetail {
 function parseDerivedBazi(v: unknown): DerivedBazi | null {
   if (!isRecord(v)) return null;
   return v as DerivedBazi;
+}
+
+function safeNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    const n = Number(value);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+function safeString(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return "";
+}
+
+function safeStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
+}
+
+function clampIndex(value: number, maxExclusive: number) {
+  if (maxExclusive <= 0) return 0;
+  return Math.max(0, Math.min(value, maxExclusive - 1));
+}
+
+function BaziFortunePanel({ derived }: { derived: DerivedBazi | null }) {
+  const decadeList = useMemo(() => derived?.decadeFortune?.list ?? [], [derived?.decadeFortune?.list]);
+  const startDate = safeString(derived?.decadeFortune?.startDate);
+  const startAge = safeNumber(derived?.decadeFortune?.startAge);
+
+  const nowYear = new Date().getFullYear();
+  const defaultDecadeIndex = useMemo(() => {
+    if (!decadeList.length) return 0;
+    const idx = decadeList.findIndex((d) => {
+      const sy = safeNumber(d.startYear);
+      const ey = safeNumber(d.endYear);
+      if (sy == null || ey == null) return false;
+      return nowYear >= sy && nowYear <= ey;
+    });
+    return idx >= 0 ? idx : 0;
+  }, [decadeList, nowYear]);
+
+  const [selectedDecadeIndex, setSelectedDecadeIndex] = useState(defaultDecadeIndex);
+
+  useEffect(() => {
+    setSelectedDecadeIndex(defaultDecadeIndex);
+  }, [defaultDecadeIndex]);
+
+  const selectedDecade = decadeList[clampIndex(selectedDecadeIndex, decadeList.length)];
+  const years = useMemo(() => selectedDecade?.years ?? [], [selectedDecade?.years]);
+
+  const defaultYearIndex = useMemo(() => {
+    if (!years.length) return 0;
+    const idx = years.findIndex((y) => safeNumber(y.year) === nowYear);
+    return idx >= 0 ? idx : 0;
+  }, [nowYear, years]);
+
+  const [selectedYearIndex, setSelectedYearIndex] = useState(defaultYearIndex);
+
+  useEffect(() => {
+    setSelectedYearIndex(defaultYearIndex);
+  }, [defaultYearIndex]);
+
+  const selectedYear = years[clampIndex(selectedYearIndex, years.length)];
+  const months = selectedYear?.months ?? [];
+
+  if (!decadeList.length) {
+    return (
+      <div className="bg-white border border-[#B37D56]/15 p-10 space-y-3 rounded-[4px] shadow-none">
+        <h3 className="text-[10px] font-bold text-[#B37D56] uppercase tracking-[0.3em] border-b border-[#B37D56]/15 pb-2">
+          运势推演
+        </h3>
+        <p className="text-[12px] text-[#2F2F2F]/40 chinese-font italic">暂无大运/流年/流月数据</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white border border-[#B37D56]/15 p-10 space-y-8 rounded-[4px] shadow-none">
+      <div className="flex flex-col gap-2">
+        <h3 className="text-[10px] font-bold text-[#B37D56] uppercase tracking-[0.3em] border-b border-[#B37D56]/15 pb-2">
+          运势推演
+        </h3>
+        <p className="text-[12px] text-[#2F2F2F]/40 chinese-font leading-relaxed">
+          起运：{startDate || "—"}
+          {startAge == null ? "" : `（${startAge}岁）`}
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-[9px] font-bold text-[#B37D56]/40 uppercase tracking-widest">大运</span>
+          <span className="text-[9px] text-[#2F2F2F]/30 chinese-font">
+            {safeString(selectedDecade?.startAge) && safeString(selectedDecade?.endAge)
+              ? `${safeString(selectedDecade?.startAge)}-${safeString(selectedDecade?.endAge)}岁`
+              : ""}
+          </span>
+        </div>
+        <div className="overflow-x-auto hideScrollbar border border-[#B37D56]/10 rounded-none">
+          <div className="min-w-max grid grid-flow-col auto-cols-[90px] bg-[#FAF7F2]/20">
+            {decadeList.map((d, idx) => {
+              const active = idx === selectedDecadeIndex;
+              const labelTop = `${safeString(d.startAge)}-${safeString(d.endAge)}岁`;
+              const labelMid = `${safeString(d.startYear)}`;
+              const labelGz = safeString(d.gz);
+              return (
+                <button
+                  key={`${labelGz}-${idx}`}
+                  type="button"
+                  onClick={() => setSelectedDecadeIndex(idx)}
+                  className={[
+                    "px-2 py-3 text-left border-r border-[#B37D56]/10 transition-colors rounded-[2px]",
+                    active ? "bg-white" : "bg-transparent hover:bg-white/60",
+                  ].join(" ")}
+                >
+                  <div className="text-[10px] text-[#2F2F2F]/40 font-bold tracking-widest">{labelTop}</div>
+                  <div className="mt-1 text-[10px] text-[#2F2F2F]/30 font-bold tracking-widest uppercase">{labelMid}</div>
+                  <div className="mt-2 text-[14px] text-[#A62121] chinese-font font-bold tracking-[0.2em]">
+                    {labelGz || "—"}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-[9px] font-bold text-[#B37D56]/40 uppercase tracking-widest">流年</span>
+          <span className="text-[9px] text-[#2F2F2F]/30 chinese-font">
+            {safeString(selectedYear?.year)} {safeString(selectedYear?.gz) ? `· ${safeString(selectedYear?.gz)}` : ""}
+          </span>
+        </div>
+        <div className="overflow-x-auto hideScrollbar border border-[#B37D56]/10 rounded-none">
+          <div className="min-w-max grid grid-flow-col auto-cols-[78px] bg-[#FAF7F2]/20">
+            {years.map((y, idx) => {
+              const active = idx === selectedYearIndex;
+              const yearNum = safeString(y.year);
+              const gz = safeString(y.gz);
+              const tenGod = safeString(y.stemTenGod);
+              return (
+                <button
+                  key={`${yearNum}-${idx}`}
+                  type="button"
+                  onClick={() => setSelectedYearIndex(idx)}
+                  className={[
+                    "px-2 py-3 text-left border-r border-[#B37D56]/10 transition-colors rounded-[2px]",
+                    active ? "bg-white" : "bg-transparent hover:bg-white/60",
+                  ].join(" ")}
+                >
+                  <div className="text-[10px] text-[#2F2F2F]/40 font-bold tracking-widest">{yearNum || "—"}</div>
+                  <div className="mt-2 text-[14px] text-[#2F2F2F] chinese-font font-bold tracking-[0.15em]">
+                    {gz || "—"}
+                  </div>
+                  <div className="mt-1 text-[10px] text-[#B37D56]/60 chinese-font">{tenGod}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 text-[11px] chinese-font text-[#2F2F2F]/60">
+          <div>旬：{safeString(selectedYear?.xun) || "—"}</div>
+          <div>空亡：{safeString(selectedYear?.kongWang) || "—"}</div>
+          <div>纳音：{safeString(selectedYear?.nayin) || "—"}</div>
+          <div>藏干：{safeStringArray(selectedYear?.branchHiddenStems).join("") || "—"}</div>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-[9px] font-bold text-[#B37D56]/40 uppercase tracking-widest">流月</span>
+          <span className="text-[9px] text-[#2F2F2F]/30 chinese-font">立春起月 · 12节</span>
+        </div>
+        <div className="overflow-x-auto hideScrollbar border border-[#B37D56]/10 rounded-none">
+          <div className="min-w-max grid grid-flow-col auto-cols-[92px] bg-[#FAF7F2]/20">
+            {months.map((m, idx) => {
+              const termName = safeString(m.termName);
+              const termDate = safeString(m.termDate);
+              const gz = safeString(m.gz);
+              const tenGod = safeString(m.stemTenGod);
+              return (
+                <div
+                  key={`${termName}-${idx}`}
+                  className="px-2 py-3 text-left border-r border-[#B37D56]/10 rounded-none"
+                >
+                  <div className="flex items-baseline justify-between gap-2">
+                    <div className="text-[10px] text-[#2F2F2F]/40 font-bold tracking-widest">{termName || "—"}</div>
+                    <div className="text-[10px] text-[#2F2F2F]/30 font-bold tracking-widest uppercase">{termDate}</div>
+                  </div>
+                  <div className="mt-2 text-[14px] text-[#2F2F2F] chinese-font font-bold tracking-[0.15em]">
+                    {gz || "—"}
+                  </div>
+                  <div className="mt-1 text-[10px] text-[#B37D56]/60 chinese-font">{tenGod}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 const transformToFullAnalysis = (params: {
@@ -326,6 +559,8 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       baziData: record.baziData,
     });
   }, [customer?.gender, record]);
+
+  const derived = useMemo(() => parseDerivedBazi(record?.baziData?.derived ?? null), [record?.baziData?.derived]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -602,38 +837,39 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         </div>
 
         <div className="lg:col-span-7 space-y-8">
-	          <div className="bg-white border border-[#B37D56]/15 p-10 space-y-10 rounded-[4px] shadow-none">
-	            <div className="space-y-6">
-	              <h3 className="text-[10px] font-bold text-[#B37D56] uppercase tracking-[0.3em] border-b border-[#B37D56]/15 pb-2">
-	                命局关系
-	              </h3>
-	              <div className="space-y-8">
-	                <div className="space-y-2">
-	                  <span className="text-[9px] font-bold text-[#B37D56]/40 uppercase tracking-widest">
-	                    天干留意
-	                  </span>
-	                  <div className="text-[13px] text-[#2F2F2F] chinese-font leading-relaxed font-bold border-l border-[#B37D56]/15 pl-3 space-y-1">
-	                    {analysis.tgNotes.length ? (
-	                      analysis.tgNotes.map((note: string, idx: number) => <div key={idx}>{note}</div>)
-	                    ) : (
-	                      <div className="text-[#2F2F2F]/30">（暂无）</div>
-	                    )}
-	                  </div>
-	                </div>
-	                <div className="space-y-2">
-	                  <span className="text-[9px] font-bold text-[#B37D56]/40 uppercase tracking-widest">
-	                    地支留意
-	                  </span>
-	                  <div className="text-[13px] text-[#2F2F2F] chinese-font leading-relaxed font-bold border-l border-[#B37D56]/15 pl-3 space-y-1">
-	                    {analysis.dzNotes.length ? (
-	                      analysis.dzNotes.map((note: string, idx: number) => <div key={idx}>{note}</div>)
-	                    ) : (
-	                      <div className="text-[#2F2F2F]/30">（暂无）</div>
-	                    )}
-	                  </div>
-	                </div>
-	              </div>
-	            </div>
+          <BaziFortunePanel derived={derived} />
+          <div className="bg-white border border-[#B37D56]/15 p-10 space-y-10 rounded-[4px] shadow-none">
+            <div className="space-y-6">
+              <h3 className="text-[10px] font-bold text-[#B37D56] uppercase tracking-[0.3em] border-b border-[#B37D56]/15 pb-2">
+                命局关系
+              </h3>
+              <div className="space-y-8">
+                <div className="space-y-2">
+                  <span className="text-[9px] font-bold text-[#B37D56]/40 uppercase tracking-widest">
+                    天干留意
+                  </span>
+                  <div className="text-[13px] text-[#2F2F2F] chinese-font leading-relaxed font-bold border-l border-[#B37D56]/15 pl-3 space-y-1">
+                    {analysis.tgNotes.length ? (
+                      analysis.tgNotes.map((note: string, idx: number) => <div key={idx}>{note}</div>)
+                    ) : (
+                      <div className="text-[#2F2F2F]/30">（暂无）</div>
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <span className="text-[9px] font-bold text-[#B37D56]/40 uppercase tracking-widest">
+                    地支留意
+                  </span>
+                  <div className="text-[13px] text-[#2F2F2F] chinese-font leading-relaxed font-bold border-l border-[#B37D56]/15 pl-3 space-y-1">
+                    {analysis.dzNotes.length ? (
+                      analysis.dzNotes.map((note: string, idx: number) => <div key={idx}>{note}</div>)
+                    ) : (
+                      <div className="text-[#2F2F2F]/30">（暂无）</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <div className="space-y-3">
               <h3 className="text-[10px] font-bold text-[#B37D56] uppercase tracking-[0.3em] border-b border-[#B37D56]/15 pb-2">
