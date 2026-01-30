@@ -28,13 +28,23 @@ function BaziEightCharChops({ baziData }: { baziData?: BaZiData }) {
   const chipClass =
     "w-7 h-7 rounded-full bg-[#B37D56]/70 text-white chinese-font font-bold text-[11px] leading-none flex items-center justify-center border border-black/5 group-hover:bg-[#A62121]/80 transition-colors";
 
+  const cells = [
+    { value: baziData.yearStem, key: "yearStem", label: "年干" },
+    { value: baziData.monthStem, key: "monthStem", label: "月干" },
+    { value: baziData.dayStem, key: "dayStem", label: "日干" },
+    { value: baziData.hourStem, key: "hourStem", label: "时干" },
+    { value: baziData.yearBranch, key: "yearBranch", label: "年支" },
+    { value: baziData.monthBranch, key: "monthBranch", label: "月支" },
+    { value: baziData.dayBranch, key: "dayBranch", label: "日支" },
+    { value: baziData.hourBranch, key: "hourBranch", label: "时支" },
+  ];
+
   return (
     <div className="shrink-0" aria-label={`八字：${eightChars}`}>
-      <div className="grid grid-cols-4 gap-x-1.5">
-        {pillars.map((p) => (
-          <span key={p.label} className={chipClass} aria-label={p.label}>
-            {p.top}
-            {p.bottom}
+      <div className="grid grid-cols-4 grid-rows-2 gap-x-1.5 gap-y-1">
+        {cells.map((c) => (
+          <span key={c.key} className={chipClass} aria-label={c.label}>
+            {c.value}
           </span>
         ))}
       </div>
