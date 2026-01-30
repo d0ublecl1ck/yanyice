@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Search, Calendar, ChevronRight, Hash, X } from "lucide-react";
@@ -8,6 +9,7 @@ import { Plus, Search, Calendar, ChevronRight, Hash, X } from "lucide-react";
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import { newCaseHref, recordAnalysisHref, recordEditHref } from "@/lib/caseLinks";
+import { zodiacInfoFromBranch } from "@/lib/zodiac";
 import { BaziEditView } from "../../bazi/_components/BaziEditView";
 
 export function CaseBazi() {
@@ -97,6 +99,7 @@ export function CaseBazi() {
               .map((record) => {
                 const customer = customers.find((c) => c.id === record.customerId);
                 const b = record.baziData;
+                const zodiac = zodiacInfoFromBranch(b?.yearBranch);
                 const editHref = recordEditHref("bazi", record.id);
                 const analysisHref = recordAnalysisHref("bazi", record.id);
                 return (
@@ -111,10 +114,20 @@ export function CaseBazi() {
                     className="bg-white flex items-start gap-4 group hover:bg-[#FAF7F2] transition-all p-6"
                   >
                     <div className="w-12 h-12 bg-[#B37D56]/5 flex items-center justify-center shrink-0">
-                      <Hash
-                        size={20}
-                        className="text-[#B37D56]/30 group-hover:text-[#A62121] transition-colors"
-                      />
+                      {zodiac ? (
+                        <Image
+                          src={zodiac.iconSrc}
+                          alt={`${b?.yearBranch}：${zodiac.nameCn}`}
+                          width={24}
+                          height={24}
+                          className="w-6 h-6 opacity-30 group-hover:opacity-100 transition-opacity"
+                        />
+                      ) : (
+                        <Hash
+                          size={20}
+                          className="text-[#B37D56]/30 group-hover:text-[#A62121] transition-colors"
+                        />
+                      )}
                     </div>
 
                     <div className="flex-1 min-w-0 space-y-4">
