@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { ANIMALS } from "@/lib/constants";
 import { geminiChat, type ChatMessage } from "@/lib/geminiService";
 import { paipanLiuyao } from "@/lib/liuyao/paipan";
+import { calcLiuyaoShenSha } from "@/lib/liuyao/shenSha";
 import { LiuyaoLineSvg } from "@/components/liuyao/LiuyaoLineSvg";
 import { getGanzhiFourPillars } from "@/lib/lunarGanzhi";
 import { useCaseStore } from "@/stores/useCaseStore";
@@ -89,6 +90,16 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     if (Number.isNaN(d.getTime())) return null;
     return getGanzhiFourPillars(d);
   }, [record?.liuyaoData?.date]);
+
+  const shenSha = useMemo(() => {
+    if (!paipan) return null;
+    const dayBranch = paipan.dayGanzhi?.[1] ?? null;
+    return calcLiuyaoShenSha({
+      dayStem: paipan.dayStem,
+      dayBranch,
+      monthBranch: paipan.monthBranch,
+    });
+  }, [paipan]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -370,17 +381,36 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           </div>
         </div>
 
-        <div className="lg:col-span-3 bg-white border border-[#B37D56]/15 p-8 space-y-8 rounded-[4px] shadow-none">
-          <h3 className="text-xs font-bold text-[#B37D56] uppercase border-b border-[#B37D56]/15 pb-2 tracking-[0.3em]">
-            断语简析
-          </h3>
-          <div className="space-y-4 text-[15px] chinese-font leading-relaxed">
-            <p className="border-l border-[#B37D56]/30 pl-4 font-bold text-[#2F2F2F]">
-              （占断模板）以用神、世应、动变为纲，结合月建日辰定旺衰。
-            </p>
-            <p className="border-l border-black/10 pl-4 text-[#4A4A4A]">
-              {record.notes?.trim() ? record.notes : "（暂无备注）"}
-            </p>
+        <div className="lg:col-span-3 bg-white border border-[#B37D56]/15 p-8 space-y-10 rounded-[4px] shadow-none">
+          <div className="space-y-4">
+            <h3 className="text-xs font-bold text-[#B37D56] uppercase border-b border-[#B37D56]/15 pb-2 tracking-[0.3em]">
+              神煞
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {(shenSha?.items ?? []).length ? (
+                (shenSha?.items ?? []).map((it, idx) => (
+                  <span
+                    key={`${it.name}-${it.branch}-${idx}`}
+                    className="inline-flex items-center px-2 py-1 border border-[#B37D56]/20 bg-[#FAF7F2] text-[#2F2F2F] font-bold rounded-[2px] text-xs chinese-font tracking-widest uppercase"
+                  >
+                    {it.name}—{it.branch}
+                  </span>
+                ))
+              ) : (
+                <p className="text-xs chinese-font text-[#6B6B6B]">（缺少月建/日辰，暂无法计算）</p>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-xs font-bold text-[#B37D56] uppercase border-b border-[#B37D56]/15 pb-2 tracking-[0.3em]">
+              断语简析
+            </h3>
+            <div className="space-y-4 text-[15px] chinese-font leading-relaxed">
+              {record.notes?.trim() ? (
+                <p className="border-l border-black/10 pl-4 text-[#4A4A4A]">{record.notes}</p>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
