@@ -86,6 +86,25 @@ export function AiRecognitionModal<T extends AiRecognizeTarget>({
       reader.readAsDataURL(file);
     });
 
+  const maybePasteImage = (e: React.ClipboardEvent) => {
+    if (isLoading) return false;
+    const dt = e.clipboardData;
+    if (!dt) return false;
+
+    const items = Array.from(dt.items ?? []);
+    const imageItem = items.find((it) => it.kind === "file" && it.type.startsWith("image/"));
+    const blob = imageItem?.getAsFile?.() ?? null;
+    if (!blob) return false;
+
+    const file = new File([blob], `clipboard-${Date.now()}.${blob.type.split("/")[1] || "png"}`, {
+      type: blob.type || "image/png",
+    });
+    setImageFile(file);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    toast.show("已从剪贴板粘贴图片", "success");
+    return true;
+  };
+
   if (!open) return null;
 
   return (
@@ -166,6 +185,9 @@ export function AiRecognitionModal<T extends AiRecognizeTarget>({
           rows={4}
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onPaste={(e) => {
+            if (maybePasteImage(e)) e.preventDefault();
+          }}
           placeholder="例如：1995年8月10日10点出生在北京，或粘贴一段命理描述..."
           className="w-full bg-white/60 p-4 border border-[#B37D56]/10 text-xs outline-none focus:border-[#A62121] transition-colors rounded-[4px]"
         />
@@ -196,6 +218,9 @@ export function AiRecognitionModal<T extends AiRecognizeTarget>({
         <button
           type="button"
           disabled={isLoading}
+          onPaste={(e) => {
+            if (maybePasteImage(e)) e.preventDefault();
+          }}
           onClick={() => fileInputRef.current?.click()}
           className="w-full border border-dashed border-[#B37D56]/20 bg-white/50 rounded-[4px] h-[180px] flex items-center justify-center text-center hover:border-[#A62121]/30 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
