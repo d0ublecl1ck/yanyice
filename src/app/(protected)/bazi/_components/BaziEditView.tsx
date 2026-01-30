@@ -1162,14 +1162,16 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
             </div>
           </div>
 
-          <div
-            className={`md:shrink-0 ${embedded ? "flex flex-col gap-2" : "grid grid-cols-2 gap-3 md:w-[260px] items-center"}`}
-          >
-            <button
-              type="button"
-              onClick={() => setBazi({ ...bazi, isDst: !bazi.isDst })}
-              className="w-full flex items-center gap-2 text-[10px] font-bold chinese-font tracking-widest text-[#2F2F2F]/40 hover:text-[#2F2F2F] transition-colors"
-            >
+	          <div
+	            className={`grid grid-cols-2 gap-3 items-center ${
+	              embedded ? "" : "md:w-[260px] md:shrink-0"
+	            }`}
+	          >
+	            <button
+	              type="button"
+	              onClick={() => setBazi({ ...bazi, isDst: !bazi.isDst })}
+	              className="w-full flex items-center gap-2 text-[10px] font-bold chinese-font tracking-widest text-[#2F2F2F]/40 hover:text-[#2F2F2F] transition-colors"
+	            >
               <div
                 className={`w-4 h-4 rounded-[1px] border flex items-center justify-center transition-all ${
                   bazi.isDst ? "bg-[#B37D56] border-[#B37D56]" : "border-[#B37D56]/20"
@@ -1191,10 +1193,10 @@ export function BaziEditView({ id, embedded = false }: { id?: string; embedded?:
               >
                 {bazi.isTrueSolarTime ? <Check size={10} className="text-white" /> : null}
               </div>
-              真太阳时
-            </button>
-          </div>
-        </div>
+	              真太阳时
+	            </button>
+	          </div>
+	        </div>
 
         <div
           className="flex items-center gap-3 cursor-pointer group"
