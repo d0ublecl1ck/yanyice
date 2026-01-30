@@ -11,6 +11,7 @@ import { paipanLiuyao } from "@/lib/liuyao/paipan";
 import { calcLiuyaoShenSha } from "@/lib/liuyao/shenSha";
 import { LiuyaoLineSvg } from "@/components/liuyao/LiuyaoLineSvg";
 import { getGanzhiFourPillars } from "@/lib/lunarGanzhi";
+import { formatLiuyaoExportText } from "@/lib/liuyao/export";
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -100,6 +101,30 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       monthBranch: paipan.monthBranch,
     });
   }, [paipan]);
+
+  const handleExport = async () => {
+    const exportText = formatLiuyaoExportText({
+      id,
+      subject: analysis?.subject ?? record?.subject ?? "卦例",
+      customerName,
+      solarDate: analysis?.solarDate ?? null,
+      monthBranch: analysis?.monthBranch ?? null,
+      dayBranch: analysis?.dayBranch ?? null,
+      notes: record?.notes ?? null,
+      fourPillars,
+      paipan,
+      shenSha,
+      chatHistory: history.map((m) => ({ role: m.role, text: m.text })),
+    });
+
+    try {
+      await navigator.clipboard.writeText(exportText);
+      showToast("已复制全部信息到剪切板", "success");
+    } catch (e) {
+      console.error(e);
+      showToast("复制失败，请检查浏览器剪切板权限", "error");
+    }
+  };
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -225,6 +250,12 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             className="text-[#B37D56] text-xs font-bold tracking-[0.2em] uppercase border border-[#B37D56]/20 px-4 py-2 rounded-[2px] hover:bg-[#B37D56]/5"
           >
             助手
+          </button>
+          <button
+            onClick={() => void handleExport()}
+            className="text-[#2F2F2F] text-xs font-bold tracking-[0.2em] uppercase border border-black/10 px-4 py-2 rounded-[2px] hover:bg-black/5"
+          >
+            导出
           </button>
           <Link
             href={`/liuyao/edit/${encodeURIComponent(id)}`}
