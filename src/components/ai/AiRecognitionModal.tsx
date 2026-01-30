@@ -154,9 +154,7 @@ export function AiRecognitionModal<T extends AiRecognizeTarget>({
               {isLoading ? "推演中..." : "开始智能识别"}
             </ModalPrimaryButton>
           </div>
-          <div className="text-[9px] text-[#2F2F2F]/25 font-bold tracking-[0.25em] uppercase text-center">
-            Powered by Gemini Engine
-          </div>
+          {/* footer note removed */}
         </div>
       }
     >

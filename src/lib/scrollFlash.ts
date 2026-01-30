@@ -1,10 +1,3 @@
-const FLASH_CLASSES = [
-  "ring-2",
-  "ring-[#A62121]/30",
-  "bg-[#A62121]/[0.03]",
-  "transition-colors",
-] as const;
-
 export function scrollAndFlash(el: HTMLElement | null, ms = 1600) {
   if (!el) return;
   try {
@@ -12,9 +5,25 @@ export function scrollAndFlash(el: HTMLElement | null, ms = 1600) {
   } catch {
     // ignore
   }
-  for (const cls of FLASH_CLASSES) el.classList.add(cls);
-  window.setTimeout(() => {
-    for (const cls of FLASH_CLASSES) el.classList.remove(cls);
-  }, ms);
-}
 
+  // Prefer native focus styling over artificial highlights to match the dossier aesthetic.
+  if (
+    el instanceof HTMLInputElement ||
+    el instanceof HTMLTextAreaElement ||
+    el instanceof HTMLSelectElement ||
+    el.isContentEditable
+  ) {
+    try {
+      el.focus({ preventScroll: true });
+    } catch {
+      // ignore
+    }
+    window.setTimeout(() => {
+      try {
+        el.blur();
+      } catch {
+        // ignore
+      }
+    }, ms);
+  }
+}

@@ -12,7 +12,6 @@ import { useAiConfigStore } from "@/stores/useAiConfigStore";
 import { useQuoteStore } from "@/stores/useQuoteStore";
 import { ApiError } from "@/lib/apiClient";
 import {
-  getDefaultAiConfig,
   sanitizeAiApiKey,
   sanitizeAiVendor,
 } from "@/lib/aiConfig";
@@ -54,9 +53,6 @@ export default function Page() {
   const bootstrapQuotes = useQuoteStore((s) => s.bootstrap);
   const saveQuoteLines = useQuoteStore((s) => s.saveQuoteLines);
   const resetSystemQuotes = useQuoteStore((s) => s.resetSystemQuotes);
-
-  const defaultAiConfig = useMemo(() => getDefaultAiConfig(), []);
-
   const [vendorDraft, setVendorDraft] = useState(aiVendor);
   const [modelDraft, setModelDraft] = useState(aiModel);
   const [apiKeyDraft, setApiKeyDraft] = useState("");
@@ -96,16 +92,6 @@ export default function Page() {
   const handleLogout = () => {
     logout();
     router.replace("/login");
-  };
-
-  const handleResetAiConfig = () => {
-    setVendorDraft(defaultAiConfig.vendor);
-    setModelDraft(defaultAiConfig.model);
-    setApiKeyDraft("");
-    void updateModel(defaultAiConfig.model).then(
-      () => toast("已恢复默认模型配置", "info"),
-      () => toast("恢复默认失败，请稍后重试", "warning"),
-    );
   };
 
   const vendorOptions = useMemo<Array<SelectOption<string>>>(
@@ -235,14 +221,6 @@ export default function Page() {
               </div>
               <h3 className="font-bold text-lg text-[#2F2F2F] chinese-font">AI 配置</h3>
             </div>
-
-            <button
-              onClick={handleResetAiConfig}
-              className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-[#B37D56]/20 text-[#2F2F2F] font-bold text-xs tracking-widest hover:bg-[#FAF7F2] transition-all chinese-font rounded-[2px]"
-              title="恢复默认 AI 配置"
-            >
-              恢复默认
-            </button>
           </div>
 
           <div className="space-y-4">
@@ -308,14 +286,14 @@ export default function Page() {
                 />
                 <button
                   onClick={handleSaveApiKey}
-                  className="h-10 px-4 bg-[#A62121] text-white text-xs font-bold tracking-widest hover:bg-[#8B1A1A] transition-colors rounded-[2px] chinese-font"
+                  className="h-10 min-w-20 px-5 bg-[#A62121] text-white text-xs font-bold tracking-[0.2em] whitespace-nowrap hover:bg-[#8B1A1A] transition-colors rounded-[2px] chinese-font shrink-0"
                   disabled={aiStatus === "loading"}
                 >
                   保存
                 </button>
                 <button
                   onClick={() => setIsClearOpen(true)}
-                  className="h-10 px-4 bg-white border border-[#A62121]/20 text-[#A62121] text-xs font-bold tracking-widest hover:bg-[#A62121] hover:text-white transition-all rounded-[2px] chinese-font"
+                  className="h-10 min-w-20 px-5 bg-white border border-[#A62121]/20 text-[#A62121] text-xs font-bold tracking-[0.2em] whitespace-nowrap hover:bg-[#A62121] hover:text-white transition-all rounded-[2px] chinese-font shrink-0"
                   disabled={!aiHasApiKey || aiStatus === "loading"}
                 >
                   清除

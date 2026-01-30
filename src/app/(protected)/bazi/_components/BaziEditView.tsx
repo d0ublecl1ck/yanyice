@@ -22,6 +22,7 @@ import type { AiRecognizeBaziResult } from "@/lib/aiRecognition";
 import { scrollAndFlash } from "@/lib/scrollFlash";
 import { loadLocationPickerSchema, formatSelection } from "@/lib/locationData";
 import { filterCities, filterDistricts, filterProvinces, type LocationNode } from "@/lib/locationSearch";
+import { resolveLocationIdsFromText } from "@/lib/locationResolve";
 import {
   deriveBaziPickerFromSolar,
   deriveBaziPickerFromSolarTime,
@@ -168,10 +169,12 @@ const LocationPickerModal = ({
   isOpen,
   onClose,
   onConfirm,
+  initialLocation,
 }: {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (loc: string) => void;
+  initialLocation?: string;
 }) => {
   const [regionType, setRegionType] = useState<"domestic" | "overseas">("domestic");
   const [schema, setSchema] = useState<Awaited<ReturnType<typeof loadLocationPickerSchema>> | null>(null);
@@ -193,8 +196,32 @@ const LocationPickerModal = ({
 
   useEffect(() => {
     if (!isOpen) return;
+    if (!initialLocation) return;
+    const trimmed = initialLocation.trim();
+    if (!trimmed) return;
+
+    // Lightweight heuristic: if it contains latin letters and no CJK, prefer overseas schema.
+    const hasLatin = /[A-Za-z]/.test(trimmed);
+    const hasCjk = /[\u4e00-\u9fff]/.test(trimmed);
+    if (hasLatin && !hasCjk) setRegionType("overseas");
+  }, [initialLocation, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
     setQuery("");
   }, [isOpen, regionType]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!schema) return;
+    const trimmed = (initialLocation ?? "").trim();
+    if (!trimmed) return;
+
+    const resolved = resolveLocationIdsFromText(schema, trimmed);
+    if (resolved.level1Id) setLevel1Id(resolved.level1Id);
+    if (resolved.level2Id) setLevel2Id(resolved.level2Id);
+    if (resolved.level3Id) setLevel3Id(resolved.level3Id);
+  }, [initialLocation, isOpen, schema]);
 
   const filteredProvinces = useMemo(
     () => (schema ? filterProvinces(schema.hierarchy, query) : []),
@@ -1488,6 +1515,7 @@ export function BaziEditView({
         isOpen={showLocPicker}
         onClose={() => setShowLocPicker(false)}
         onConfirm={setLocation}
+        initialLocation={location}
       />
     </div>
   );
