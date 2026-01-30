@@ -133,20 +133,8 @@ export function CreateLiuyaoRecordModal({
 
 	        <div className="min-h-0 flex-1 overflow-y-auto p-6 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
 	          <div className="space-y-8">
-	            <section className="space-y-6">
-	              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
-	                <div className="space-y-2 group">
-	                  <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
-                    关联客户（可选）
-                  </label>
-                  <Select
-                    value={customerId}
-                    onValueChange={(v) => setCustomerId(String(v))}
-                    emptyLabel="-- 不绑定 --"
-                    options={customers.map((c) => ({ value: c.id, label: c.name }))}
-                  />
-                </div>
-
+            <section className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
                 <div className="space-y-2 group">
                   <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
                     咨询主题
@@ -157,6 +145,18 @@ export function CreateLiuyaoRecordModal({
                     onChange={(e) => setSubject(e.target.value)}
                     placeholder="如：问来年财运..."
                     className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-2 outline-none focus:border-[#A62121] transition-colors chinese-font font-bold rounded-none"
+                  />
+                </div>
+
+                <div className="space-y-2 group">
+                  <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+                    关联客户（可选）
+                  </label>
+                  <Select
+                    value={customerId}
+                    onValueChange={(v) => setCustomerId(String(v))}
+                    emptyLabel="-- 不绑定 --"
+                    options={customers.map((c) => ({ value: c.id, label: c.name }))}
                   />
                 </div>
               </div>
