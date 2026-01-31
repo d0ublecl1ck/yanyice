@@ -12,6 +12,7 @@ import { AiRecognitionModal } from "@/components/ai/AiRecognitionModal";
 import { scrollAndFlash } from "@/lib/scrollFlash";
 import { calcLiuyaoGanzhiFromIso } from "@/lib/lunarGanzhi";
 import { LineType, type LiuyaoGender, type LiuYaoData } from "@/lib/types";
+import { getMovingMarkText, isLineMoving } from "@/lib/liuyao/lineType";
 import { useAiConfigStore } from "@/stores/useAiConfigStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useCaseStore } from "@/stores/useCaseStore";
@@ -410,11 +411,21 @@ export function CreateLiuyaoRecordModal({
           <h3 className="text-center text-[10px] text-[#B37D56] mb-6 tracking-[0.5em] font-bold uppercase">
             六爻（自下而上）
           </h3>
+          <div className="grid grid-cols-[3rem_minmax(0,1fr)_3rem_7rem] items-center gap-3 pb-2 px-3">
+            <div />
+            <div />
+            <div className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest text-center">
+              发动
+            </div>
+            <div className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest text-center">
+              爻
+            </div>
+          </div>
           <div className="flex flex-col-reverse gap-3 items-stretch">
             {lines.map((line, idx) => (
               <div
                 key={idx}
-                className="grid grid-cols-[3rem_minmax(0,1fr)_7rem] items-center gap-3 py-2 px-3 border border-transparent hover:bg-black/[0.01]"
+                className="grid grid-cols-[3rem_minmax(0,1fr)_3rem_7rem] items-center gap-3 py-2 px-3 border border-transparent hover:bg-black/[0.01]"
               >
                 <span className="text-[9px] font-bold text-[#2F2F2F]/20 chinese-font">
                   {LINE_LABELS[idx] ?? `爻${idx + 1}`}
@@ -425,7 +436,17 @@ export function CreateLiuyaoRecordModal({
                     className="h-6 w-full max-w-[160px]"
                     lineColor="#2F2F2F"
                     markColor="#A62121"
+                    showMark={false}
                   />
+                </div>
+                <div className="flex items-center justify-center">
+                  {isLineMoving(line) ? (
+                    <span className="inline-flex items-center justify-center w-8 h-8 border border-[#A62121] bg-[#FAF7F2] text-[#A62121] text-lg font-black rounded-[2px]">
+                      {getMovingMarkText(line)}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-bold text-[#2F2F2F]/20">—</span>
+                  )}
                 </div>
                 <Select
                   aria-label={`第 ${idx + 1} 爻`}
