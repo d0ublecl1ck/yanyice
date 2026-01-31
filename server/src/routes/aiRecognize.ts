@@ -85,7 +85,7 @@ export async function aiRecognizeRoutes(app: FastifyInstance) {
         tags: ["ai"],
         security: [{ bearerAuth: [] }],
         body: RecognizeBody,
-        response: { 200: Type.Any(), 400: ErrorResponse, 401: ErrorResponse },
+        response: { 200: Type.Any(), 400: ErrorResponse, 401: ErrorResponse, 429: ErrorResponse },
       },
       onRequest: [app.authenticate],
     },
