@@ -120,15 +120,27 @@ export async function aiRecognizeRoutes(app: FastifyInstance) {
         parts.push({ type: "text", text: trimmedText });
       }
 
-      const result = await zhipuChatJson({
-        vendor: cfg.vendor,
-        apiKey,
-        model: cfg.model.trim(),
-        messages: [
-          { role: "system", content: instructionByTarget[body.target] },
-          { role: "user", content: parts },
-        ],
-      });
+      let result: unknown;
+      try {
+        result = await zhipuChatJson({
+          vendor: cfg.vendor,
+          apiKey,
+          model: cfg.model.trim(),
+          messages: [
+            { role: "system", content: instructionByTarget[body.target] },
+            { role: "user", content: parts },
+          ],
+        });
+      } catch (e) {
+        const err = e as { code?: string; statusCode?: number; message?: string };
+        if (err?.code === "ZHIPU_RATE_LIMIT" || err?.statusCode === 429) {
+          request.log.warn({ err }, "aiRecognize: upstream rate limited");
+          return reply
+            .status(429)
+            .send({ code: "AI_RATE_LIMIT", message: "当前 AI 请求过多，系统已自动重试仍失败，请稍后再试" });
+        }
+        throw e;
+      }
 
       if (body.target === "liuyao" && result && typeof result === "object" && !Array.isArray(result)) {
         const obj = result as Record<string, unknown>;
