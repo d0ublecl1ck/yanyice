@@ -11,8 +11,12 @@ import { LiuyaoLineSvg } from "@/components/liuyao/LiuyaoLineSvg";
 import { AiRecognitionModal } from "@/components/ai/AiRecognitionModal";
 import { scrollAndFlash } from "@/lib/scrollFlash";
 import { calcLiuyaoGanzhiFromIso } from "@/lib/lunarGanzhi";
-import { LineType, type LiuyaoGender, type LiuYaoData } from "@/lib/types";
 import { getMovingMarkText, isLineMoving } from "@/lib/liuyao/lineType";
+import {
+  parseLiuyaoDateTimeFromIsoLike,
+  parseLiuyaoDateTimeFromSolarLike,
+} from "@/lib/liuyao/recognitionTime";
+import { LineType, type LiuyaoGender, type LiuYaoData } from "@/lib/types";
 import { useAiConfigStore } from "@/stores/useAiConfigStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useCaseStore } from "@/stores/useCaseStore";
@@ -218,6 +222,9 @@ export function CreateLiuyaoRecordModal({
         target="liuyao"
         onClose={() => setAiOpen(false)}
         onRecognized={(result) => {
+          // Helpful when user reports "recognized but missing time/lines" issues.
+          console.log("[liuyao-ai-recognize] raw result:", result);
+
           const nextSubject = typeof result.subject === "string" ? result.subject.trim() : "";
           if (!nextSubject) {
             showToast("识别失败：未识别到问事主题（必填）", "error");
@@ -231,35 +238,32 @@ export function CreateLiuyaoRecordModal({
           }
 
           const maybeIso = typeof result.iso === "string" ? result.iso.trim() : "";
-          const solar = (result as { solar?: unknown }).solar as
-            | { y: number; m: number; d: number; h: number; min: number }
-            | undefined;
+          const solar = (result as { solar?: unknown }).solar as unknown;
 
           let nextDateIso: string | null = null;
           let nextTimeHHmm: string | null = null;
 
           if (maybeIso) {
-            const d = new Date(maybeIso);
-            if (!Number.isNaN(d.getTime())) {
-              nextDateIso = d.toISOString();
-              nextTimeHHmm = isoTimeToHHmm(d.toISOString());
+            const parsed = parseLiuyaoDateTimeFromIsoLike(maybeIso);
+            if (parsed) {
+              nextDateIso = parsed.dateIso;
+              nextTimeHHmm = parsed.timeHHmm;
             }
-          } else if (
-            solar &&
-            Number.isFinite(solar.y) &&
-            Number.isFinite(solar.m) &&
-            Number.isFinite(solar.d) &&
-            Number.isFinite(solar.h) &&
-            Number.isFinite(solar.min)
-          ) {
-            const d = new Date(solar.y, solar.m - 1, solar.d, solar.h, solar.min, 0, 0);
-            if (!Number.isNaN(d.getTime())) {
-              nextDateIso = d.toISOString();
-              nextTimeHHmm = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+          } else {
+            const parsed = parseLiuyaoDateTimeFromSolarLike(solar);
+            if (parsed) {
+              nextDateIso = parsed.dateIso;
+              nextTimeHHmm = parsed.timeHHmm;
             }
           }
 
           if (!nextDateIso || !nextTimeHHmm) {
+            console.log(
+              "[liuyao-ai-recognize] missing time. iso:",
+              result.iso,
+              "solar:",
+              (result as { solar?: unknown }).solar,
+            );
             showToast("识别失败：未识别到起卦时间（需精确到分钟）", "error");
             return false;
           }
