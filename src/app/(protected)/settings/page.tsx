@@ -44,6 +44,7 @@ export default function Page() {
   const aiHasApiKey = useAiConfigStore((s) => s.hasApiKey);
   const aiStatus = useAiConfigStore((s) => s.status);
   const bootstrapAi = useAiConfigStore((s) => s.bootstrap);
+  const updateVendor = useAiConfigStore((s) => s.updateVendor);
   const updateModel = useAiConfigStore((s) => s.updateModel);
   const saveApiKey = useAiConfigStore((s) => s.saveApiKey);
   const clearApiKey = useAiConfigStore((s) => s.clearApiKey);
@@ -229,7 +230,7 @@ export default function Page() {
                 提示
               </p>
               <p className="text-xs text-[#2F2F2F]/60 chinese-font">
-                当前仅支持 {selectedVendor?.label ?? "AI"}。这里用于配置「厂家」与「模型」的默认值。
+                这里用于配置「提供商」与「模型」的默认值。
                 配置保存到服务端账户下，API Key 不会在前端回显。
               </p>
             </div>
@@ -243,15 +244,19 @@ export default function Page() {
                 options={vendorOptions}
                 variant="box"
                 className="h-10 px-3 text-sm chinese-font font-bold rounded-none"
-                disabled
                 onValueChange={(next) => {
                   const nextVendor = sanitizeAiVendor(String(next));
                   if (!nextVendor) {
-                    toast("厂家不能为空，且最多 48 字", "warning");
+                    toast("提供商不能为空，且最多 48 字", "warning");
                     return;
                   }
+                  if (nextVendor === aiVendor) return;
                   setVendorDraft(nextVendor);
                   setModelDraft("");
+                  void updateVendor(nextVendor).then(
+                    () => toast("提供商已更新", "success"),
+                    () => toast("提供商更新失败，请稍后重试", "warning"),
+                  );
                 }}
               />
             </div>

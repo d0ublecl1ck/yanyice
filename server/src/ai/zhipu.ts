@@ -1,20 +1,5 @@
-import type { AiVendor } from "@prisma/client";
-
-export type ZhipuRole = "system" | "user" | "assistant";
-
-export type ZhipuMessage =
-  | { role: ZhipuRole; content: string }
-  | {
-      role: ZhipuRole;
-      content: Array<{ type: "text"; text: string } | { type: "image_url"; image_url: { url: string } }>;
-    };
-
-export type ZhipuChatRequest = {
-  vendor: AiVendor;
-  apiKey: string;
-  model: string;
-  messages: ZhipuMessage[];
-};
+import type { AiChatRequest } from "./types";
+import { extractFirstJsonObject } from "./extractJson";
 
 type ZhipuRateLimitError = Error & { code: "ZHIPU_RATE_LIMIT"; statusCode: 429 };
 
@@ -38,27 +23,7 @@ const toRateLimitError = (message: string): ZhipuRateLimitError => {
   return err;
 };
 
-function extractFirstJsonObject(text: string): unknown {
-  const s = text.trim();
-  if (s.startsWith("{") || s.startsWith("[")) {
-    try {
-      return JSON.parse(s);
-    } catch {
-      // fallthrough
-    }
-  }
-
-  const start = s.indexOf("{");
-  const end = s.lastIndexOf("}");
-  if (start >= 0 && end > start) {
-    const candidate = s.slice(start, end + 1);
-    return JSON.parse(candidate);
-  }
-
-  throw new Error("NO_JSON");
-}
-
-export async function zhipuChat(params: ZhipuChatRequest): Promise<string> {
+export async function zhipuChat(params: AiChatRequest): Promise<string> {
   if (params.vendor !== "zhipu") throw new Error("UNSUPPORTED_VENDOR");
   const url = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
   const res = await fetch(url, {
@@ -90,7 +55,7 @@ export async function zhipuChat(params: ZhipuChatRequest): Promise<string> {
   return json?.choices?.[0]?.message?.content ?? "";
 }
 
-export async function zhipuChatJson(params: ZhipuChatRequest): Promise<unknown> {
+export async function zhipuChatJson(params: AiChatRequest): Promise<unknown> {
   const maxAttempts = 3;
   let lastErr: unknown = null;
 

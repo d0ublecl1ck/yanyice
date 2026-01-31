@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { Type, type Static } from "@sinclair/typebox";
 
 import { getUserAiApiKey, getUserAiConfig } from "../ai/userAiConfig";
-import { zhipuChat } from "../ai/zhipu";
+import { aiChat } from "../ai/chat";
 
 const ErrorResponse = Type.Object({
   code: Type.String(),
@@ -52,7 +52,7 @@ export async function aiChatRoutes(app: FastifyInstance) {
         return reply.status(400).send({ code: "AI_API_KEY_REQUIRED", message: "请先在设置中配置 API Key" });
       }
 
-      const text = await zhipuChat({
+      const text = await aiChat({
         vendor: cfg.vendor,
         apiKey,
         model: cfg.model.trim(),
@@ -69,4 +69,3 @@ export async function aiChatRoutes(app: FastifyInstance) {
     },
   );
 }
-

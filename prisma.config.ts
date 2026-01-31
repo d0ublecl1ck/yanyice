@@ -1,4 +1,3 @@
-import { defineConfig } from "prisma/config";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -21,11 +20,13 @@ function normalizeDatabaseUrl(databaseUrl: string): string {
   return `file:${absolutePath}${query ? `?${query}` : ""}`;
 }
 
-export default defineConfig({
+const prismaConfig = {
   schema: "server/prisma/schema.prisma",
   datasource: {
     url: normalizeDatabaseUrl(
       process.env.DATABASE_URL ?? `file:${path.resolve("/Users/d0ublecl1ck/d0ublecl1ck_pkm/备份", "baghdad-v1.db")}`,
     ),
   },
-});
+};
+
+export default prismaConfig;

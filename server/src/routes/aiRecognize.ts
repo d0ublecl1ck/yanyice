@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { Type, type Static } from "@sinclair/typebox";
 
 import { getUserAiApiKey, getUserAiConfig } from "../ai/userAiConfig";
-import { zhipuChatJson } from "../ai/zhipu";
+import { aiChatJson } from "../ai/chat";
 import { deriveLinesFromHexagramNames, parseHexagramPairFromText } from "../liuyao/recognitionHexagram";
 import { parseLiuyaoIsoFromText } from "../liuyao/recognitionTime";
 
@@ -122,7 +122,7 @@ export async function aiRecognizeRoutes(app: FastifyInstance) {
 
       let result: unknown;
       try {
-        result = await zhipuChatJson({
+        result = await aiChatJson({
           vendor: cfg.vendor,
           apiKey,
           model: cfg.model.trim(),
@@ -133,7 +133,7 @@ export async function aiRecognizeRoutes(app: FastifyInstance) {
         });
       } catch (e) {
         const err = e as { code?: string; statusCode?: number; message?: string };
-        if (err?.code === "ZHIPU_RATE_LIMIT" || err?.statusCode === 429) {
+        if (err?.statusCode === 429 || err?.code === "ZHIPU_RATE_LIMIT" || err?.code === "OPENAI_RATE_LIMIT") {
           request.log.warn({ err }, "aiRecognize: upstream rate limited");
           return reply
             .status(429)
@@ -206,7 +206,7 @@ export async function aiRecognizeRoutes(app: FastifyInstance) {
             );
 
             try {
-              const fallback = await zhipuChatJson({
+              const fallback = await aiChatJson({
                 vendor: cfg.vendor,
                 apiKey,
                 model: cfg.model.trim(),

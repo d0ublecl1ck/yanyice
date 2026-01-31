@@ -7,7 +7,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 type LoadStatus = "idle" | "loading" | "ready" | "error";
 
 type ServerAiConfig = {
-  vendor: "zhipu";
+  vendor: "zhipu" | "openai";
   model: string;
   hasApiKey: boolean;
 };
@@ -19,6 +19,7 @@ interface AiConfigState {
   status: LoadStatus;
 
   bootstrap: () => Promise<void>;
+  updateVendor: (vendor: string) => Promise<void>;
   updateModel: (model: string) => Promise<void>;
   saveApiKey: (apiKey: string) => Promise<void>;
   clearApiKey: () => Promise<void>;
@@ -55,6 +56,30 @@ export const useAiConfigStore = create<AiConfigState>((set, get) => ({
       const cfg = await apiFetch<ServerAiConfig>("/api/ai/config", {
         method: "GET",
         accessToken: auth.accessToken,
+      });
+      set({ vendor: cfg.vendor, model: cfg.model, hasApiKey: cfg.hasApiKey, status: "ready" });
+    } catch (err) {
+      if (isUnauthorized(err)) {
+        set({ vendor: DEFAULT.vendor, model: DEFAULT.model, hasApiKey: false, status: "idle" });
+        return;
+      }
+      set({ vendor: prev.vendor, model: prev.model, hasApiKey: prev.hasApiKey, status: "error" });
+      throw err;
+    }
+  },
+
+  updateVendor: async (vendor) => {
+    const auth = getAuthContext();
+    if (!auth) throw new Error("未登录");
+    const next = vendor.trim();
+
+    const prev = get();
+    set({ status: "loading" });
+    try {
+      const cfg = await apiFetch<ServerAiConfig>("/api/ai/config", {
+        method: "PUT",
+        accessToken: auth.accessToken,
+        body: JSON.stringify({ vendor: next }),
       });
       set({ vendor: cfg.vendor, model: cfg.model, hasApiKey: cfg.hasApiKey, status: "ready" });
     } catch (err) {
@@ -138,4 +163,3 @@ export const useAiConfigStore = create<AiConfigState>((set, get) => ({
     }
   },
 }));
-
