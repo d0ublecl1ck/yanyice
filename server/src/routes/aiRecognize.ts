@@ -3,6 +3,7 @@ import { Type, type Static } from "@sinclair/typebox";
 
 import { getUserAiApiKey, getUserAiConfig } from "../ai/userAiConfig";
 import { zhipuChatJson } from "../ai/zhipu";
+import { parseLiuyaoIsoFromText } from "../liuyao/recognitionTime";
 
 const ErrorResponse = Type.Object({
   code: Type.String(),
@@ -114,6 +115,17 @@ export async function aiRecognizeRoutes(app: FastifyInstance) {
           { role: "user", content: parts },
         ],
       });
+
+      if (body.target === "liuyao" && trimmedText && result && typeof result === "object" && !Array.isArray(result)) {
+        const obj = result as Record<string, unknown>;
+        const hasIso = typeof obj.iso === "string" && obj.iso.trim().length > 0;
+        const hasSolar = obj.solar && typeof obj.solar === "object";
+
+        if (!hasIso && !hasSolar) {
+          const fallbackIso = parseLiuyaoIsoFromText(trimmedText);
+          if (fallbackIso) obj.iso = fallbackIso;
+        }
+      }
 
       return result;
     },

@@ -222,6 +222,9 @@ export function CreateLiuyaoRecordModal({
         target="liuyao"
         onClose={() => setAiOpen(false)}
         onRecognized={(result) => {
+          // Helpful when user reports "recognized but missing time/lines" issues.
+          console.log("[liuyao-ai-recognize] raw result:", result);
+
           const nextSubject = typeof result.subject === "string" ? result.subject.trim() : "";
           if (!nextSubject) {
             showToast("识别失败：未识别到问事主题（必填）", "error");
@@ -255,6 +258,12 @@ export function CreateLiuyaoRecordModal({
           }
 
           if (!nextDateIso || !nextTimeHHmm) {
+            console.log(
+              "[liuyao-ai-recognize] missing time. iso:",
+              result.iso,
+              "solar:",
+              (result as { solar?: unknown }).solar,
+            );
             showToast("识别失败：未识别到起卦时间（需精确到分钟）", "error");
             return false;
           }
