@@ -13,14 +13,15 @@ const ErrorResponse = Type.Object({
 
 const liuyaoFallbackFromImageInstruction = `
 你是一个专门从六爻截图中“抠字段”的识别器。
-你的任务：只从图片中提取以下字段，并输出 JSON（不要输出额外文字）。
+目标：只做信息抽取，用于填表；允许多次抽取补全：本次能确定哪项就输出哪项；看不到就不要输出该字段；不要编造。
 
-字段：
-1) 起卦时间（必填，精确到分钟）：优先输出 iso（如 2025-01-01T10:30:00+08:00），或输出 solar：y,m,d,h,min（二选一，至少一个）
-2) 本卦与变卦（可选，但尽量）：baseHexagramName / changedHexagramName（例如：地水师 / 天地否）
-3) 若能判断动爻，也可直接输出 lines（可选）：0=少阳,1=少阴,2=老阳（动）,3=老阴（动），顺序从下往上（初爻到上爻）
+请尽量从图片里提取（任意项即可）：
+1) time.gregorian：{ date:"YYYY-MM-DD", time:"HH:mm", timezone:"UTC+8"(可省略) }
+2) time.ganzhi：{ year, month, day, hour }（可只给部分）
+3) pan.hexagram：{ original:"本卦名", changed:"变卦名"(可省略) }
+4) pan.lines：6个爻，从初爻(最下)到上爻(最上)，每个值只能是：老阴/老阳/少阴/少阳
 
-提示：截图里常见字段名有“日期/起卦时间/本卦/变卦/动爻”。
+只输出 JSON，不要输出额外文字。
 `.trim();
 
 const RecognizeBody = Type.Object({
@@ -51,16 +52,24 @@ const instructionByTarget: Record<RecognizeBodyType["target"], string> = {
 只输出 JSON，不要输出额外文字。
 `.trim(),
   liuyao: `
-你是一个专业的六爻排盘助手。你的任务是从用户的文本描述与/或卦例图片中提取出结构化的六爻数据。
+你是“六爻盘信息抽取助手”。目标：从用户提供的文字与/或图片中抽取可用于填表的信息。
+允许多次抽取补全：本次能确定哪项就输出哪项；看不到就不要输出该字段；不要编造。
 
-六爻数据包括：
-1) 问事主题（subject，必填）
-2) 起卦时间（必填，精确到分钟）：优先输出 iso（如 2025-01-01T10:30:00+08:00），或输出 solar：y,m,d,h,min（二选一，至少一个）
-2.1) 若文本出现“本卦/变卦”或类似“地水师变天地否”，请尽量输出 baseHexagramName 与 changedHexagramName（可选，但建议）。
-3) 6个爻的状态（lines，可选）：0=少阳, 1=少阴, 2=老阳（动）, 3=老阴（动）。顺序必须是从下往上（初爻到上爻）。
-4) 若仅识别到四柱，可输出 fourPillars（8字或带空格），但仍应尽量给出起卦时间到分钟。
+请尽量抽取（任意项即可）：
+1) time（时间提取，支持两类）
+   - time.gregorian：{ date:"YYYY-MM-DD", time:"HH:mm", timezone:"UTC+8"(可省略) }
+   - time.ganzhi：{ year, month, day, hour }（可只给部分）
+2) pan（盘面提取，两种方式任选其一或同时给出）
+   - pan.lines：6个爻，从初爻(最下)到上爻(最上)，每个值只能是：老阴/老阳/少阴/少阳
+   - pan.hexagram：{ original:"本卦名", changed:"变卦名"(可省略) }
+3) subject：问事描述（可省略）
+4) gender：只在输入明确出现时提取；输出只允许：男 / 女 / 不详
+5) topic：从问事语境归类（如：感情/婚姻、寻物、事业、财运、健康、学业、出行、诉讼、家宅、其他）
+6) tags：只输出 1 个 tag，格式必须为「xx卦」（例如：感情卦 / 寻物卦 / 事业卦 / 财运卦 / 健康卦 / 学业卦 / 出行卦 / 诉讼卦 / 家宅卦 / 其他卦）
 
-只输出 JSON，不要输出额外文字。
+输出要求：
+- 只输出 JSON，不要输出额外文字。
+- 缺失字段不要输出（不要填 null）。
 `.trim(),
   customer: `
 你是一个专业的客户信息录入助手。
@@ -147,14 +156,55 @@ export async function aiRecognizeRoutes(app: FastifyInstance) {
         const hasIso = typeof obj.iso === "string" && obj.iso.trim().length > 0;
         const hasSolar = obj.solar && typeof obj.solar === "object";
 
-        if (trimmedText && !hasIso && !hasSolar) {
+        const timeObj = obj.time && typeof obj.time === "object" ? (obj.time as Record<string, unknown>) : null;
+        const gregorianObj =
+          timeObj?.gregorian && typeof timeObj.gregorian === "object"
+            ? (timeObj.gregorian as Record<string, unknown>)
+            : null;
+        const hasGregorian =
+          Boolean(gregorianObj) &&
+          typeof gregorianObj?.date === "string" &&
+          Boolean(gregorianObj.date.trim()) &&
+          typeof gregorianObj?.time === "string" &&
+          Boolean(gregorianObj.time.trim());
+        const ganzhiObj =
+          timeObj?.ganzhi && typeof timeObj.ganzhi === "object" ? (timeObj.ganzhi as Record<string, unknown>) : null;
+        const hasGanzhi =
+          Boolean(ganzhiObj) &&
+          ["year", "month", "day", "hour"].some((k) => typeof ganzhiObj?.[k] === "string" && String(ganzhiObj[k]).trim());
+
+        const hasAnyTime = hasIso || hasSolar || hasGregorian || hasGanzhi;
+
+        if (trimmedText && !hasAnyTime) {
           const fallbackIso = parseLiuyaoIsoFromText(trimmedText);
           if (fallbackIso) obj.iso = fallbackIso;
+        }
+
+        const pan = obj.pan && typeof obj.pan === "object" ? (obj.pan as Record<string, unknown>) : null;
+        const panHex =
+          pan?.hexagram && typeof pan.hexagram === "object" ? (pan.hexagram as Record<string, unknown>) : null;
+        const panBase = typeof panHex?.original === "string" ? panHex.original.trim() : "";
+        const panChanged = typeof panHex?.changed === "string" ? panHex.changed.trim() : "";
+        if ((!obj.baseHexagramName || typeof obj.baseHexagramName !== "string" || !obj.baseHexagramName.trim()) && panBase) {
+          obj.baseHexagramName = panBase;
+        }
+        if (
+          (!obj.changedHexagramName || typeof obj.changedHexagramName !== "string" || !obj.changedHexagramName.trim()) &&
+          panChanged
+        ) {
+          obj.changedHexagramName = panChanged;
         }
 
         const lines = obj.lines;
         const hasLines =
           Array.isArray(lines) && lines.length === 6 && lines.every((n) => Number.isInteger(n) && n >= 0 && n <= 3);
+
+        if (!hasLines && Array.isArray(pan?.lines) && pan.lines.length === 6 && pan.lines.every((v) => typeof v === "string")) {
+          const map: Record<string, 0 | 1 | 2 | 3> = { 少阳: 0, 少阴: 1, 老阳: 2, 老阴: 3 };
+          const mapped = (pan.lines as string[]).map((raw) => map[raw.trim().replace(/（.*?）/g, "").replace(/\s+/g, "")]);
+          const ok = mapped.length === 6 && mapped.every((n) => Number.isInteger(n) && n >= 0 && n <= 3);
+          if (ok) obj.lines = mapped;
+        }
 
         if (!hasLines) {
           const baseHexagramName = typeof obj.baseHexagramName === "string" ? obj.baseHexagramName.trim() : "";
@@ -180,12 +230,32 @@ export async function aiRecognizeRoutes(app: FastifyInstance) {
         if (hasImage) {
           const afterTextFallbackHasIso = typeof obj.iso === "string" && obj.iso.trim().length > 0;
           const afterTextFallbackHasSolar = obj.solar && typeof obj.solar === "object";
+          const afterTimeObj = obj.time && typeof obj.time === "object" ? (obj.time as Record<string, unknown>) : null;
+          const afterGregorian =
+            afterTimeObj?.gregorian && typeof afterTimeObj.gregorian === "object"
+              ? (afterTimeObj.gregorian as Record<string, unknown>)
+              : null;
+          const afterHasGregorian =
+            Boolean(afterGregorian) &&
+            typeof afterGregorian?.date === "string" &&
+            Boolean(String(afterGregorian.date).trim()) &&
+            typeof afterGregorian?.time === "string" &&
+            Boolean(String(afterGregorian.time).trim());
+          const afterGanzhi =
+            afterTimeObj?.ganzhi && typeof afterTimeObj.ganzhi === "object"
+              ? (afterTimeObj.ganzhi as Record<string, unknown>)
+              : null;
+          const afterHasGanzhi =
+            Boolean(afterGanzhi) &&
+            ["year", "month", "day", "hour"].some(
+              (k) => typeof afterGanzhi?.[k] === "string" && String(afterGanzhi[k]).trim(),
+            );
           const afterDeriveHasLines =
             Array.isArray(obj.lines) &&
             obj.lines.length === 6 &&
             obj.lines.every((n) => Number.isInteger(n) && n >= 0 && n <= 3);
 
-          const needsTime = !afterTextFallbackHasIso && !afterTextFallbackHasSolar;
+          const needsTime = !afterTextFallbackHasIso && !afterTextFallbackHasSolar && !afterHasGregorian && !afterHasGanzhi;
           const needsHexagramInfo =
             !afterDeriveHasLines &&
             !(
@@ -222,6 +292,7 @@ export async function aiRecognizeRoutes(app: FastifyInstance) {
                 if (needsTime) {
                   if (typeof f.iso === "string" && f.iso.trim()) obj.iso = f.iso.trim();
                   if (!obj.solar && f.solar && typeof f.solar === "object") obj.solar = f.solar;
+                  if (!obj.time && f.time && typeof f.time === "object") obj.time = f.time;
                 }
 
                 if (!afterDeriveHasLines) {
@@ -232,14 +303,24 @@ export async function aiRecognizeRoutes(app: FastifyInstance) {
                     fLines.every((n) => Number.isInteger(n) && n >= 0 && n <= 3);
                   if (fHasLines) obj.lines = fLines;
 
+                  const fPan = f.pan && typeof f.pan === "object" ? (f.pan as Record<string, unknown>) : null;
+                  const fPanHex =
+                    fPan?.hexagram && typeof fPan.hexagram === "object" ? (fPan.hexagram as Record<string, unknown>) : null;
+                  const fPanBase = typeof fPanHex?.original === "string" ? fPanHex.original.trim() : "";
+                  const fPanChanged = typeof fPanHex?.changed === "string" ? fPanHex.changed.trim() : "";
+
                   if (typeof obj.baseHexagramName !== "string" || !obj.baseHexagramName.trim()) {
                     if (typeof f.baseHexagramName === "string" && f.baseHexagramName.trim()) {
                       obj.baseHexagramName = f.baseHexagramName.trim();
+                    } else if (fPanBase) {
+                      obj.baseHexagramName = fPanBase;
                     }
                   }
                   if (typeof obj.changedHexagramName !== "string" || !obj.changedHexagramName.trim()) {
                     if (typeof f.changedHexagramName === "string" && f.changedHexagramName.trim()) {
                       obj.changedHexagramName = f.changedHexagramName.trim();
+                    } else if (fPanChanged) {
+                      obj.changedHexagramName = fPanChanged;
                     }
                   }
 

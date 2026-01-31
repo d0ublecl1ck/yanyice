@@ -18,13 +18,27 @@ export type AiRecognizeBaziResult = {
 };
 
 export type AiRecognizeLiuyaoResult = {
-  subject: string;
+  // Legacy fields (kept for backward compatibility)
+  subject?: string;
   lines?: number[];
   iso?: string;
   solar?: { y: number; m: number; d: number; h: number; min: number };
   baseHexagramName?: string;
   changedHexagramName?: string;
   fourPillars?: string;
+
+  // New incremental extraction fields (preferred)
+  time?: {
+    gregorian?: { date?: string; time?: string; timezone?: string; confidence?: number };
+    ganzhi?: { year?: string; month?: string; day?: string; hour?: string; confidence?: number };
+  };
+  pan?: {
+    lines?: string[];
+    hexagram?: { original?: string; changed?: string };
+  };
+  topic?: string;
+  gender?: "男" | "女" | "不详";
+  tags?: string[];
 };
 
 export type AiRecognizeCustomerResult = {

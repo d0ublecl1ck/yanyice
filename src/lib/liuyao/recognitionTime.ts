@@ -88,6 +88,20 @@ const parseYmdhmFromText = (raw: string) => {
   return null;
 };
 
+export const parseLiuyaoDateTimeFromGregorianLike = (gregorian: unknown) => {
+  if (!gregorian || typeof gregorian !== "object") return null;
+  const obj = gregorian as Record<string, unknown>;
+  const date = typeof obj.date === "string" ? obj.date.trim() : "";
+  const time = typeof obj.time === "string" ? obj.time.trim() : "";
+  if (!date || !time) return null;
+
+  const ymdhm = parseYmdhmFromText(`${date} ${time}`);
+  if (!ymdhm) return null;
+  // Note: we intentionally treat extracted gregorian date/time as local time for form-filling,
+  // to avoid surprising timezone conversions in the UI. (timezone may exist but is ignored here.)
+  return toLocalDateIso(ymdhm.y, ymdhm.m, ymdhm.d, ymdhm.h, ymdhm.min);
+};
+
 export const parseLiuyaoDateTimeFromIsoLike = (input: string) => {
   const maybe = stripNoise(input);
 
@@ -113,4 +127,3 @@ export const parseLiuyaoDateTimeFromSolarLike = (solar: unknown) => {
   if (y == null || m == null || d == null || h == null || min == null) return null;
   return toLocalDateIso(y, m, d, h, min);
 };
-
