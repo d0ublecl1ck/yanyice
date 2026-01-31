@@ -3,6 +3,7 @@ import { Type, type Static } from "@sinclair/typebox";
 
 import { getUserAiApiKey, getUserAiConfig } from "../ai/userAiConfig";
 import { zhipuChatJson } from "../ai/zhipu";
+import { deriveLinesFromHexagramNames, parseHexagramPairFromText } from "../liuyao/recognitionHexagram";
 import { parseLiuyaoIsoFromText } from "../liuyao/recognitionTime";
 
 const ErrorResponse = Type.Object({
@@ -43,6 +44,7 @@ const instructionByTarget: Record<RecognizeBodyType["target"], string> = {
 六爻数据包括：
 1) 问事主题（subject，必填）
 2) 起卦时间（必填，精确到分钟）：优先输出 iso（如 2025-01-01T10:30:00+08:00），或输出 solar：y,m,d,h,min（二选一，至少一个）
+2.1) 若文本出现“本卦/变卦”或类似“地水师变天地否”，请尽量输出 baseHexagramName 与 changedHexagramName（可选，但建议）。
 3) 6个爻的状态（lines，可选）：0=少阳, 1=少阴, 2=老阳（动）, 3=老阴（动）。顺序必须是从下往上（初爻到上爻）。
 4) 若仅识别到四柱，可输出 fourPillars（8字或带空格），但仍应尽量给出起卦时间到分钟。
 
@@ -124,6 +126,29 @@ export async function aiRecognizeRoutes(app: FastifyInstance) {
         if (!hasIso && !hasSolar) {
           const fallbackIso = parseLiuyaoIsoFromText(trimmedText);
           if (fallbackIso) obj.iso = fallbackIso;
+        }
+
+        const lines = obj.lines;
+        const hasLines =
+          Array.isArray(lines) && lines.length === 6 && lines.every((n) => Number.isInteger(n) && n >= 0 && n <= 3);
+
+        if (!hasLines) {
+          const baseHexagramName = typeof obj.baseHexagramName === "string" ? obj.baseHexagramName.trim() : "";
+          const changedHexagramName =
+            typeof obj.changedHexagramName === "string" ? obj.changedHexagramName.trim() : "";
+
+          const parsed =
+            (baseHexagramName ? { baseHexagramName, changedHexagramName: changedHexagramName || undefined } : null) ??
+            parseHexagramPairFromText(trimmedText);
+
+          if (parsed) {
+            const derived = deriveLinesFromHexagramNames(parsed.baseHexagramName, parsed.changedHexagramName);
+            if (derived && derived.length === 6) {
+              obj.lines = derived;
+              obj.baseHexagramName = parsed.baseHexagramName;
+              if (parsed.changedHexagramName) obj.changedHexagramName = parsed.changedHexagramName;
+            }
+          }
         }
       }
 

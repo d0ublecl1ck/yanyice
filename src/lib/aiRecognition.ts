@@ -22,6 +22,8 @@ export type AiRecognizeLiuyaoResult = {
   lines?: number[];
   iso?: string;
   solar?: { y: number; m: number; d: number; h: number; min: number };
+  baseHexagramName?: string;
+  changedHexagramName?: string;
   fourPillars?: string;
 };
 
