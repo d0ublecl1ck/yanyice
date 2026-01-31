@@ -1,7 +1,6 @@
 import type { AiChatRequest } from "./types";
-import { extractFirstJsonObject } from "./extractJson";
-import { openaiChat } from "./openai";
-import { zhipuChat } from "./zhipu";
+import { openaiChat, openaiChatJson } from "./openai";
+import { zhipuChat, zhipuChatJson } from "./zhipu";
 
 export async function aiChat(params: AiChatRequest): Promise<string> {
   if (params.vendor === "zhipu") return zhipuChat(params);
@@ -10,7 +9,7 @@ export async function aiChat(params: AiChatRequest): Promise<string> {
 }
 
 export async function aiChatJson(params: AiChatRequest): Promise<unknown> {
-  const text = await aiChat(params);
-  return extractFirstJsonObject(text);
+  if (params.vendor === "zhipu") return zhipuChatJson(params);
+  if (params.vendor === "openai") return openaiChatJson(params);
+  throw new Error("UNSUPPORTED_VENDOR");
 }
-

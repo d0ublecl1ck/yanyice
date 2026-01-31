@@ -3,11 +3,25 @@ import { Type, type Static } from "@sinclair/typebox";
 
 import { getUserAiApiKey, getUserAiConfig } from "../ai/userAiConfig";
 import { aiChatJson } from "../ai/chat";
+import { deriveLinesFromHexagramNames, parseHexagramPairFromText } from "../liuyao/recognitionHexagram";
+import { parseLiuyaoIsoFromText } from "../liuyao/recognitionTime";
 
 const ErrorResponse = Type.Object({
   code: Type.String(),
   message: Type.String(),
 });
+
+const liuyaoFallbackFromImageInstruction = `
+你是一个专门从六爻截图中“抠字段”的识别器。
+你的任务：只从图片中提取以下字段，并输出 JSON（不要输出额外文字）。
+
+字段：
+1) 起卦时间（必填，精确到分钟）：优先输出 iso（如 2025-01-01T10:30:00+08:00），或输出 solar：y,m,d,h,min（二选一，至少一个）
+2) 本卦与变卦（可选，但尽量）：baseHexagramName / changedHexagramName（例如：地水师 / 天地否）
+3) 若能判断动爻，也可直接输出 lines（可选）：0=少阳,1=少阴,2=老阳（动）,3=老阴（动），顺序从下往上（初爻到上爻）
+
+提示：截图里常见字段名有“日期/起卦时间/本卦/变卦/动爻”。
+`.trim();
 
 const RecognizeBody = Type.Object({
   target: Type.Union([Type.Literal("bazi"), Type.Literal("liuyao"), Type.Literal("customer")]),
@@ -42,6 +56,7 @@ const instructionByTarget: Record<RecognizeBodyType["target"], string> = {
 六爻数据包括：
 1) 问事主题（subject，必填）
 2) 起卦时间（必填，精确到分钟）：优先输出 iso（如 2025-01-01T10:30:00+08:00），或输出 solar：y,m,d,h,min（二选一，至少一个）
+2.1) 若文本出现“本卦/变卦”或类似“地水师变天地否”，请尽量输出 baseHexagramName 与 changedHexagramName（可选，但建议）。
 3) 6个爻的状态（lines，可选）：0=少阳, 1=少阴, 2=老阳（动）, 3=老阴（动）。顺序必须是从下往上（初爻到上爻）。
 4) 若仅识别到四柱，可输出 fourPillars（8字或带空格），但仍应尽量给出起卦时间到分钟。
 
@@ -70,7 +85,7 @@ export async function aiRecognizeRoutes(app: FastifyInstance) {
         tags: ["ai"],
         security: [{ bearerAuth: [] }],
         body: RecognizeBody,
-        response: { 200: Type.Any(), 400: ErrorResponse, 401: ErrorResponse },
+        response: { 200: Type.Any(), 400: ErrorResponse, 401: ErrorResponse, 429: ErrorResponse },
       },
       onRequest: [app.authenticate],
     },
@@ -105,15 +120,143 @@ export async function aiRecognizeRoutes(app: FastifyInstance) {
         parts.push({ type: "text", text: trimmedText });
       }
 
-      const result = await aiChatJson({
-        vendor: cfg.vendor,
-        apiKey,
-        model: cfg.model.trim(),
-        messages: [
-          { role: "system", content: instructionByTarget[body.target] },
-          { role: "user", content: parts },
-        ],
-      });
+      let result: unknown;
+      try {
+        result = await aiChatJson({
+          vendor: cfg.vendor,
+          apiKey,
+          model: cfg.model.trim(),
+          messages: [
+            { role: "system", content: instructionByTarget[body.target] },
+            { role: "user", content: parts },
+          ],
+        });
+      } catch (e) {
+        const err = e as { code?: string; statusCode?: number; message?: string };
+        if (err?.statusCode === 429 || err?.code === "ZHIPU_RATE_LIMIT" || err?.code === "OPENAI_RATE_LIMIT") {
+          request.log.warn({ err }, "aiRecognize: upstream rate limited");
+          return reply
+            .status(429)
+            .send({ code: "AI_RATE_LIMIT", message: "当前 AI 请求过多，系统已自动重试仍失败，请稍后再试" });
+        }
+        throw e;
+      }
+
+      if (body.target === "liuyao" && result && typeof result === "object" && !Array.isArray(result)) {
+        const obj = result as Record<string, unknown>;
+        const hasIso = typeof obj.iso === "string" && obj.iso.trim().length > 0;
+        const hasSolar = obj.solar && typeof obj.solar === "object";
+
+        if (trimmedText && !hasIso && !hasSolar) {
+          const fallbackIso = parseLiuyaoIsoFromText(trimmedText);
+          if (fallbackIso) obj.iso = fallbackIso;
+        }
+
+        const lines = obj.lines;
+        const hasLines =
+          Array.isArray(lines) && lines.length === 6 && lines.every((n) => Number.isInteger(n) && n >= 0 && n <= 3);
+
+        if (!hasLines) {
+          const baseHexagramName = typeof obj.baseHexagramName === "string" ? obj.baseHexagramName.trim() : "";
+          const changedHexagramName =
+            typeof obj.changedHexagramName === "string" ? obj.changedHexagramName.trim() : "";
+
+          const parsed =
+            (baseHexagramName ? { baseHexagramName, changedHexagramName: changedHexagramName || undefined } : null) ??
+            (trimmedText ? parseHexagramPairFromText(trimmedText) : null);
+
+          if (parsed) {
+            const derived = deriveLinesFromHexagramNames(parsed.baseHexagramName, parsed.changedHexagramName);
+            if (derived && derived.length === 6) {
+              obj.lines = derived;
+              obj.baseHexagramName = parsed.baseHexagramName;
+              if (parsed.changedHexagramName) obj.changedHexagramName = parsed.changedHexagramName;
+            }
+          }
+        }
+
+        // If the vision model omitted time/hexagrams, run a narrow second pass that focuses on these fields only.
+        // This is a best-effort fallback and only triggers when we have an image.
+        if (hasImage) {
+          const afterTextFallbackHasIso = typeof obj.iso === "string" && obj.iso.trim().length > 0;
+          const afterTextFallbackHasSolar = obj.solar && typeof obj.solar === "object";
+          const afterDeriveHasLines =
+            Array.isArray(obj.lines) &&
+            obj.lines.length === 6 &&
+            obj.lines.every((n) => Number.isInteger(n) && n >= 0 && n <= 3);
+
+          const needsTime = !afterTextFallbackHasIso && !afterTextFallbackHasSolar;
+          const needsHexagramInfo =
+            !afterDeriveHasLines &&
+            !(
+              typeof obj.baseHexagramName === "string" &&
+              obj.baseHexagramName.trim() &&
+              typeof obj.changedHexagramName === "string" &&
+              obj.changedHexagramName.trim()
+            );
+
+          if (needsTime || needsHexagramInfo) {
+            request.log.info(
+              {
+                target: "liuyao",
+                needsTime,
+                needsHexagramInfo,
+              },
+              "aiRecognize: running liuyao image fallback pass",
+            );
+
+            try {
+              const fallback = await aiChatJson({
+                vendor: cfg.vendor,
+                apiKey,
+                model: cfg.model.trim(),
+                messages: [
+                  { role: "system", content: liuyaoFallbackFromImageInstruction },
+                  { role: "user", content: hasImage ? parts.filter((p) => p.type === "image_url") : parts },
+                ],
+              });
+
+              if (fallback && typeof fallback === "object" && !Array.isArray(fallback)) {
+                const f = fallback as Record<string, unknown>;
+
+                if (needsTime) {
+                  if (typeof f.iso === "string" && f.iso.trim()) obj.iso = f.iso.trim();
+                  if (!obj.solar && f.solar && typeof f.solar === "object") obj.solar = f.solar;
+                }
+
+                if (!afterDeriveHasLines) {
+                  const fLines = f.lines;
+                  const fHasLines =
+                    Array.isArray(fLines) &&
+                    fLines.length === 6 &&
+                    fLines.every((n) => Number.isInteger(n) && n >= 0 && n <= 3);
+                  if (fHasLines) obj.lines = fLines;
+
+                  if (typeof obj.baseHexagramName !== "string" || !obj.baseHexagramName.trim()) {
+                    if (typeof f.baseHexagramName === "string" && f.baseHexagramName.trim()) {
+                      obj.baseHexagramName = f.baseHexagramName.trim();
+                    }
+                  }
+                  if (typeof obj.changedHexagramName !== "string" || !obj.changedHexagramName.trim()) {
+                    if (typeof f.changedHexagramName === "string" && f.changedHexagramName.trim()) {
+                      obj.changedHexagramName = f.changedHexagramName.trim();
+                    }
+                  }
+
+                  // If fallback gave hexagram names but not lines, derive.
+                  const baseName = typeof obj.baseHexagramName === "string" ? obj.baseHexagramName.trim() : "";
+                  const changedName =
+                    typeof obj.changedHexagramName === "string" ? obj.changedHexagramName.trim() : "";
+                  const derived = baseName ? deriveLinesFromHexagramNames(baseName, changedName || undefined) : null;
+                  if (derived && derived.length === 6) obj.lines = derived;
+                }
+              }
+            } catch (e) {
+              request.log.warn({ err: e }, "aiRecognize: liuyao image fallback pass failed");
+            }
+          }
+        }
+      }
 
       return result;
     },

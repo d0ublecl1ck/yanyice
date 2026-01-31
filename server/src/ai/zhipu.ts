@@ -1,6 +1,28 @@
 import type { AiChatRequest } from "./types";
 import { extractFirstJsonObject } from "./extractJson";
 
+type ZhipuRateLimitError = Error & { code: "ZHIPU_RATE_LIMIT"; statusCode: 429 };
+
+const isRateLimitMessage = (msg: string) => {
+  const s = msg.trim();
+  return (
+    s.includes("请求过多") ||
+    s.includes("Too Many Requests") ||
+    s.includes("rate limit") ||
+    s.includes("Rate limit") ||
+    s.includes("429")
+  );
+};
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+const toRateLimitError = (message: string): ZhipuRateLimitError => {
+  const err = new Error(message) as ZhipuRateLimitError;
+  err.code = "ZHIPU_RATE_LIMIT";
+  err.statusCode = 429;
+  return err;
+};
+
 export async function zhipuChat(params: AiChatRequest): Promise<string> {
   if (params.vendor !== "zhipu") throw new Error("UNSUPPORTED_VENDOR");
   const url = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
@@ -26,6 +48,7 @@ export async function zhipuChat(params: AiChatRequest): Promise<string> {
 
   if (!res.ok) {
     const msg = json?.error?.message || `Zhipu request failed (${res.status})`;
+    if (res.status === 429 || isRateLimitMessage(msg)) throw toRateLimitError(msg);
     throw new Error(msg);
   }
 
@@ -33,6 +56,27 @@ export async function zhipuChat(params: AiChatRequest): Promise<string> {
 }
 
 export async function zhipuChatJson(params: AiChatRequest): Promise<unknown> {
-  const text = await zhipuChat(params);
-  return extractFirstJsonObject(text);
+  const maxAttempts = 3;
+  let lastErr: unknown = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const text = await zhipuChat(params);
+      return extractFirstJsonObject(text);
+    } catch (e) {
+      lastErr = e;
+      const err = e as Partial<ZhipuRateLimitError>;
+      const isRateLimit = err?.code === "ZHIPU_RATE_LIMIT" || err?.statusCode === 429;
+
+      if (!isRateLimit || attempt === maxAttempts) throw e;
+
+      // Exponential backoff with small jitter.
+      const baseMs = 250 * Math.pow(2, attempt - 1);
+      const jitterMs = Math.floor(Math.random() * 120);
+      await sleep(baseMs + jitterMs);
+    }
+  }
+
+  // Should be unreachable; kept for type narrowing.
+  throw lastErr instanceof Error ? lastErr : new Error("ZHIPU_RETRY_FAILED");
 }
