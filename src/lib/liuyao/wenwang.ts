@@ -190,7 +190,7 @@ function parseHexagramNameToTrigrams(name: string): { upper: TrigramName; lower:
   return { upper, lower };
 }
 
-const PALACE_GROUPS: ReadonlyArray<{ palace: PalaceName; names: readonly string[] }> = [
+export const PALACE_GROUPS: ReadonlyArray<{ palace: PalaceName; names: readonly string[] }> = [
   {
     palace: "乾",
     names: ["乾为天", "天风姤", "天山遁", "天地否", "风地观", "山地剥", "火地晋", "火天大有"],
@@ -239,6 +239,8 @@ for (const g of PALACE_GROUPS) {
   });
 }
 
+export const HEXAGRAM_NAMES: readonly string[] = PALACE_GROUPS.flatMap((g) => g.names);
+
 export function getHexagramNameByTrigrams(upper: TrigramName, lower: TrigramName): string | null {
   return NAME_BY_TRIGRAMS.get(`${upper}|${lower}`) ?? null;
 }
@@ -252,4 +254,3 @@ export function getHexagramMetaByTrigrams(upper: TrigramName, lower: TrigramName
   if (!name) return null;
   return getHexagramMetaByName(name);
 }
-
