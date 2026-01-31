@@ -76,15 +76,17 @@ describe("liuyao module", () => {
           lines: [0, 2, 1, 0, 1, 0],
           date: new Date("2026-01-01T00:00:00.000Z").toISOString(),
           subject: "合作项目",
+          gender: "female",
           monthBranch: "子",
           dayBranch: "甲子",
         },
       },
     });
     expect(createRes.statusCode).toBe(201);
-    const created = createRes.json() as { record: { id: string; subject: string; customerName?: string } };
+    const created = createRes.json() as { record: { id: string; subject: string; customerName?: string; liuyaoData?: { gender?: string } } };
     expect(created.record.subject).toBe("占近期合作能否成");
     expect(created.record.customerName).toBe("张三");
+    expect(created.record.liuyaoData?.gender).toBe("female");
 
     const listRes = await app.inject({
       method: "GET",
@@ -128,4 +130,3 @@ describe("liuyao module", () => {
     expect(getAfterDel.statusCode).toBe(404);
   });
 });
-

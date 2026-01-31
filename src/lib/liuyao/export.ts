@@ -1,5 +1,6 @@
 import { ANIMALS } from "@/lib/constants";
 import type { LiuyaoPaipan } from "@/lib/liuyao/paipan";
+import type { LiuyaoGender } from "@/lib/types";
 
 type ExportChatMessage = { role: "user" | "model"; text: string };
 type ExportFourPillars = {
@@ -39,10 +40,14 @@ const getSixGodText = (posFromTop: number, fallbackIdx: number, sixGod: string |
 const formatShenSha = (items: Array<{ name: string; branch: string }>) =>
   items.map((it) => `${it.name}在${it.branch}`).join("、");
 
+const liuyaoGenderText = (g: LiuyaoGender | null | undefined) =>
+  g === "male" ? "男" : g === "female" ? "女" : "不祥";
+
 export function formatLiuyaoExportText(params: {
   id: string;
   subject: string;
   customerName?: string | null;
+  gender?: LiuyaoGender | null;
   solarDate?: string | null;
   monthBranch?: string | null;
   dayBranch?: string | null;
@@ -56,6 +61,8 @@ export function formatLiuyaoExportText(params: {
   lines.push("一、 基础信息");
   lines.push("");
   lines.push(`- 占事：${params.subject}`);
+  if (params.customerName) lines.push(`- 缘主：${params.customerName}`);
+  if (params.gender) lines.push(`- 性别：${liuyaoGenderText(params.gender)}`);
   lines.push("- 排卦工具：（未记录）");
   if (params.solarDate) lines.push(`- 起卦时间：${params.solarDate}`);
 

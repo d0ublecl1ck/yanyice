@@ -25,6 +25,7 @@ describe("liuyao export", () => {
       id: "cml0qya9f00002gronvm2bcy6",
       subject: "测试卦例",
       customerName: "张三",
+      gender: "male",
       solarDate: "2026/1/1 12:00:00",
       monthBranch: "子",
       dayBranch: "甲子",
@@ -38,6 +39,8 @@ describe("liuyao export", () => {
 
     expect(text).toContain("一、 基础信息");
     expect(text).toContain("- 占事：测试卦例");
+    expect(text).toContain("- 缘主：张三");
+    expect(text).toContain("- 性别：男");
 
     expect(text).toContain("二、 卦象结构");
     expect(text).toContain("- 本卦：火泽睽（艮宫）");

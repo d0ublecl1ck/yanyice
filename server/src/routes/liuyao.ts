@@ -5,10 +5,13 @@ import type { Prisma } from "@prisma/client";
 
 const LineType = Type.Integer({ minimum: 0, maximum: 3 });
 
+const LiuyaoGender = Type.Union([Type.Literal("male"), Type.Literal("female"), Type.Literal("unknown")]);
+
 const LiuyaoData = Type.Object({
   lines: Type.Array(LineType, { minItems: 6, maxItems: 6 }),
   date: Type.String(),
   subject: Type.String(),
+  gender: Type.Optional(LiuyaoGender),
   monthBranch: Type.String(),
   dayBranch: Type.String(),
 });
@@ -83,6 +86,7 @@ function toRecordResponse(row: {
     lines: [0, 0, 0, 0, 0, 0],
     date: "",
     subject: "",
+    gender: "unknown",
     monthBranch: "",
     dayBranch: "",
   });

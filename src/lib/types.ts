@@ -8,10 +8,13 @@ export enum LineType {
   LAO_YIN = 3    // 老阴 -- X (动)
 }
 
+export type LiuyaoGender = "male" | "female" | "unknown";
+
 export interface LiuYaoData {
   lines: LineType[]; // 从下往上 0-5
   date: string; // 农历或公历日期
   subject: string; // 问事主题
+  gender?: LiuyaoGender; // 男/女/不祥（历史数据可能缺失）
   monthBranch: string; // 月建
   dayBranch: string; // 日辰
 }
