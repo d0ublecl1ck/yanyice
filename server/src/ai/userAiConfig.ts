@@ -1,6 +1,6 @@
 import type { PrismaClient, AiVendor } from "@prisma/client";
 
-import { encryptSecret } from "./crypto";
+import { decryptSecret, encryptSecret } from "./crypto";
 import { getAiCredentialsMasterKey } from "../config";
 
 export type PublicUserAiConfig = {
@@ -70,3 +70,15 @@ export async function upsertUserAiConfig(
   return getUserAiConfig(prisma, userId);
 }
 
+export async function getUserAiApiKey(prisma: PrismaClient, userId: string, vendor: AiVendor): Promise<string | null> {
+  const cred = await prisma.userAiCredential.findFirst({
+    where: { userId, vendor },
+    select: { apiKeyCipher: true, apiKeyIv: true, apiKeyTag: true },
+  });
+  if (!cred) return null;
+  const key = getAiCredentialsMasterKey();
+  return decryptSecret(
+    { cipherTextB64: cred.apiKeyCipher, ivB64: cred.apiKeyIv, tagB64: cred.apiKeyTag },
+    key,
+  );
+}

@@ -24,7 +24,7 @@ describe("aiConfig", () => {
   });
 
   test("sanitizeAiModel trims and rejects invalid", () => {
-    expect(sanitizeAiModel("  gemini-3-pro-preview  ")).toBe("gemini-3-pro-preview");
+    expect(sanitizeAiModel("  glm-4v-flash  ")).toBe("glm-4v-flash");
     expect(sanitizeAiModel("")).toBe("");
     expect(sanitizeAiModel("   ")).toBe("");
     expect(sanitizeAiModel("x".repeat(81))).toBeNull();

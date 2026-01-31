@@ -12,12 +12,10 @@ import { useAiConfigStore } from "@/stores/useAiConfigStore";
 import { useQuoteStore } from "@/stores/useQuoteStore";
 import { ApiError } from "@/lib/apiClient";
 import {
-  getDefaultAiConfig,
   sanitizeAiApiKey,
-  sanitizeAiModel,
   sanitizeAiVendor,
 } from "@/lib/aiConfig";
-import { AI_VENDORS, getAiVendorById } from "@/lib/aiVendors";
+import { getAiVendorById, getAiVendors } from "@/lib/aiVendors";
 
 function getToastErrorMessage(err: unknown): string {
   if (err instanceof ApiError) return err.message;
@@ -55,9 +53,6 @@ export default function Page() {
   const bootstrapQuotes = useQuoteStore((s) => s.bootstrap);
   const saveQuoteLines = useQuoteStore((s) => s.saveQuoteLines);
   const resetSystemQuotes = useQuoteStore((s) => s.resetSystemQuotes);
-
-  const defaultAiConfig = useMemo(() => getDefaultAiConfig(), []);
-
   const [vendorDraft, setVendorDraft] = useState(aiVendor);
   const [modelDraft, setModelDraft] = useState(aiModel);
   const [apiKeyDraft, setApiKeyDraft] = useState("");
@@ -99,33 +94,25 @@ export default function Page() {
     router.replace("/login");
   };
 
-  const handleResetAiConfig = () => {
-    setVendorDraft(defaultAiConfig.vendor);
-    setModelDraft(defaultAiConfig.model);
-    setApiKeyDraft("");
-    void updateModel(defaultAiConfig.model).then(
-      () => toast("已恢复默认模型配置", "info"),
-      () => toast("恢复默认失败，请稍后重试", "warning"),
-    );
-  };
-
   const vendorOptions = useMemo<Array<SelectOption<string>>>(
-    () => AI_VENDORS.map((v) => ({ value: v.id, label: v.label })),
+    () => getAiVendors().map((v) => ({ value: v.id, label: v.label })),
     [],
   );
 
   const selectedVendor = useMemo(() => getAiVendorById(vendorDraft), [vendorDraft]);
-  const modelPlaceholder = selectedVendor?.modelPlaceholder ?? "留空使用默认值";
-  const modelHint = selectedVendor?.modelRecommendedHint ?? "留空使用默认值";
-  const apiKeyHint = selectedVendor?.apiKeyHint ?? "在对应厂家控制台获取";
+  const apiKeyLinkLabel = selectedVendor?.apiKeyLinkLabel ?? "在对应厂家控制台获取";
+  const apiKeyUrl = selectedVendor?.apiKeyUrl ?? "";
 
-  const commitModel = () => {
-    const next = sanitizeAiModel(modelDraft);
-    if (next === null) {
-      toast("模型最多 80 字", "warning");
-      setModelDraft(aiModel);
-      return;
-    }
+  const modelOptions = useMemo<Array<SelectOption<string>>>(() => {
+    const list = selectedVendor?.models ?? [];
+    const base: Array<SelectOption<string>> = [
+      { value: "", label: selectedVendor?.modelEmptyLabel ?? "（未设置）" },
+      ...list.map((m) => ({ value: m, label: m })),
+    ];
+    return base;
+  }, [selectedVendor]);
+
+  const commitModel = (next: string) => {
     if (next === aiModel) return;
     setModelDraft(next);
     void updateModel(next).then(
@@ -234,14 +221,6 @@ export default function Page() {
               </div>
               <h3 className="font-bold text-lg text-[#2F2F2F] chinese-font">AI 配置</h3>
             </div>
-
-            <button
-              onClick={handleResetAiConfig}
-              className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-[#B37D56]/20 text-[#2F2F2F] font-bold text-xs tracking-widest hover:bg-[#FAF7F2] transition-all chinese-font rounded-[2px]"
-              title="恢复默认 AI 配置"
-            >
-              恢复默认
-            </button>
           </div>
 
           <div className="space-y-4">
@@ -250,7 +229,7 @@ export default function Page() {
                 提示
               </p>
               <p className="text-xs text-[#2F2F2F]/60 chinese-font">
-                当前仅支持智谱 BigModel。这里用于配置「厂家」与「模型」的默认值，为后期接入 AI 对话做准备。
+                当前仅支持 {selectedVendor?.label ?? "AI"}。这里用于配置「厂家」与「模型」的默认值。
                 配置保存到服务端账户下，API Key 不会在前端回显。
               </p>
             </div>
@@ -263,6 +242,7 @@ export default function Page() {
                 value={vendorDraft}
                 options={vendorOptions}
                 variant="box"
+                className="h-10 px-3 text-sm chinese-font font-bold rounded-none"
                 disabled
                 onValueChange={(next) => {
                   const nextVendor = sanitizeAiVendor(String(next));
@@ -280,16 +260,14 @@ export default function Page() {
               <span className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
                 模型
               </span>
-              <input
+              <Select
                 value={modelDraft}
-                onChange={(e) => setModelDraft(e.target.value)}
-                onBlur={commitModel}
-                placeholder={modelPlaceholder}
-                className="w-full px-3 py-2 bg-white border border-[#B37D56]/20 text-sm chinese-font rounded-none focus:outline-none focus:border-[#B37D56]/50"
-                autoComplete="off"
+                options={modelOptions}
+                variant="box"
+                className="h-10 px-3 text-sm chinese-font font-bold rounded-none"
                 disabled={aiStatus === "loading"}
+                onValueChange={(next) => commitModel(String(next))}
               />
-              <p className="text-[10px] text-[#2F2F2F]/40">{modelHint}</p>
             </div>
 
             <div className="space-y-1">
@@ -302,26 +280,39 @@ export default function Page() {
                   onChange={(e) => setApiKeyDraft(e.target.value)}
                   placeholder={aiHasApiKey ? "已配置（重新粘贴可覆盖）" : "********"}
                   type="password"
-                  className="w-full px-3 py-2 bg-white border border-[#B37D56]/20 text-sm chinese-font rounded-none focus:outline-none focus:border-[#B37D56]/50"
+                  className="w-full h-10 px-3 bg-white border border-[#B37D56]/20 text-sm chinese-font rounded-none focus:outline-none focus:border-[#B37D56]/50"
                   autoComplete="off"
                   disabled={aiStatus === "loading"}
                 />
                 <button
                   onClick={handleSaveApiKey}
-                  className="px-3 py-2 bg-[#A62121] text-white text-xs font-bold tracking-widest hover:bg-[#8B1A1A] transition-colors rounded-[2px] chinese-font"
+                  className="h-10 min-w-20 px-5 bg-[#A62121] text-white text-xs font-bold tracking-[0.2em] whitespace-nowrap hover:bg-[#8B1A1A] transition-colors rounded-[2px] chinese-font shrink-0"
                   disabled={aiStatus === "loading"}
                 >
                   保存
                 </button>
                 <button
                   onClick={() => setIsClearOpen(true)}
-                  className="px-3 py-2 bg-white border border-[#A62121]/20 text-[#A62121] text-xs font-bold tracking-widest hover:bg-[#A62121] hover:text-white transition-all rounded-[2px] chinese-font"
+                  className="h-10 min-w-20 px-5 bg-white border border-[#A62121]/20 text-[#A62121] text-xs font-bold tracking-[0.2em] whitespace-nowrap hover:bg-[#A62121] hover:text-white transition-all rounded-[2px] chinese-font shrink-0"
                   disabled={!aiHasApiKey || aiStatus === "loading"}
                 >
                   清除
                 </button>
               </div>
-              <p className="text-[10px] text-[#2F2F2F]/40">{apiKeyHint}</p>
+              <p className="text-[10px] text-[#2F2F2F]/40">
+                {apiKeyUrl ? (
+                  <a
+                    href={apiKeyUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[#B37D56] hover:text-[#A62121] underline underline-offset-2"
+                  >
+                    {apiKeyLinkLabel}
+                  </a>
+                ) : (
+                  apiKeyLinkLabel
+                )}
+              </p>
             </div>
 
             <div className="flex items-center justify-between p-4 bg-[#FAF7F2]/50 border border-[#B37D56]/5">
@@ -426,7 +417,9 @@ export default function Page() {
             <div className="flex items-center justify-between p-4 bg-[#FAF7F2]/50 border border-[#B37D56]/5">
               <div>
                 <p className="font-bold text-[#2F2F2F] chinese-font">发送 AI 确认</p>
-                <p className="text-xs text-[#2F2F2F]/40">在将文本/图片发送给 Google 之前始终弹出确认提示。</p>
+                <p className="text-xs text-[#2F2F2F]/40">
+                  在将文本/图片发送给第三方 AI 平台之前始终弹出确认提示。
+                </p>
               </div>
               <div className="w-12 h-6 bg-[#A62121]/60 rounded-none relative cursor-pointer">
                 <div className="absolute right-1 top-1 w-4 h-4 bg-white shadow-sm"></div>

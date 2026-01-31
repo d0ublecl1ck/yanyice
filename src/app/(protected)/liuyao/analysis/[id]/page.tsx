@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { ANIMALS } from "@/lib/constants";
-import { geminiChat, type ChatMessage } from "@/lib/geminiService";
+import { aiChat, type ChatMessage } from "@/lib/aiService";
 import { paipanLiuyao } from "@/lib/liuyao/paipan";
 import { calcLiuyaoShenSha } from "@/lib/liuyao/shenSha";
 import { LiuyaoLineSvg } from "@/components/liuyao/LiuyaoLineSvg";
@@ -37,6 +37,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const showToast = useToastStore((s) => s.show);
   const accessToken = useAuthStore((s) => s.accessToken);
   const aiModel = useAiConfigStore((s) => s.model);
+  const aiHasApiKey = useAiConfigStore((s) => s.hasApiKey);
   const syncLiuyaoFromApi = useCaseStore((s) => s.syncLiuyaoFromApi);
 
   const records = useCaseStore((state) => state.records);
@@ -142,6 +143,18 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
   const handleSend = async () => {
     if (!inputText.trim() || !analysis) return;
+    if (!aiModel.trim()) {
+      showToast("请先在设置中配置模型", "warning");
+      return;
+    }
+    if (!aiHasApiKey) {
+      showToast("请先在设置中配置 API Key", "warning");
+      return;
+    }
+    if (!accessToken) {
+      showToast("未登录或登录已过期", "error");
+      return;
+    }
     const userText = inputText;
     addMessage(id, { role: "user", text: userText, timestamp: Date.now() });
     setInputText("");
@@ -154,10 +167,10 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         { role: "user", text: userText },
       ];
 
-      const text = await geminiChat({
+      const text = await aiChat({
+        accessToken,
         systemInstruction,
         messages,
-        model: aiModel.trim() ? aiModel.trim() : undefined,
       });
       addMessage(id, { role: "model", text: text || "...", timestamp: Date.now() });
     } catch (e) {

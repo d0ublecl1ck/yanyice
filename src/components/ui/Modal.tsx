@@ -17,6 +17,7 @@ export function Modal({
   open,
   title,
   titleIcon,
+  headerActions,
   children,
   footer,
   onClose,
@@ -26,10 +27,13 @@ export function Modal({
   hideScrollbar = false,
   showCloseButton = true,
   bodyClassName,
+  containerClassName,
+  containerStyle,
 }: {
   open: boolean;
   title: string;
   titleIcon?: React.ReactNode;
+  headerActions?: React.ReactNode;
   children: React.ReactNode;
   footer?: React.ReactNode;
   onClose: () => void;
@@ -39,6 +43,8 @@ export function Modal({
   hideScrollbar?: boolean;
   showCloseButton?: boolean;
   bodyClassName?: string;
+  containerClassName?: string;
+  containerStyle?: React.CSSProperties;
 }) {
   const titleId = useId();
 
@@ -83,7 +89,8 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={`bg-white w-full ${sizeClassName[size]} ${containerMaxHeight} rounded-[4px] border border-[#B37D56]/20 shadow-none overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col`}
+        className={`bg-white w-full ${sizeClassName[size]} ${containerMaxHeight} rounded-[4px] border border-[#B37D56]/20 shadow-none overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col ${containerClassName ?? ""}`}
+        style={containerStyle}
       >
         <div className="p-6 border-b border-[#B37D56]/10 flex justify-between items-center">
           <p
@@ -95,16 +102,19 @@ export function Modal({
             {titleIcon}
             {title}
           </p>
-          {showCloseButton ? (
-            <button
-              type="button"
-              aria-label="关闭"
-              className="text-[#2F2F2F]/20 hover:text-[#A62121] transition-colors"
-              onClick={onClose}
-            >
-              <X size={20} />
-            </button>
-          ) : null}
+          <div className="flex items-center gap-2">
+            {headerActions}
+            {showCloseButton ? (
+              <button
+                type="button"
+                aria-label="关闭"
+                className="text-[#2F2F2F]/20 hover:text-[#A62121] transition-colors"
+                onClick={onClose}
+              >
+                <X size={20} />
+              </button>
+            ) : null}
+          </div>
         </div>
 
         <div className={`${bodyScrollClassName} ${scrollbarClassName} ${bodyClassName ?? "p-6"}`}>

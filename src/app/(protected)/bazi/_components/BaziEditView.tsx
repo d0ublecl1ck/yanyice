@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   CalendarDays,
@@ -18,8 +18,11 @@ import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useToastStore } from "@/stores/useToastStore";
 import type { BaZiData } from "@/lib/types";
 import { BRANCHES, STEMS } from "@/lib/constants";
+import type { AiRecognizeBaziResult } from "@/lib/aiRecognition";
+import { scrollAndFlash } from "@/lib/scrollFlash";
 import { loadLocationPickerSchema, formatSelection } from "@/lib/locationData";
 import { filterCities, filterDistricts, filterProvinces, type LocationNode } from "@/lib/locationSearch";
+import { resolveLocationIdsFromText } from "@/lib/locationResolve";
 import {
   deriveBaziPickerFromSolar,
   deriveBaziPickerFromSolarTime,
@@ -166,10 +169,12 @@ const LocationPickerModal = ({
   isOpen,
   onClose,
   onConfirm,
+  initialLocation,
 }: {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (loc: string) => void;
+  initialLocation?: string;
 }) => {
   const [regionType, setRegionType] = useState<"domestic" | "overseas">("domestic");
   const [schema, setSchema] = useState<Awaited<ReturnType<typeof loadLocationPickerSchema>> | null>(null);
@@ -191,8 +196,32 @@ const LocationPickerModal = ({
 
   useEffect(() => {
     if (!isOpen) return;
+    if (!initialLocation) return;
+    const trimmed = initialLocation.trim();
+    if (!trimmed) return;
+
+    // Lightweight heuristic: if it contains latin letters and no CJK, prefer overseas schema.
+    const hasLatin = /[A-Za-z]/.test(trimmed);
+    const hasCjk = /[\u4e00-\u9fff]/.test(trimmed);
+    if (hasLatin && !hasCjk) setRegionType("overseas");
+  }, [initialLocation, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
     setQuery("");
   }, [isOpen, regionType]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!schema) return;
+    const trimmed = (initialLocation ?? "").trim();
+    if (!trimmed) return;
+
+    const resolved = resolveLocationIdsFromText(schema, trimmed);
+    if (resolved.level1Id) setLevel1Id(resolved.level1Id);
+    if (resolved.level2Id) setLevel2Id(resolved.level2Id);
+    if (resolved.level3Id) setLevel3Id(resolved.level3Id);
+  }, [initialLocation, isOpen, schema]);
 
   const filteredProvinces = useMemo(
     () => (schema ? filterProvinces(schema.hierarchy, query) : []),
@@ -867,11 +896,13 @@ const BaziTimePickerModal = ({
 export function BaziEditView({
   id,
   embedded = false,
+  aiPrefill,
   onSaved,
   redirectTo,
 }: {
   id?: string;
   embedded?: boolean;
+  aiPrefill?: (AiRecognizeBaziResult & { _nonce: number }) | null;
   onSaved?: () => void;
   redirectTo?: string | null;
 }) {
@@ -910,6 +941,12 @@ export function BaziEditView({
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showLocPicker, setShowLocPicker] = useState(false);
 
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
+  const genderRef = useRef<HTMLDivElement | null>(null);
+  const timeCardRef = useRef<HTMLDivElement | null>(null);
+  const locationRowRef = useRef<HTMLDivElement | null>(null);
+  const lastAppliedAiNonceRef = useRef<number | null>(null);
+
   useEffect(() => {
     if (id) return;
     const fromQuery = searchParams.get("customerId");
@@ -936,6 +973,94 @@ export function BaziEditView({
       if (cust) setGender(cust.gender === "female" ? "female" : "male");
     }
   }, [id, records, customers]);
+
+  useEffect(() => {
+    if (!aiPrefill) return;
+    if (typeof aiPrefill._nonce !== "number") return;
+    if (lastAppliedAiNonceRef.current === aiPrefill._nonce) return;
+    lastAppliedAiNonceRef.current = aiPrefill._nonce;
+
+    const nextName = typeof aiPrefill.name === "string" ? aiPrefill.name.trim() : "";
+    const nextGender = aiPrefill.gender;
+    const nextLocation = typeof aiPrefill.location === "string" ? aiPrefill.location.trim() : "";
+
+    if (nextName && !subject.trim()) setSubject(nextName);
+    if (nextGender === "male" || nextGender === "female") setGender(nextGender);
+    if (nextLocation) setLocation(nextLocation);
+
+    const solar = aiPrefill.solar;
+    if (
+      solar &&
+      Number.isInteger(solar.y) &&
+      Number.isInteger(solar.m) &&
+      Number.isInteger(solar.d) &&
+      Number.isInteger(solar.h) &&
+      Number.isInteger(solar.min)
+    ) {
+      const derived = deriveBaziPickerFromSolar({
+        y: solar.y,
+        m: solar.m,
+        d: solar.d,
+        h: solar.h,
+        min: solar.min,
+      });
+      setBazi((prev) => ({
+        ...prev,
+        yearStem: derived.fourPillars.yS,
+        yearBranch: derived.fourPillars.yB,
+        monthStem: derived.fourPillars.mS,
+        monthBranch: derived.fourPillars.mB,
+        dayStem: derived.fourPillars.dS,
+        dayBranch: derived.fourPillars.dB,
+        hourStem: derived.fourPillars.hS,
+        hourBranch: derived.fourPillars.hB,
+        calendarType: "solar",
+      }));
+      setRecordDate(toBjIsoFromSolar(derived.solar));
+    } else if (aiPrefill.fourPillars) {
+      const fp = aiPrefill.fourPillars;
+      const yS = typeof fp.yearStem === "string" ? fp.yearStem.trim() : "";
+      const yB = typeof fp.yearBranch === "string" ? fp.yearBranch.trim() : "";
+      const mS = typeof fp.monthStem === "string" ? fp.monthStem.trim() : "";
+      const mB = typeof fp.monthBranch === "string" ? fp.monthBranch.trim() : "";
+      const dS = typeof fp.dayStem === "string" ? fp.dayStem.trim() : "";
+      const dB = typeof fp.dayBranch === "string" ? fp.dayBranch.trim() : "";
+      const hS = typeof fp.hourStem === "string" ? fp.hourStem.trim() : "";
+      const hB = typeof fp.hourBranch === "string" ? fp.hourBranch.trim() : "";
+
+      const canApply =
+        STEMS.includes(yS) &&
+        BRANCHES.includes(yB) &&
+        STEMS.includes(mS) &&
+        BRANCHES.includes(mB) &&
+        STEMS.includes(dS) &&
+        BRANCHES.includes(dB) &&
+        STEMS.includes(hS) &&
+        BRANCHES.includes(hB);
+
+      if (canApply) {
+        setBazi((prev) => ({
+          ...prev,
+          yearStem: yS,
+          yearBranch: yB,
+          monthStem: mS,
+          monthBranch: mB,
+          dayStem: dS,
+          dayBranch: dB,
+          hourStem: hS,
+          hourBranch: hB,
+          calendarType: "fourPillars",
+        }));
+      }
+    }
+
+    window.setTimeout(() => {
+      scrollAndFlash(nameInputRef.current);
+      scrollAndFlash(genderRef.current);
+      scrollAndFlash(timeCardRef.current);
+      scrollAndFlash(locationRowRef.current);
+    }, 0);
+  }, [aiPrefill, subject]);
 
   const handleTimePickerConfirm = (data: BaziTimePickerConfirmData) => {
     setBazi((prev) => ({
@@ -1097,6 +1222,7 @@ export function BaziEditView({
               姓名
             </label>
             <input
+              ref={nameInputRef}
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
@@ -1108,7 +1234,7 @@ export function BaziEditView({
             <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest ml-1">
               性别
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div ref={genderRef} className="grid grid-cols-2 gap-3">
               {(
                 [
                   { id: "male", l: "乾造" },
@@ -1190,6 +1316,7 @@ export function BaziEditView({
           }`}
         >
           <div
+            ref={timeCardRef}
             role="button"
             tabIndex={0}
             onClick={() => setShowTimePicker(true)}
@@ -1277,6 +1404,7 @@ export function BaziEditView({
 	        </div>
 
         <div
+          ref={locationRowRef}
           className="flex items-center gap-3 cursor-pointer group"
           onClick={() => setShowLocPicker(true)}
         >
@@ -1387,6 +1515,7 @@ export function BaziEditView({
         isOpen={showLocPicker}
         onClose={() => setShowLocPicker(false)}
         onConfirm={setLocation}
+        initialLocation={location}
       />
     </div>
   );

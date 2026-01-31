@@ -1,15 +1,18 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Plus, Sparkles } from "lucide-react";
 
 import { ChineseDatePicker } from "@/components/ChineseDatePicker";
 import { ChineseTimePicker } from "@/components/ChineseTimePicker";
 import { Select, type SelectOption } from "@/components/Select";
 import { Modal, ModalPrimaryButton, ModalSecondaryButton } from "@/components/ui/Modal";
 import { LiuyaoLineSvg } from "@/components/liuyao/LiuyaoLineSvg";
+import { AiRecognitionModal } from "@/components/ai/AiRecognitionModal";
+import { scrollAndFlash } from "@/lib/scrollFlash";
 import { calcLiuyaoGanzhiFromIso } from "@/lib/lunarGanzhi";
 import { LineType, type LiuYaoData } from "@/lib/types";
+import { useAiConfigStore } from "@/stores/useAiConfigStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
@@ -49,6 +52,7 @@ export function CreateLiuyaoRecordModal({
   initialCustomerId?: string;
 }) {
   const showToast = useToastStore((s) => s.show);
+  const aiModel = useAiConfigStore((s) => s.model);
   const accessToken = useAuthStore((s) => s.accessToken);
   const upsertLiuyaoRemote = useCaseStore((s) => s.upsertLiuyaoRemote);
   const customers = useCustomerStore((s) => s.customers);
@@ -68,6 +72,11 @@ export function CreateLiuyaoRecordModal({
   ]);
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
+  const [aiOpen, setAiOpen] = useState(false);
+
+  const subjectInputRef = useRef<HTMLInputElement | null>(null);
+  const monthDayRef = useRef<HTMLDivElement | null>(null);
+  const linesSectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -87,13 +96,16 @@ export function CreateLiuyaoRecordModal({
     ]);
     setTags([]);
     setNewTag("");
+    setAiOpen(false);
   }, [initialCustomerId, open]);
 
   const recordIso = useMemo(() => setIsoTime(dateIso, timeHHmm || "00:00"), [dateIso, timeHHmm]);
 
   const ganzhi = useMemo(() => calcLiuyaoGanzhiFromIso(recordIso), [recordIso]);
-  const monthBranch = ganzhi?.monthBranch ?? "子";
-  const dayBranch = ganzhi?.dayGanzhi ?? "甲子";
+  const derivedMonthBranch = ganzhi?.monthBranch ?? "子";
+  const derivedDayBranch = ganzhi?.dayGanzhi ?? "甲子";
+  const monthBranch = derivedMonthBranch;
+  const dayBranch = derivedDayBranch;
 
   const setLineAtIndex = (index: number, nextLine: LineType) => {
     setLines((prev) => {
@@ -115,6 +127,23 @@ export function CreateLiuyaoRecordModal({
       scrollBody
       hideScrollbar
       bodyClassName="p-6"
+      headerActions={
+        <button
+          type="button"
+          aria-label="AI 智能识盘"
+          title="AI 智能识盘"
+          onClick={() => {
+            if (!aiModel.trim()) {
+              showToast("请先在设置中配置模型", "warning");
+              return;
+            }
+            setAiOpen(true);
+          }}
+          className="p-2 text-[#B37D56]/60 hover:text-[#A62121] hover:bg-[#A62121]/5 transition-all rounded-[2px]"
+        >
+          <Sparkles size={18} />
+        </button>
+      }
       footer={
         <div className="flex justify-end gap-3">
           <ModalSecondaryButton onClick={onClose}>取消</ModalSecondaryButton>
@@ -174,6 +203,69 @@ export function CreateLiuyaoRecordModal({
         </div>
       }
     >
+      <AiRecognitionModal
+        open={aiOpen}
+        target="liuyao"
+        onClose={() => setAiOpen(false)}
+        onRecognized={(result) => {
+          const nextSubject = typeof result.subject === "string" ? result.subject.trim() : "";
+          if (!nextSubject) {
+            showToast("识别失败：未识别到问事主题（必填）", "error");
+            return false;
+          }
+          setSubject(nextSubject);
+
+          const nextLines = Array.isArray(result.lines) ? result.lines : [];
+          if (nextLines.length === 6 && nextLines.every((n) => Number.isInteger(n) && n >= 0 && n <= 3)) {
+            setLines(nextLines as LineType[]);
+          }
+
+          const maybeIso = typeof result.iso === "string" ? result.iso.trim() : "";
+          const solar = (result as { solar?: unknown }).solar as
+            | { y: number; m: number; d: number; h: number; min: number }
+            | undefined;
+
+          let nextDateIso: string | null = null;
+          let nextTimeHHmm: string | null = null;
+
+          if (maybeIso) {
+            const d = new Date(maybeIso);
+            if (!Number.isNaN(d.getTime())) {
+              nextDateIso = d.toISOString();
+              nextTimeHHmm = isoTimeToHHmm(d.toISOString());
+            }
+          } else if (
+            solar &&
+            Number.isFinite(solar.y) &&
+            Number.isFinite(solar.m) &&
+            Number.isFinite(solar.d) &&
+            Number.isFinite(solar.h) &&
+            Number.isFinite(solar.min)
+          ) {
+            const d = new Date(solar.y, solar.m - 1, solar.d, solar.h, solar.min, 0, 0);
+            if (!Number.isNaN(d.getTime())) {
+              nextDateIso = d.toISOString();
+              nextTimeHHmm = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+            }
+          }
+
+          if (!nextDateIso || !nextTimeHHmm) {
+            showToast("识别失败：未识别到起卦时间（需精确到分钟）", "error");
+            return false;
+          }
+
+          setDateIso(nextDateIso);
+          setTimeHHmm(nextTimeHHmm);
+
+          window.setTimeout(() => {
+            scrollAndFlash(subjectInputRef.current);
+            scrollAndFlash(monthDayRef.current);
+            scrollAndFlash(linesSectionRef.current);
+          }, 0);
+
+          return true;
+        }}
+      />
       <div className="space-y-8">
         <section className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
@@ -186,6 +278,7 @@ export function CreateLiuyaoRecordModal({
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 placeholder="如：问来年财运..."
+                ref={subjectInputRef}
                 className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-2 outline-none focus:border-[#A62121] transition-colors chinese-font font-bold rounded-none"
               />
             </div>
@@ -208,7 +301,7 @@ export function CreateLiuyaoRecordModal({
             <ChineseTimePicker label="起卦时间" value={timeHHmm} onChange={setTimeHHmm} />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div ref={monthDayRef} className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
                 月建
@@ -279,7 +372,10 @@ export function CreateLiuyaoRecordModal({
           </div>
         </section>
 
-        <section className="bg-[#FAF7F2]/40 p-6 border border-[#B37D56]/10 rounded-none">
+        <section
+          ref={linesSectionRef}
+          className="bg-[#FAF7F2]/40 p-6 border border-[#B37D56]/10 rounded-none"
+        >
           <h3 className="text-center text-[10px] text-[#B37D56] mb-6 tracking-[0.5em] font-bold uppercase">
             六爻（自下而上）
           </h3>

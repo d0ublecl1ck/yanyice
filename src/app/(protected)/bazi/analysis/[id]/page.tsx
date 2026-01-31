@@ -5,7 +5,7 @@ import React, { use, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Hash } from "lucide-react";
 
-import { geminiChat, type ChatMessage } from "@/lib/geminiService";
+import { aiChat, type ChatMessage } from "@/lib/aiService";
 import type { BaZiData } from "@/lib/types";
 import { calcMingJuRelations } from "@/lib/baziRelations";
 import { useCaseStore } from "@/stores/useCaseStore";
@@ -13,6 +13,7 @@ import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useChatStore, type Message } from "@/stores/useChatStore";
 import { useToastStore } from "@/stores/useToastStore";
 import { useAiConfigStore } from "@/stores/useAiConfigStore";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { Modal } from "@/components/ui/Modal";
 import { BaziEditView } from "../../_components/BaziEditView";
 
@@ -630,6 +631,8 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const toast = useToastStore();
   const aiModel = useAiConfigStore((state) => state.model);
+  const aiHasApiKey = useAiConfigStore((state) => state.hasApiKey);
+  const accessToken = useAuthStore((s) => s.accessToken);
 
   const records = useCaseStore((state) => state.records);
   const recordStatus = useCaseStore((state) => state.status);
@@ -685,6 +688,18 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
   const handleSend = async () => {
     if (!inputText.trim() || !analysis) return;
+    if (!aiModel.trim()) {
+      toast.show("请先在设置中配置模型", "warning");
+      return;
+    }
+    if (!aiHasApiKey) {
+      toast.show("请先在设置中配置 API Key", "warning");
+      return;
+    }
+    if (!accessToken) {
+      toast.show("未登录或登录已过期", "error");
+      return;
+    }
     const userText = inputText;
     addMessage(id, { role: "user", text: userText, timestamp: Date.now() });
     setInputText("");
@@ -697,10 +712,10 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         { role: "user", text: userText },
       ];
 
-      const text = await geminiChat({
+      const text = await aiChat({
+        accessToken,
         systemInstruction,
         messages,
-        model: aiModel.trim() ? aiModel.trim() : undefined,
       });
 
       addMessage(id, { role: "model", text: text || "...", timestamp: Date.now() });
