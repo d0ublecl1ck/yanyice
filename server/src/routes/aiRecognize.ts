@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { Type, type Static } from "@sinclair/typebox";
 
 import { getUserAiApiKey, getUserAiConfig } from "../ai/userAiConfig";
-import { zhipuChatJson } from "../ai/zhipu";
+import { aiChatJson } from "../ai/chat";
 
 const ErrorResponse = Type.Object({
   code: Type.String(),
@@ -105,7 +105,7 @@ export async function aiRecognizeRoutes(app: FastifyInstance) {
         parts.push({ type: "text", text: trimmedText });
       }
 
-      const result = await zhipuChatJson({
+      const result = await aiChatJson({
         vendor: cfg.vendor,
         apiKey,
         model: cfg.model.trim(),

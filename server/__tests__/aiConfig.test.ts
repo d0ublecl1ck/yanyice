@@ -92,6 +92,55 @@ describe("ai config module", () => {
     expect(clear.json()).toEqual({ vendor: "zhipu", model: "glm-4v-flash", hasApiKey: false });
   });
 
+  it("supports switching vendors and keeps per-vendor state", async () => {
+    const email = `u${Date.now()}@example.com`;
+    const password = "password123";
+
+    const registerRes = await app.inject({
+      method: "POST",
+      url: "/api/auth/register",
+      payload: { email, password },
+    });
+    expect(registerRes.statusCode).toBe(201);
+    const { accessToken } = registerRes.json() as { accessToken: string };
+
+    const setZhipu = await app.inject({
+      method: "PUT",
+      url: "/api/ai/config",
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { model: "glm-4.6v-flash", apiKey: "zhipu-key" },
+    });
+    expect(setZhipu.statusCode).toBe(200);
+    expect(setZhipu.json()).toEqual({ vendor: "zhipu", model: "glm-4.6v-flash", hasApiKey: true });
+
+    const switchToOpenai = await app.inject({
+      method: "PUT",
+      url: "/api/ai/config",
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { vendor: "openai" },
+    });
+    expect(switchToOpenai.statusCode).toBe(200);
+    expect(switchToOpenai.json()).toEqual({ vendor: "openai", model: "", hasApiKey: false });
+
+    const setOpenai = await app.inject({
+      method: "PUT",
+      url: "/api/ai/config",
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { model: "gpt-4.1", apiKey: "openai-key" },
+    });
+    expect(setOpenai.statusCode).toBe(200);
+    expect(setOpenai.json()).toEqual({ vendor: "openai", model: "gpt-4.1", hasApiKey: true });
+
+    const switchBackToZhipu = await app.inject({
+      method: "PUT",
+      url: "/api/ai/config",
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { vendor: "zhipu" },
+    });
+    expect(switchBackToZhipu.statusCode).toBe(200);
+    expect(switchBackToZhipu.json()).toEqual({ vendor: "zhipu", model: "glm-4.6v-flash", hasApiKey: true });
+  });
+
   it("exposes OpenAPI paths for ai config", async () => {
     const res = await app.inject({ method: "GET", url: "/openapi.json" });
     expect(res.statusCode).toBe(200);
@@ -99,4 +148,3 @@ describe("ai config module", () => {
     expect(body.paths?.["/api/ai/config"]).toBeDefined();
   });
 });
-

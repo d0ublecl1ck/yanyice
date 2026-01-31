@@ -9,22 +9,46 @@ export type PublicUserAiConfig = {
   hasApiKey: boolean;
 };
 
-export async function getUserAiConfig(prisma: PrismaClient, userId: string): Promise<PublicUserAiConfig> {
+export async function getUserAiVendor(prisma: PrismaClient, userId: string): Promise<AiVendor> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { aiVendor: true },
+  });
+  return user?.aiVendor ?? "zhipu";
+}
+
+export async function setUserAiVendor(prisma: PrismaClient, userId: string, vendor: AiVendor): Promise<void> {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { aiVendor: vendor },
+  });
+}
+
+export async function getUserAiConfigByVendor(
+  prisma: PrismaClient,
+  userId: string,
+  vendor: AiVendor,
+): Promise<PublicUserAiConfig> {
   const config = await prisma.userAiConfig.findFirst({
-    where: { userId, vendor: "zhipu" },
+    where: { userId, vendor },
     select: { vendor: true, model: true },
   });
 
   const cred = await prisma.userAiCredential.findFirst({
-    where: { userId, vendor: "zhipu" },
+    where: { userId, vendor },
     select: { id: true },
   });
 
   return {
-    vendor: config?.vendor ?? "zhipu",
+    vendor,
     model: config?.model ?? "",
     hasApiKey: Boolean(cred),
   };
+}
+
+export async function getUserAiConfig(prisma: PrismaClient, userId: string): Promise<PublicUserAiConfig> {
+  const vendor = await getUserAiVendor(prisma, userId);
+  return getUserAiConfigByVendor(prisma, userId, vendor);
 }
 
 export async function upsertUserAiConfig(
@@ -67,7 +91,7 @@ export async function upsertUserAiConfig(
     }
   }
 
-  return getUserAiConfig(prisma, userId);
+  return getUserAiConfigByVendor(prisma, userId, vendor);
 }
 
 export async function getUserAiApiKey(prisma: PrismaClient, userId: string, vendor: AiVendor): Promise<string | null> {

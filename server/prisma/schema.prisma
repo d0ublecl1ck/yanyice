@@ -20,12 +20,14 @@ enum VerifiedStatus {
 
 enum AiVendor {
   zhipu
+  openai
 }
 
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
   passwordHash String
+  aiVendor     AiVendor @default(zhipu)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
