@@ -32,7 +32,7 @@ const PAPER_TEXTURE_URL = "https://www.transparenttextures.com/patterns/natural-
 
 const placeholderByTarget: Record<AiRecognizeTarget, string> = {
   bazi: "例如：1995年8月10日10点出生在北京，或粘贴一段命理描述...",
-  liuyao: "例如：问来年财运，起卦时间 2025-01-01 10:30，或粘贴一段卦例描述...",
+  liuyao: "女问感情 二零二五年十二月三十一日十二点二十一分 地水师变天地否",
   customer: "例如：张三，男，电话 138xxxxxx，或粘贴一段客户描述...",
 };
 

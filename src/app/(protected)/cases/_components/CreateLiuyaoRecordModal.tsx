@@ -5,6 +5,7 @@ import { Plus, Sparkles } from "lucide-react";
 
 import { ChineseDatePicker } from "@/components/ChineseDatePicker";
 import { ChineseTimePicker } from "@/components/ChineseTimePicker";
+import { SearchSelect } from "@/components/SearchSelect";
 import { Select, type SelectOption } from "@/components/Select";
 import { Modal, ModalPrimaryButton, ModalSecondaryButton } from "@/components/ui/Modal";
 import { LiuyaoLineSvg } from "@/components/liuyao/LiuyaoLineSvg";
@@ -419,10 +420,11 @@ export function CreateLiuyaoRecordModal({
                 <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
                   本卦
                 </label>
-                <Select
+                <SearchSelect
                   value={baseHexagramName}
                   onValueChange={(v) => setBaseHexagramName(String(v))}
                   emptyLabel="请选择本卦"
+                  searchPlaceholder="搜索本卦..."
                   options={hexagramNameOptions}
                 />
               </div>
@@ -430,10 +432,11 @@ export function CreateLiuyaoRecordModal({
                 <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
                   变卦
                 </label>
-                <Select
+                <SearchSelect
                   value={changedHexagramName}
                   onValueChange={(v) => setChangedHexagramName(String(v))}
                   emptyLabel="请选择变卦"
+                  searchPlaceholder="搜索变卦..."
                   options={hexagramNameOptions}
                 />
               </div>
