@@ -216,11 +216,24 @@ export function AiRecognitionModal<T extends AiRecognizeTarget>({
           }}
         />
 
-        <button
-          type="button"
-          disabled={isLoading}
-          onClick={() => fileInputRef.current?.click()}
-          className="w-full border border-dashed border-[#B37D56]/20 bg-white/50 rounded-[4px] h-[180px] flex items-center justify-center text-center hover:border-[#A62121]/30 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        <div
+          role="button"
+          tabIndex={0}
+          aria-disabled={isLoading}
+          onClick={() => {
+            if (isLoading) return;
+            fileInputRef.current?.click();
+          }}
+          onKeyDown={(e) => {
+            if (isLoading) return;
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              fileInputRef.current?.click();
+            }
+          }}
+          className={`w-full border border-dashed border-[#B37D56]/20 bg-white/50 rounded-[4px] h-[180px] flex items-center justify-center text-center hover:border-[#A62121]/30 transition-colors ${
+            isLoading ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+          }`}
         >
           {imagePreviewUrl ? (
             <div className="w-full h-full p-3 relative">
@@ -262,7 +275,7 @@ export function AiRecognitionModal<T extends AiRecognizeTarget>({
               </div>
             </div>
           )}
-        </button>
+        </div>
       </div>
     </Modal>
   );
