@@ -15,7 +15,7 @@ import { useCaseStore } from '@/stores/useCaseStore';
 import { useCustomerStore } from '@/stores/useCustomerStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useToastStore } from '@/stores/useToastStore';
-import { LineType, LiuYaoData, BaZiData } from '@/lib/types';
+import { LineType, type LiuyaoGender, LiuYaoData, BaZiData } from '@/lib/types';
 import { ApiError } from '@/lib/apiClient';
 import { LINE_SYMBOLS, BRANCHES, STEMS } from '@/lib/constants';
 import { calcLiuyaoGanzhiFromIso } from "@/lib/lunarGanzhi";
@@ -38,6 +38,12 @@ const setIsoTime = (iso: string, hhmm: string) => {
   d.setHours(Number.isFinite(h) ? h : 0, Number.isFinite(m) ? m : 0, 0, 0);
   return d.toISOString();
 };
+
+const LIUYAO_GENDER_OPTIONS: Array<{ id: LiuyaoGender; label: string }> = [
+  { id: 'male', label: '男' },
+  { id: 'female', label: '女' },
+  { id: 'unknown', label: '不祥' },
+];
 
 type PickerItem = string | number | LocationNode;
 
@@ -393,6 +399,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
   const [lines, setLines] = useState<LineType[]>([0, 0, 0, 0, 0, 0]);
   const [monthBranch, setMonthBranch] = useState('子');
   const [dayBranch, setDayBranch] = useState('甲子');
+  const [liuyaoGender, setLiuyaoGender] = useState<LiuyaoGender>('unknown');
 
   // 八字专有状态
   const [bazi, setBazi] = useState<Partial<BaZiData>>({
@@ -460,6 +467,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
           setMonthBranch(record.liuyaoData.monthBranch);
           setDayBranch(record.liuyaoData.dayBranch);
           setRecordDate(record.liuyaoData.date);
+          setLiuyaoGender(record.liuyaoData.gender ?? 'unknown');
         }
         if (record.baziData) {
           setBazi(record.baziData);
@@ -544,6 +552,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
       lines,
       date: recordDate,
       subject,
+      gender: liuyaoGender,
       monthBranch,
       dayBranch
     } : undefined;
@@ -754,8 +763,27 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
             </div>
 
             {module === 'liuyao' ? (
-              <div className="grid grid-cols-2 gap-8 items-end animate-in fade-in duration-300">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end animate-in fade-in duration-300">
                 <ChineseDatePicker label="起卦日期" value={recordDate} onChange={setRecordDate} />
+                <div className="space-y-2 group">
+                  <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">性别</label>
+                  <div className="flex flex-wrap gap-2">
+                    {LIUYAO_GENDER_OPTIONS.map((g) => (
+                      <button
+                        key={g.id}
+                        type="button"
+                        onClick={() => setLiuyaoGender(g.id)}
+                        className={`px-4 py-1.5 text-[10px] font-bold tracking-widest border transition-all rounded-[2px] ${
+                          liuyaoGender === g.id
+                            ? 'bg-[#2F2F2F] text-white border-[#2F2F2F]'
+                            : 'bg-white text-[#2F2F2F]/40 border-[#B37D56]/10 hover:border-[#A62121]'
+                        }`}
+                      >
+                        {g.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">月建</label>

@@ -11,7 +11,7 @@ import { LiuyaoLineSvg } from "@/components/liuyao/LiuyaoLineSvg";
 import { AiRecognitionModal } from "@/components/ai/AiRecognitionModal";
 import { scrollAndFlash } from "@/lib/scrollFlash";
 import { calcLiuyaoGanzhiFromIso } from "@/lib/lunarGanzhi";
-import { LineType, type LiuYaoData } from "@/lib/types";
+import { LineType, type LiuyaoGender, type LiuYaoData } from "@/lib/types";
 import { getMovingMarkText, isLineMoving } from "@/lib/liuyao/lineType";
 import { useAiConfigStore } from "@/stores/useAiConfigStore";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -43,6 +43,12 @@ const LINE_OPTIONS: Array<SelectOption<LineType>> = [
 
 const LINE_LABELS = ["初爻", "二爻", "三爻", "四爻", "五爻", "上爻"] as const;
 
+const LIUYAO_GENDER_OPTIONS: Array<{ id: LiuyaoGender; label: string }> = [
+  { id: "male", label: "男" },
+  { id: "female", label: "女" },
+  { id: "unknown", label: "不祥" },
+];
+
 export function CreateLiuyaoRecordModal({
   open,
   onClose,
@@ -63,6 +69,7 @@ export function CreateLiuyaoRecordModal({
   const [customerId, setCustomerId] = useState("");
   const [dateIso, setDateIso] = useState(() => new Date().toISOString());
   const [timeHHmm, setTimeHHmm] = useState(() => isoTimeToHHmm(new Date().toISOString()));
+  const [gender, setGender] = useState<LiuyaoGender>("unknown");
   const [lines, setLines] = useState<LineType[]>([
     LineType.SHAO_YANG,
     LineType.SHAO_YANG,
@@ -87,6 +94,7 @@ export function CreateLiuyaoRecordModal({
     setCustomerId((initialCustomerId ?? "").trim());
     setDateIso(nowIso);
     setTimeHHmm(isoTimeToHHmm(nowIso));
+    setGender("unknown");
     setLines([
       LineType.SHAO_YANG,
       LineType.SHAO_YANG,
@@ -173,6 +181,7 @@ export function CreateLiuyaoRecordModal({
                   lines,
                   date: recordIso,
                   subject: trimmedSubject,
+                  gender,
                   monthBranch,
                   dayBranch,
                 };
@@ -300,6 +309,28 @@ export function CreateLiuyaoRecordModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
             <ChineseDatePicker label="起卦日期" value={dateIso} onChange={setDateIso} />
             <ChineseTimePicker label="起卦时间" value={timeHHmm} onChange={setTimeHHmm} />
+          </div>
+
+          <div className="space-y-2 group">
+            <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+              性别
+            </label>
+            <div className="flex flex-wrap gap-3">
+              {LIUYAO_GENDER_OPTIONS.map((g) => (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => setGender(g.id)}
+                  className={`px-4 py-1.5 text-[10px] font-bold tracking-widest border transition-all rounded-[2px] ${
+                    gender === g.id
+                      ? "bg-[#2F2F2F] text-white border-[#2F2F2F]"
+                      : "bg-white text-[#2F2F2F]/40 border-[#B37D56]/10 hover:border-[#A62121]"
+                  }`}
+                >
+                  {g.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div ref={monthDayRef} className="grid grid-cols-2 gap-4">
