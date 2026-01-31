@@ -192,13 +192,17 @@ export function SearchSelect<T extends string | number>({
   useEffect(() => {
     if (!open) return;
     setQuery("");
+    window.setTimeout(() => searchRef.current?.focus(), 0);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
     const idx =
       selectedIndex >= 0 && !listOptions[selectedIndex]?.disabled
         ? selectedIndex
         : findFirstEnabledIndex(listOptions);
     setActiveIndex(idx);
-    window.setTimeout(() => searchRef.current?.focus(), 0);
-  }, [open, selectedIndex, listOptions]);
+  }, [listOptions, open, selectedIndex]);
 
   const commit = (next: T | "") => {
     onValueChange?.(next);
@@ -281,7 +285,7 @@ export function SearchSelect<T extends string | number>({
                 value={query}
                 onChange={(e) => {
                   setQuery(e.target.value);
-                  setActiveIndex(findFirstEnabledIndex(listOptions));
+                  setActiveIndex(0);
                 }}
                 placeholder={String(searchPlaceholder)}
                 className="w-full bg-transparent outline-none text-[10px] chinese-font font-bold rounded-none"
@@ -323,4 +327,3 @@ export function SearchSelect<T extends string | number>({
     </div>
   );
 }
-
