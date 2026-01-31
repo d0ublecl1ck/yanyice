@@ -5,6 +5,7 @@ import { Plus, Sparkles } from "lucide-react";
 
 import { ChineseDatePicker } from "@/components/ChineseDatePicker";
 import { ChineseTimePicker } from "@/components/ChineseTimePicker";
+import { SearchSelect } from "@/components/SearchSelect";
 import { Select, type SelectOption } from "@/components/Select";
 import { Modal, ModalPrimaryButton, ModalSecondaryButton } from "@/components/ui/Modal";
 import { LiuyaoLineSvg } from "@/components/liuyao/LiuyaoLineSvg";
@@ -12,11 +13,13 @@ import { AiRecognitionModal } from "@/components/ai/AiRecognitionModal";
 import { scrollAndFlash } from "@/lib/scrollFlash";
 import { calcLiuyaoGanzhiFromIso } from "@/lib/lunarGanzhi";
 import { getMovingMarkText, isLineMoving } from "@/lib/liuyao/lineType";
+import { coerceHexagramName, deriveLinesFromHexagramNames } from "@/lib/liuyao/hexagramName";
 import {
   parseLiuyaoDateTimeFromIsoLike,
   parseLiuyaoDateTimeFromSolarLike,
 } from "@/lib/liuyao/recognitionTime";
 import { LineType, type LiuyaoGender, type LiuYaoData } from "@/lib/types";
+import { HEXAGRAM_NAMES } from "@/lib/liuyao/wenwang";
 import { useAiConfigStore } from "@/stores/useAiConfigStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useCaseStore } from "@/stores/useCaseStore";
@@ -53,6 +56,8 @@ const LIUYAO_GENDER_OPTIONS: Array<{ id: LiuyaoGender; label: string }> = [
   { id: "unknown", label: "不祥" },
 ];
 
+type QiguaMode = "lines" | "hexagramName";
+
 export function CreateLiuyaoRecordModal({
   open,
   onClose,
@@ -74,6 +79,9 @@ export function CreateLiuyaoRecordModal({
   const [dateIso, setDateIso] = useState(() => new Date().toISOString());
   const [timeHHmm, setTimeHHmm] = useState(() => isoTimeToHHmm(new Date().toISOString()));
   const [gender, setGender] = useState<LiuyaoGender>("unknown");
+  const [qiguaMode, setQiguaMode] = useState<QiguaMode>("lines");
+  const [baseHexagramName, setBaseHexagramName] = useState("");
+  const [changedHexagramName, setChangedHexagramName] = useState("");
   const [lines, setLines] = useState<LineType[]>([
     LineType.SHAO_YANG,
     LineType.SHAO_YANG,
@@ -99,6 +107,9 @@ export function CreateLiuyaoRecordModal({
     setDateIso(nowIso);
     setTimeHHmm(isoTimeToHHmm(nowIso));
     setGender("unknown");
+    setQiguaMode("lines");
+    setBaseHexagramName("");
+    setChangedHexagramName("");
     setLines([
       LineType.SHAO_YANG,
       LineType.SHAO_YANG,
@@ -119,6 +130,25 @@ export function CreateLiuyaoRecordModal({
   const derivedDayBranch = ganzhi?.dayGanzhi ?? "甲子";
   const monthBranch = derivedMonthBranch;
   const dayBranch = derivedDayBranch;
+
+  const hexagramNameOptions = useMemo(
+    () => HEXAGRAM_NAMES.map((n) => ({ value: n, label: n })),
+    [],
+  );
+
+  const derivedLinesFromNames = useMemo(() => {
+    if (qiguaMode !== "hexagramName") return null;
+    const base = baseHexagramName.trim();
+    const changed = changedHexagramName.trim();
+    if (!base || !changed) return null;
+    return deriveLinesFromHexagramNames(base, changed);
+  }, [baseHexagramName, changedHexagramName, qiguaMode]);
+
+  useEffect(() => {
+    if (qiguaMode !== "hexagramName") return;
+    if (!derivedLinesFromNames) return;
+    setLines(derivedLinesFromNames);
+  }, [derivedLinesFromNames, qiguaMode]);
 
   const setLineAtIndex = (index: number, nextLine: LineType) => {
     setLines((prev) => {
@@ -169,8 +199,17 @@ export function CreateLiuyaoRecordModal({
               }
 
               const trimmedSubject = subject.trim();
-              if (!trimmedSubject) {
+              if (!trimmedSubject && qiguaMode === "lines") {
                 showToast("请填写咨询主题", "error");
+                return;
+              }
+
+              const resolvedLines =
+                qiguaMode === "hexagramName"
+                  ? deriveLinesFromHexagramNames(baseHexagramName.trim(), changedHexagramName.trim())
+                  : lines;
+              if (!resolvedLines || resolvedLines.length !== 6) {
+                showToast("请先选择本卦与变卦（系统将自动推导六爻）", "error");
                 return;
               }
 
@@ -182,9 +221,13 @@ export function CreateLiuyaoRecordModal({
                   : undefined;
 
                 const liuyaoData: LiuYaoData = {
-                  lines,
+                  lines: resolvedLines,
                   date: recordIso,
-                  subject: trimmedSubject,
+                  subject:
+                    trimmedSubject ||
+                    (qiguaMode === "hexagramName"
+                      ? `${baseHexagramName.trim()}变${changedHexagramName.trim()}`
+                      : "（未填写）"),
                   gender,
                   monthBranch,
                   dayBranch,
@@ -194,7 +237,11 @@ export function CreateLiuyaoRecordModal({
                   payload: {
                     customerId: normalizedCustomerId,
                     customerName: customer?.name ?? null,
-                    subject: trimmedSubject,
+                    subject:
+                      trimmedSubject ||
+                      (qiguaMode === "hexagramName"
+                        ? `${baseHexagramName.trim()}变${changedHexagramName.trim()}`
+                        : "（未填写）"),
                     notes: "",
                     tags,
                     liuyaoData,
@@ -226,15 +273,32 @@ export function CreateLiuyaoRecordModal({
           console.log("[liuyao-ai-recognize] raw result:", result);
 
           const nextSubject = typeof result.subject === "string" ? result.subject.trim() : "";
-          if (!nextSubject) {
-            showToast("识别失败：未识别到问事主题（必填）", "error");
-            return false;
-          }
-          setSubject(nextSubject);
+          if (nextSubject) setSubject(nextSubject);
 
           const nextLines = Array.isArray(result.lines) ? result.lines : [];
           if (nextLines.length === 6 && nextLines.every((n) => Number.isInteger(n) && n >= 0 && n <= 3)) {
             setLines(nextLines as LineType[]);
+          }
+
+          const rawBaseName =
+            typeof (result as { baseHexagramName?: unknown }).baseHexagramName === "string"
+              ? ((result as { baseHexagramName: string }).baseHexagramName ?? "").trim()
+              : "";
+          const rawChangedName =
+            typeof (result as { changedHexagramName?: unknown }).changedHexagramName === "string"
+              ? ((result as { changedHexagramName: string }).changedHexagramName ?? "").trim()
+              : "";
+
+          const coercedBase = rawBaseName ? coerceHexagramName(rawBaseName) ?? rawBaseName : "";
+          const coercedChanged = rawChangedName ? coerceHexagramName(rawChangedName) ?? rawChangedName : "";
+          const derivedByName =
+            coercedBase && coercedChanged ? deriveLinesFromHexagramNames(coercedBase, coercedChanged) : null;
+
+          if (derivedByName) {
+            setQiguaMode("hexagramName");
+            setBaseHexagramName(coercedBase);
+            setChangedHexagramName(coercedChanged);
+            setLines(derivedByName);
           }
 
           const maybeIso = typeof result.iso === "string" ? result.iso.trim() : "";
@@ -277,6 +341,11 @@ export function CreateLiuyaoRecordModal({
             scrollAndFlash(linesSectionRef.current);
           }, 0);
 
+          if (!nextSubject && !derivedByName) {
+            showToast("识别失败：未识别到问事主题或本卦/变卦（三项即可起卦）", "error");
+            return false;
+          }
+
           return true;
         }}
       />
@@ -314,6 +383,65 @@ export function CreateLiuyaoRecordModal({
             <ChineseDatePicker label="起卦日期" value={dateIso} onChange={setDateIso} />
             <ChineseTimePicker label="起卦时间" value={timeHHmm} onChange={setTimeHHmm} />
           </div>
+
+          <div className="space-y-2 group">
+            <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+              起卦方式
+            </label>
+            <div className="flex flex-wrap gap-3">
+              {[
+                { id: "lines" as const, label: "按爻起卦" },
+                { id: "hexagramName" as const, label: "按卦名起卦" },
+              ].map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setQiguaMode(m.id)}
+                  className={`px-4 py-1.5 text-[10px] font-bold tracking-widest border transition-all rounded-[2px] ${
+                    qiguaMode === m.id
+                      ? "bg-[#2F2F2F] text-white border-[#2F2F2F]"
+                      : "bg-white text-[#2F2F2F]/40 border-[#B37D56]/10 hover:border-[#A62121]"
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+            {qiguaMode === "hexagramName" && (
+              <p className="text-[10px] text-[#2F2F2F]/40 chinese-font">
+                提示：仅需「本卦 / 变卦 / 起卦时间」三项即可创建
+              </p>
+            )}
+          </div>
+
+          {qiguaMode === "hexagramName" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+              <div className="space-y-2 group">
+                <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+                  本卦
+                </label>
+                <SearchSelect
+                  value={baseHexagramName}
+                  onValueChange={(v) => setBaseHexagramName(String(v))}
+                  emptyLabel="请选择本卦"
+                  searchPlaceholder="搜索本卦..."
+                  options={hexagramNameOptions}
+                />
+              </div>
+              <div className="space-y-2 group">
+                <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
+                  变卦
+                </label>
+                <SearchSelect
+                  value={changedHexagramName}
+                  onValueChange={(v) => setChangedHexagramName(String(v))}
+                  emptyLabel="请选择变卦"
+                  searchPlaceholder="搜索变卦..."
+                  options={hexagramNameOptions}
+                />
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2 group">
             <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">
@@ -458,6 +586,7 @@ export function CreateLiuyaoRecordModal({
                   onValueChange={(v) => setLineAtIndex(idx, v as LineType)}
                   options={LINE_OPTIONS}
                   size="sm"
+                  disabled={qiguaMode === "hexagramName"}
                 />
               </div>
             ))}
