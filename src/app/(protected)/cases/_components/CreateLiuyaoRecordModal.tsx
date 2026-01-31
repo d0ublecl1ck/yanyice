@@ -12,13 +12,7 @@ import { AiRecognitionModal } from "@/components/ai/AiRecognitionModal";
 import { scrollAndFlash } from "@/lib/scrollFlash";
 import { calcLiuyaoGanzhiFromIso } from "@/lib/lunarGanzhi";
 import { LineType, type LiuYaoData } from "@/lib/types";
-import {
-  getLineNature,
-  getMovingMarkText,
-  isLineMoving,
-  toLineType,
-  type LineNature,
-} from "@/lib/liuyao/lineType";
+import { getMovingMarkText, isLineMoving } from "@/lib/liuyao/lineType";
 import { useAiConfigStore } from "@/stores/useAiConfigStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useCaseStore } from "@/stores/useCaseStore";
@@ -40,9 +34,11 @@ const setIsoTime = (iso: string, hhmm: string) => {
   return d.toISOString();
 };
 
-const NATURE_OPTIONS: Array<SelectOption<LineNature>> = [
-  { value: "yang", label: "少阳" },
-  { value: "yin", label: "少阴" },
+const LINE_OPTIONS: Array<SelectOption<LineType>> = [
+  { value: LineType.SHAO_YANG, label: "少阳" },
+  { value: LineType.SHAO_YIN, label: "少阴" },
+  { value: LineType.LAO_YANG, label: "老阳（动）" },
+  { value: LineType.LAO_YIN, label: "老阴（动）" },
 ];
 
 const LINE_LABELS = ["初爻", "二爻", "三爻", "四爻", "五爻", "上爻"] as const;
@@ -112,19 +108,10 @@ export function CreateLiuyaoRecordModal({
   const monthBranch = derivedMonthBranch;
   const dayBranch = derivedDayBranch;
 
-  const setNatureAtIndex = (index: number, nextNature: LineNature) => {
+  const setLineAtIndex = (index: number, nextLine: LineType) => {
     setLines((prev) => {
       const next = [...prev];
-      next[index] = toLineType(nextNature, isLineMoving(prev[index] ?? LineType.SHAO_YANG));
-      return next;
-    });
-  };
-
-  const setMovingAtIndex = (index: number, nextMoving: boolean) => {
-    setLines((prev) => {
-      const next = [...prev];
-      const current = prev[index] ?? LineType.SHAO_YANG;
-      next[index] = toLineType(getLineNature(current), nextMoving);
+      next[index] = nextLine;
       return next;
     });
   };
@@ -393,21 +380,21 @@ export function CreateLiuyaoRecordModal({
           <h3 className="text-center text-[10px] text-[#B37D56] mb-6 tracking-[0.5em] font-bold uppercase">
             六爻（自下而上）
           </h3>
-          <div className="grid grid-cols-[3rem_minmax(0,1fr)_7rem_3rem] items-center gap-3 pb-2 px-3">
+          <div className="grid grid-cols-[3rem_minmax(0,1fr)_3rem_7rem] items-center gap-3 pb-2 px-3">
             <div />
             <div />
-            <div className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest text-center">
-              爻
-            </div>
             <div className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest text-center">
               发动
+            </div>
+            <div className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest text-center">
+              爻
             </div>
           </div>
           <div className="flex flex-col-reverse gap-3 items-stretch">
             {lines.map((line, idx) => (
               <div
                 key={idx}
-                className="grid grid-cols-[3rem_minmax(0,1fr)_7rem_3rem] items-center gap-3 py-2 px-3 border border-transparent hover:bg-black/[0.01]"
+                className="grid grid-cols-[3rem_minmax(0,1fr)_3rem_7rem] items-center gap-3 py-2 px-3 border border-transparent hover:bg-black/[0.01]"
               >
                 <span className="text-[9px] font-bold text-[#2F2F2F]/20 chinese-font">
                   {LINE_LABELS[idx] ?? `爻${idx + 1}`}
@@ -418,29 +405,25 @@ export function CreateLiuyaoRecordModal({
                     className="h-6 w-full max-w-[160px]"
                     lineColor="#2F2F2F"
                     markColor="#A62121"
+                    showMark={false}
                   />
                 </div>
+                <div className="flex items-center justify-center">
+                  {isLineMoving(line) ? (
+                    <span className="inline-flex items-center justify-center w-8 h-8 border border-[#A62121] bg-[#FAF7F2] text-[#A62121] text-lg font-black rounded-[2px]">
+                      {getMovingMarkText(line)}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-bold text-[#2F2F2F]/20">—</span>
+                  )}
+                </div>
                 <Select
-                  aria-label={`第 ${idx + 1} 爻 阴阳`}
-                  value={getLineNature(line)}
-                  onValueChange={(v) => setNatureAtIndex(idx, v as LineNature)}
-                  options={NATURE_OPTIONS}
+                  aria-label={`第 ${idx + 1} 爻`}
+                  value={line}
+                  onValueChange={(v) => setLineAtIndex(idx, v as LineType)}
+                  options={LINE_OPTIONS}
                   size="sm"
                 />
-                <button
-                  type="button"
-                  aria-label={`第 ${idx + 1} 爻 发动`}
-                  aria-pressed={isLineMoving(line)}
-                  title="发动"
-                  onClick={() => setMovingAtIndex(idx, !isLineMoving(line))}
-                  className={`h-9 w-12 border text-sm font-black chinese-font transition-colors rounded-[2px] ${
-                    isLineMoving(line)
-                      ? "border-[#A62121] bg-[#FAF7F2] text-[#A62121] hover:bg-[#A62121]/5"
-                      : "border-[#B37D56]/20 bg-white text-[#2F2F2F]/20 hover:text-[#A62121] hover:border-[#A62121]/30"
-                  }`}
-                >
-                  {getMovingMarkText(line) || "—"}
-                </button>
               </div>
             ))}
           </div>
