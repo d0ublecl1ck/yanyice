@@ -12,6 +12,7 @@ import { calcLiuyaoShenSha } from "@/lib/liuyao/shenSha";
 import { LiuyaoLineSvg } from "@/components/liuyao/LiuyaoLineSvg";
 import { getGanzhiFourPillars } from "@/lib/lunarGanzhi";
 import { formatLiuyaoExportText } from "@/lib/liuyao/export";
+import type { LiuyaoGender } from "@/lib/types";
 import { useCaseStore } from "@/stores/useCaseStore";
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -30,6 +31,9 @@ const WUXING_COLORS: Record<string, string> = {
 };
 
 const getWuxingColor = (el: string) => WUXING_COLORS[el] ?? WUXING_COLORS["土"];
+
+const liuyaoGenderText = (g: LiuyaoGender | null | undefined) =>
+  g === "male" ? "男" : g === "female" ? "女" : "不祥";
 
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -70,6 +74,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     return {
       subject: record.subject || d.subject || "卦例",
       solarDate,
+      gender: (d.gender ?? "unknown") as LiuyaoGender,
       monthBranch: d.monthBranch,
       dayBranch: d.dayBranch,
       lines: d.lines,
@@ -108,6 +113,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       id,
       subject: analysis?.subject ?? record?.subject ?? "卦例",
       customerName,
+      gender: analysis?.gender ?? record?.liuyaoData?.gender ?? "unknown",
       solarDate: analysis?.solarDate ?? null,
       monthBranch: analysis?.monthBranch ?? null,
       dayBranch: analysis?.dayBranch ?? null,
@@ -160,7 +166,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     setInputText("");
     setIsTyping(true);
     try {
-      const systemInstruction = `你是一位专业六爻师。当前卦例：${analysis.subject}。月建：${analysis.monthBranch}，日辰：${analysis.dayBranch}。请根据排盘与问事语境回答追问，语气扁平文字化，不使用Emoji。`;
+      const systemInstruction = `你是一位专业六爻师。当前卦例：${analysis.subject}。性别：${liuyaoGenderText(analysis.gender)}。月建：${analysis.monthBranch}，日辰：${analysis.dayBranch}。请根据排盘与问事语境回答追问，语气扁平文字化，不使用Emoji。`;
 
       const messages: ChatMessage[] = [
         ...history.map((m): ChatMessage => ({ role: m.role, text: m.text })),
@@ -245,6 +251,8 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             {customerName ? <span>{customerName}</span> : null}
             {customerName ? <span className="text-[#B37D56]/30">·</span> : null}
             <span>{analysis.solarDate}</span>
+            <span className="text-[#B37D56]/30">·</span>
+            <span>性别：{liuyaoGenderText(analysis.gender)}</span>
           </div>
           {paipan?.base.name && (
             <p className="text-xs text-[#8B6A52] chinese-font tracking-widest uppercase mt-1">

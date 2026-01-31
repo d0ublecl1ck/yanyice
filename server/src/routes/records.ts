@@ -13,6 +13,8 @@ const VerifiedStatus = Type.Union([
   Type.Literal("partial"),
 ]);
 
+const LiuyaoGender = Type.Union([Type.Literal("male"), Type.Literal("female"), Type.Literal("unknown")]);
+
 const BaZiData = Type.Object({
   birthDate: Type.String(),
   yearStem: Type.Optional(Type.String()),
@@ -36,6 +38,7 @@ const LiuYaoData = Type.Object({
   lines: Type.Array(Type.Number(), { minItems: 6, maxItems: 6 }),
   date: Type.String(),
   subject: Type.String(),
+  gender: Type.Optional(LiuyaoGender),
   monthBranch: Type.String(),
   dayBranch: Type.String(),
 });
