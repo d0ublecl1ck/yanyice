@@ -1,6 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
-import { parseLiuyaoDateTimeFromIsoLike, parseLiuyaoDateTimeFromSolarLike } from "@/lib/liuyao/recognitionTime";
+import {
+  parseLiuyaoDateTimeFromGregorianLike,
+  parseLiuyaoDateTimeFromIsoLike,
+  parseLiuyaoDateTimeFromSolarLike,
+} from "@/lib/liuyao/recognitionTime";
 
 describe("liuyao recognition time parsing", () => {
   test("parses Chinese datetime with lunar annotation", () => {
@@ -36,5 +40,13 @@ describe("liuyao recognition time parsing", () => {
     expect(d.getHours()).toBe(18);
     expect(d.getMinutes()).toBe(28);
   });
-});
 
+  test("parses gregorian object and timezone variants", () => {
+    const parsed1 = parseLiuyaoDateTimeFromGregorianLike({ date: "2026-01-27", time: "18:28", timezone: "UTC+8" });
+    const parsed2 = parseLiuyaoDateTimeFromGregorianLike({ date: "2026/01/27", time: "18:28", timezone: "+08:00" });
+    const parsed3 = parseLiuyaoDateTimeFromGregorianLike({ date: "2026-01-27", time: "18:28" });
+    expect(parsed1?.timeHHmm).toBe("18:28");
+    expect(parsed2?.timeHHmm).toBe("18:28");
+    expect(parsed3?.timeHHmm).toBe("18:28");
+  });
+});

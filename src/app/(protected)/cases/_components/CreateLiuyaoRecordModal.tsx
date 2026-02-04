@@ -13,11 +13,8 @@ import { AiRecognitionModal } from "@/components/ai/AiRecognitionModal";
 import { scrollAndFlash } from "@/lib/scrollFlash";
 import { calcLiuyaoGanzhiFromIso } from "@/lib/lunarGanzhi";
 import { getMovingMarkText, isLineMoving } from "@/lib/liuyao/lineType";
-import { coerceHexagramName, deriveLinesFromHexagramNames } from "@/lib/liuyao/hexagramName";
-import {
-  parseLiuyaoDateTimeFromIsoLike,
-  parseLiuyaoDateTimeFromSolarLike,
-} from "@/lib/liuyao/recognitionTime";
+import { deriveLinesFromHexagramNames } from "@/lib/liuyao/hexagramName";
+import { normalizeLiuyaoAiPrefill } from "@/lib/liuyao/aiPrefill";
 import { LineType, type LiuyaoGender, type LiuYaoData } from "@/lib/types";
 import { HEXAGRAM_NAMES } from "@/lib/liuyao/wenwang";
 import { useAiConfigStore } from "@/stores/useAiConfigStore";
@@ -272,68 +269,51 @@ export function CreateLiuyaoRecordModal({
           // Helpful when user reports "recognized but missing time/lines" issues.
           console.log("[liuyao-ai-recognize] raw result:", result);
 
-          const nextSubject = typeof result.subject === "string" ? result.subject.trim() : "";
-          if (nextSubject) setSubject(nextSubject);
+          const prefill = normalizeLiuyaoAiPrefill(result);
+          let applied = false;
 
-          const nextLines = Array.isArray(result.lines) ? result.lines : [];
-          if (nextLines.length === 6 && nextLines.every((n) => Number.isInteger(n) && n >= 0 && n <= 3)) {
-            setLines(nextLines as LineType[]);
+          if (prefill.subject) {
+            setSubject(prefill.subject);
+            applied = true;
           }
 
-          const rawBaseName =
-            typeof (result as { baseHexagramName?: unknown }).baseHexagramName === "string"
-              ? ((result as { baseHexagramName: string }).baseHexagramName ?? "").trim()
-              : "";
-          const rawChangedName =
-            typeof (result as { changedHexagramName?: unknown }).changedHexagramName === "string"
-              ? ((result as { changedHexagramName: string }).changedHexagramName ?? "").trim()
-              : "";
+          if (prefill.gender) {
+            setGender(prefill.gender);
+            applied = true;
+          }
 
-          const coercedBase = rawBaseName ? coerceHexagramName(rawBaseName) ?? rawBaseName : "";
-          const coercedChanged = rawChangedName ? coerceHexagramName(rawChangedName) ?? rawChangedName : "";
-          const derivedByName =
-            coercedBase && coercedChanged ? deriveLinesFromHexagramNames(coercedBase, coercedChanged) : null;
+          if (prefill.tag) {
+            setTags((prev) => (prev.includes(prefill.tag!) ? prev : [prefill.tag!, ...prev]));
+            applied = true;
+          }
 
-          if (derivedByName) {
+          if (prefill.time) {
+            setDateIso(prefill.time.dateIso);
+            setTimeHHmm(prefill.time.timeHHmm);
+            applied = true;
+          }
+
+          if (prefill.baseHexagramName) {
+            setBaseHexagramName(prefill.baseHexagramName);
+            applied = true;
+          }
+          if (prefill.changedHexagramName) {
+            setChangedHexagramName(prefill.changedHexagramName);
+            applied = true;
+          }
+
+          if (prefill.qiguaMode === "hexagramName" && prefill.baseHexagramName && prefill.changedHexagramName) {
             setQiguaMode("hexagramName");
-            setBaseHexagramName(coercedBase);
-            setChangedHexagramName(coercedChanged);
-            setLines(derivedByName);
+            if (prefill.lines) setLines(prefill.lines);
+            applied = true;
+          } else if (prefill.lines) {
+            setQiguaMode("lines");
+            setLines(prefill.lines);
+            applied = true;
+          } else if (prefill.baseHexagramName || prefill.changedHexagramName) {
+            setQiguaMode("hexagramName");
+            applied = true;
           }
-
-          const maybeIso = typeof result.iso === "string" ? result.iso.trim() : "";
-          const solar = (result as { solar?: unknown }).solar as unknown;
-
-          let nextDateIso: string | null = null;
-          let nextTimeHHmm: string | null = null;
-
-          if (maybeIso) {
-            const parsed = parseLiuyaoDateTimeFromIsoLike(maybeIso);
-            if (parsed) {
-              nextDateIso = parsed.dateIso;
-              nextTimeHHmm = parsed.timeHHmm;
-            }
-          } else {
-            const parsed = parseLiuyaoDateTimeFromSolarLike(solar);
-            if (parsed) {
-              nextDateIso = parsed.dateIso;
-              nextTimeHHmm = parsed.timeHHmm;
-            }
-          }
-
-          if (!nextDateIso || !nextTimeHHmm) {
-            console.log(
-              "[liuyao-ai-recognize] missing time. iso:",
-              result.iso,
-              "solar:",
-              (result as { solar?: unknown }).solar,
-            );
-            showToast("识别失败：未识别到起卦时间（需精确到分钟）", "error");
-            return false;
-          }
-
-          setDateIso(nextDateIso);
-          setTimeHHmm(nextTimeHHmm);
 
           window.setTimeout(() => {
             scrollAndFlash(subjectInputRef.current);
@@ -341,8 +321,8 @@ export function CreateLiuyaoRecordModal({
             scrollAndFlash(linesSectionRef.current);
           }, 0);
 
-          if (!nextSubject && !derivedByName) {
-            showToast("识别失败：未识别到问事主题或本卦/变卦（三项即可起卦）", "error");
+          if (!applied) {
+            showToast("未识别到可填充字段，可尝试更换截图或补充文字", "warning");
             return false;
           }
 
