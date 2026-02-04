@@ -26,7 +26,7 @@ const topicToTag = (topic: string) => {
   return null;
 };
 
-const coerceLiuyaoTag = (input: unknown) => {
+const coerceLiuyaoTag = (input: unknown): string | null => {
   if (typeof input === "string") {
     const s = input.trim();
     if (!s) return null;
