@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   CalendarDays,
@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Hash,
   MapPin,
-  RefreshCw,
   Search,
   X,
 } from "lucide-react";
@@ -19,35 +18,37 @@ import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useToastStore } from "@/stores/useToastStore";
 import type { BaZiData } from "@/lib/types";
 import { BRANCHES, STEMS } from "@/lib/constants";
-import { filterCities, filterDistricts, filterProvinces, type LocationData } from "@/lib/locationSearch";
+import type { AiRecognizeBaziResult } from "@/lib/aiRecognition";
+import { scrollAndFlash } from "@/lib/scrollFlash";
+import { loadLocationPickerSchema, formatSelection } from "@/lib/locationData";
+import { filterCities, filterDistricts, filterProvinces, type LocationNode } from "@/lib/locationSearch";
+import { resolveLocationIdsFromText } from "@/lib/locationResolve";
 import {
   deriveBaziPickerFromSolar,
   deriveBaziPickerFromSolarTime,
   getBaziPickerYearItems,
   getBaziTimePickerOpenDefaults,
   getNowButtonResult,
+  parseQuickFourPillarsInput,
+  parseQuickSolarInput,
   tryDeriveSolarFromLunar,
 } from "@/lib/baziTimePicker";
 
-const PROVINCES = ["北京市", "上海市", "天津市", "广东省", "江苏省", "浙江省", "四川省"];
-const CITIES: Record<string, string[]> = {
-  北京市: ["北京市"],
-  上海市: ["上海市"],
-  天津市: ["天津市"],
-  广东省: ["广州市", "深圳市", "珠海市", "佛山市"],
-  浙江省: ["杭州市", "宁波市", "温州市"],
-  江苏省: ["南京市", "苏州市", "无锡市"],
-  四川省: ["成都市", "绵阳市", "德阳市"],
-};
-const DISTRICTS: Record<string, string[]> = {
-  广州市: ["越秀区", "荔湾区", "海珠区", "天河区", "白云区"],
-  深圳市: ["罗湖区", "福田区", "南山区", "宝安区"],
-  杭州市: ["西湖区", "上城区", "拱墅区"],
-  南京市: ["玄武区", "鼓楼区", "秦淮区"],
-  成都市: ["锦江区", "青羊区", "武侯区"],
+const pad2 = (n: number) => n.toString().padStart(2, "0");
+
+const toBjIsoFromSolar = (solar: { y: number; m: number; d: number; h: number; min: number }) => {
+  return `${solar.y}-${pad2(solar.m)}-${pad2(solar.d)}T${pad2(solar.h)}:${pad2(solar.min)}:00+08:00`;
 };
 
-const pad2 = (n: number) => n.toString().padStart(2, "0");
+const nowBjIso = () => {
+  const now = new Date();
+  const bj = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+  return `${bj.getUTCFullYear()}-${pad2(bj.getUTCMonth() + 1)}-${pad2(bj.getUTCDate())}T${pad2(
+    bj.getUTCHours(),
+  )}:${pad2(bj.getUTCMinutes())}:00+08:00`;
+};
+
+type PickerItem = string | number | LocationNode;
 
 const PickerColumn = ({
   items,
@@ -57,11 +58,11 @@ const PickerColumn = ({
   renderItem,
   showDivider = true,
 }: {
-  items: string[] | number[];
+  items: PickerItem[];
   value: string | number;
   onChange: (val: string | number) => void;
   label: string;
-  renderItem?: (item: string | number) => React.ReactNode;
+  renderItem?: (label: string) => React.ReactNode;
   showDivider?: boolean;
 }) => {
   const scrollerRef = React.useRef<HTMLDivElement>(null);
@@ -138,17 +139,23 @@ const PickerColumn = ({
           <div className="py-20 flex flex-col items-center">
             {items.map((item) => (
               <button
-                key={item}
-                onClick={() => onChange(item)}
+                key={typeof item === "object" ? item.id : item}
+                onClick={() => {
+                  const nextValue = typeof item === "object" ? item.id : String(item);
+                  onChange(typeof value === "number" ? Number(nextValue) : nextValue);
+                }}
                 data-picker-item="1"
-                data-picker-value={String(item)}
+                data-picker-value={typeof item === "object" ? item.id : String(item)}
                 className={`w-full py-2 text-center transition-all duration-300 snap-center chinese-font outline-none ${
-                  item.toString() === value.toString()
+                  (typeof item === "object" ? item.id : item.toString()) === value.toString()
                     ? "text-[#2F2F2F] font-bold text-base"
                     : "text-[#2F2F2F]/10 text-xs hover:text-[#2F2F2F]/30"
                 }`}
               >
-                {renderItem ? renderItem(item) : item}
+                {(() => {
+                  const labelText = typeof item === "object" ? item.name : String(item);
+                  return renderItem ? renderItem(labelText) : labelText;
+                })()}
               </button>
             ))}
           </div>
@@ -162,62 +169,96 @@ const LocationPickerModal = ({
   isOpen,
   onClose,
   onConfirm,
+  initialLocation,
 }: {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (loc: string) => void;
+  initialLocation?: string;
 }) => {
   const [regionType, setRegionType] = useState<"domestic" | "overseas">("domestic");
-  const [prov, setProv] = useState("北京市");
-  const [city, setCity] = useState("北京市");
-  const [dist, setDist] = useState("--");
+  const [schema, setSchema] = useState<Awaited<ReturnType<typeof loadLocationPickerSchema>> | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [level1Id, setLevel1Id] = useState<string>("");
+  const [level2Id, setLevel2Id] = useState<string>("");
+  const [level3Id, setLevel3Id] = useState<string>("");
   const [query, setQuery] = useState("");
 
-  const locationData = useMemo<LocationData>(
-    () => ({
-      provinces: PROVINCES,
-      citiesByProvince: CITIES,
-      districtsByCity: DISTRICTS,
-    }),
-    [],
-  );
+  useEffect(() => {
+    if (!isOpen) return;
+    setIsLoading(true);
+    loadLocationPickerSchema(regionType)
+      .then((s) => {
+        setSchema(s);
+      })
+      .finally(() => setIsLoading(false));
+  }, [isOpen, regionType]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!initialLocation) return;
+    const trimmed = initialLocation.trim();
+    if (!trimmed) return;
+
+    // Lightweight heuristic: if it contains latin letters and no CJK, prefer overseas schema.
+    const hasLatin = /[A-Za-z]/.test(trimmed);
+    const hasCjk = /[\u4e00-\u9fff]/.test(trimmed);
+    if (hasLatin && !hasCjk) setRegionType("overseas");
+  }, [initialLocation, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setQuery("");
+  }, [isOpen, regionType]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!schema) return;
+    const trimmed = (initialLocation ?? "").trim();
+    if (!trimmed) return;
+
+    const resolved = resolveLocationIdsFromText(schema, trimmed);
+    if (resolved.level1Id) setLevel1Id(resolved.level1Id);
+    if (resolved.level2Id) setLevel2Id(resolved.level2Id);
+    if (resolved.level3Id) setLevel3Id(resolved.level3Id);
+  }, [initialLocation, isOpen, schema]);
 
   const filteredProvinces = useMemo(
-    () => filterProvinces(locationData, query),
-    [locationData, query],
+    () => (schema ? filterProvinces(schema.hierarchy, query) : []),
+    [schema, query],
   );
 
   const filteredCities = useMemo(
-    () => filterCities(locationData, prov, query),
-    [locationData, prov, query],
+    () => (schema && level1Id ? filterCities(schema.hierarchy, level1Id, query) : []),
+    [schema, level1Id, query],
   );
 
   const filteredDistricts = useMemo(
-    () => filterDistricts(locationData, city, query),
-    [locationData, city, query],
+    () => (schema && level2Id ? filterDistricts(schema.hierarchy, level2Id, query) : []),
+    [schema, level2Id, query],
   );
 
   useEffect(() => {
     if (filteredProvinces.length === 0) return;
-    if (!filteredProvinces.includes(prov)) setProv(filteredProvinces[0]);
-  }, [filteredProvinces, prov]);
+    if (!filteredProvinces.some((n) => n.id === level1Id)) setLevel1Id(filteredProvinces[0].id);
+  }, [filteredProvinces, level1Id]);
 
   useEffect(() => {
     if (filteredCities.length === 0) return;
-    if (!filteredCities.includes(city)) setCity(filteredCities[0]);
-  }, [city, filteredCities]);
+    if (!filteredCities.some((n) => n.id === level2Id)) setLevel2Id(filteredCities[0].id);
+  }, [filteredCities, level2Id]);
 
   useEffect(() => {
     if (filteredDistricts.length === 0) return;
-    if (!filteredDistricts.includes(dist)) setDist(filteredDistricts[0]);
-  }, [dist, filteredDistricts]);
+    if (!filteredDistricts.some((n) => n.id === level3Id)) setLevel3Id(filteredDistricts[0].id);
+  }, [filteredDistricts, level3Id]);
 
   const highlight = useMemo(() => {
     const q = query.trim();
     if (!q) return undefined;
 
     const qLower = q.toLowerCase();
-    return (raw: string | number) => {
+    function renderHighlightedText(raw: string | number) {
       const text = String(raw);
       const lower = text.toLowerCase();
       const idx = lower.indexOf(qLower);
@@ -233,7 +274,9 @@ const LocationPickerModal = ({
           {after}
         </>
       );
-    };
+    }
+
+    return renderHighlightedText;
   }, [query]);
 
   if (!isOpen) return null;
@@ -281,47 +324,64 @@ const LocationPickerModal = ({
         </div>
 
         <div className="p-8 flex justify-between min-h-[240px]">
-          <PickerColumn
-            label="省份"
-            items={filteredProvinces}
-            value={prov}
-            onChange={(v) => {
-              const p = String(v);
-              setProv(p);
-              const nextCities = filterCities(locationData, p, query);
-              const nextCity = nextCities[0] ?? "--";
-              setCity(nextCity);
-              const nextDists = filterDistricts(locationData, nextCity, query);
-              setDist(nextDists[0] ?? "--");
-            }}
-            renderItem={highlight}
-          />
-          <PickerColumn
-            label="城市"
-            items={filteredCities}
-            value={city}
-            onChange={(v) => {
-              const c = String(v);
-              setCity(c);
-              const nextDists = filterDistricts(locationData, c, query);
-              setDist(nextDists[0] ?? "--");
-            }}
-            renderItem={highlight}
-          />
-          <PickerColumn
-            label="区县"
-            items={filteredDistricts}
-            value={dist}
-            onChange={(v) => setDist(String(v))}
-            showDivider={false}
-            renderItem={highlight}
-          />
+          {isLoading || !schema ? (
+            <div className="w-full py-16 text-center text-xs text-[#2F2F2F]/30 chinese-font">
+              加载中…
+            </div>
+          ) : (
+            <>
+              <PickerColumn
+                label={schema.labels.level1}
+                items={filteredProvinces}
+                value={level1Id}
+                onChange={(v) => {
+                  const nextLevel1Id = String(v);
+                  setLevel1Id(nextLevel1Id);
+                  const nextLevel2 = filterCities(schema.hierarchy, nextLevel1Id, query);
+                  const nextLevel2Id = nextLevel2[0]?.id ?? "";
+                  setLevel2Id(nextLevel2Id);
+                  const nextLevel3 = nextLevel2Id
+                    ? filterDistricts(schema.hierarchy, nextLevel2Id, query)
+                    : [];
+                  setLevel3Id(nextLevel3[0]?.id ?? "");
+                }}
+                renderItem={highlight}
+              />
+              <PickerColumn
+                label={schema.labels.level2}
+                items={filteredCities}
+                value={level2Id}
+                onChange={(v) => {
+                  const nextLevel2Id = String(v);
+                  setLevel2Id(nextLevel2Id);
+                  const nextLevel3 = filterDistricts(schema.hierarchy, nextLevel2Id, query);
+                  setLevel3Id(nextLevel3[0]?.id ?? "");
+                }}
+                renderItem={highlight}
+              />
+              <PickerColumn
+                label={schema.labels.level3}
+                items={filteredDistricts}
+                value={level3Id}
+                onChange={(v) => setLevel3Id(String(v))}
+                showDivider={false}
+                renderItem={highlight}
+              />
+            </>
+          )}
         </div>
 
         <div className="p-8 pt-0">
           <button
             onClick={() => {
-              onConfirm(`${prov} ${city} ${dist}`);
+              if (!schema) return;
+              onConfirm(
+                formatSelection(schema, {
+                  level1Id,
+                  level2Id,
+                  level3Id,
+                }),
+              );
               onClose();
             }}
             className="w-full h-12 bg-[#2F2F2F] text-white font-bold chinese-font tracking-[0.4em] rounded-[2px] hover:bg-black transition-all"
@@ -357,6 +417,7 @@ const BaziTimePickerModal = ({
   onClose: () => void;
   onConfirm: (data: BaziTimePickerConfirmData) => void;
 }) => {
+  const toast = useToastStore();
   const [tab, setTab] = useState<"solar" | "lunar" | "fourPillars">("solar");
   const [solar, setSolar] = useState({ y: 1990, m: 1, d: 1, h: 0, min: 0 });
   const [lunar, setLunar] = useState({ y: 1989, m: "腊月", d: "初五", h: 0, min: 0 });
@@ -380,6 +441,7 @@ const BaziTimePickerModal = ({
   const [selectedCandidateIndex, setSelectedCandidateIndex] = useState(0);
   const wasOpenRef = React.useRef(false);
   const lastSolarSyncKeyRef = React.useRef<string | null>(null);
+  const [quickInput, setQuickInput] = useState("");
 
   const getSolarMaxDay = React.useCallback((y: number, m: number) => {
     const safeMonth = Math.min(12, Math.max(1, m));
@@ -396,6 +458,7 @@ const BaziTimePickerModal = ({
       setFourPillarsCandidates([]);
       setSelectedCandidateIndex(0);
       setPicking(null);
+      setQuickInput("");
     }
     wasOpenRef.current = isOpen;
   }, [isOpen]);
@@ -478,6 +541,38 @@ const BaziTimePickerModal = ({
     if (shouldAutoClose) onClose();
   };
 
+  const applyQuickInput = React.useCallback(() => {
+    const raw = quickInput.trim();
+    if (!raw) {
+      toast.show("请输入要识别的内容", "warning");
+      return;
+    }
+
+    const parsedSolar = parseQuickSolarInput(raw);
+    if (parsedSolar) {
+      setTab("solar");
+      setSolar(parsedSolar);
+      toast.show(
+        `已定位到 ${parsedSolar.y} / ${pad2(parsedSolar.m)} / ${pad2(parsedSolar.d)}  ${pad2(
+          parsedSolar.h,
+        )}:${pad2(parsedSolar.min)}`,
+        "success",
+      );
+      return;
+    }
+
+    const parsedFp = parseQuickFourPillarsInput(raw);
+    if (parsedFp) {
+      setTab("fourPillars");
+      setPicking(null);
+      setFourPillars(parsedFp);
+      toast.show("已识别四柱并更新匹配时间", "success");
+      return;
+    }
+
+    toast.show("未能识别：支持 199303270255 或 乙酉戊寅丙戌己丑", "warning");
+  }, [quickInput, toast]);
+
   if (!isOpen) return null;
 
   return (
@@ -516,6 +611,35 @@ const BaziTimePickerModal = ({
           </button>
         </div>
         <div className="p-8 min-h-[280px]">
+          <div className="mb-6">
+            <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest mb-2 block">
+              快捷识别
+            </label>
+            <div className="flex gap-2 items-stretch">
+              <div className="flex items-center gap-2 flex-1 bg-[#FAF7F2] border border-[#B37D56]/20 px-3 rounded-[2px]">
+                <Search size={14} className="text-[#B37D56]/50 shrink-0" />
+                <input
+                  value={quickInput}
+                  onChange={(e) => setQuickInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") applyQuickInput();
+                  }}
+                  placeholder="199303270255 或 乙酉戊寅丙戌己丑"
+                  className="w-full bg-transparent py-2 outline-none text-xs chinese-font font-bold text-[#2F2F2F] placeholder:text-[#2F2F2F]/30"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={applyQuickInput}
+                className="px-4 bg-[#2F2F2F] text-white font-bold chinese-font text-xs rounded-[2px] hover:bg-black transition-all"
+              >
+                识别
+              </button>
+            </div>
+            <p className="text-[10px] text-[#2F2F2F]/30 chinese-font mt-2">
+              数字支持：YYYYMMDDHHmm；四柱支持：年柱月柱日柱时柱（8 字）。
+            </p>
+          </div>
           {tab === "solar" && (
             <div className="flex justify-between">
               <PickerColumn
@@ -769,7 +893,19 @@ const BaziTimePickerModal = ({
   );
 };
 
-export function BaziEditView({ id }: { id?: string }) {
+export function BaziEditView({
+  id,
+  embedded = false,
+  aiPrefill,
+  onSaved,
+  redirectTo,
+}: {
+  id?: string;
+  embedded?: boolean;
+  aiPrefill?: (AiRecognizeBaziResult & { _nonce: number }) | null;
+  onSaved?: () => void;
+  redirectTo?: string | null;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToastStore();
@@ -778,10 +914,14 @@ export function BaziEditView({ id }: { id?: string }) {
   const addRecord = useCaseStore((state) => state.addRecord);
   const updateRecord = useCaseStore((state) => state.updateRecord);
   const customers = useCustomerStore((state) => state.customers);
+  const addCustomer = useCustomerStore((state) => state.addCustomer);
 
   const [subject, setSubject] = useState("");
   const [customerId, setCustomerId] = useState("");
-  const [recordDate, setRecordDate] = useState(new Date().toISOString());
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagDraft, setTagDraft] = useState("");
+  const [createCustomerAlso, setCreateCustomerAlso] = useState(false);
+  const [recordDate, setRecordDate] = useState(() => nowBjIso());
   const [gender, setGender] = useState<"male" | "female">("male");
   const [location, setLocation] = useState("请选择地区");
   const [bazi, setBazi] = useState<Partial<BaZiData>>({
@@ -801,6 +941,12 @@ export function BaziEditView({ id }: { id?: string }) {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showLocPicker, setShowLocPicker] = useState(false);
 
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
+  const genderRef = useRef<HTMLDivElement | null>(null);
+  const timeCardRef = useRef<HTMLDivElement | null>(null);
+  const locationRowRef = useRef<HTMLDivElement | null>(null);
+  const lastAppliedAiNonceRef = useRef<number | null>(null);
+
   useEffect(() => {
     if (id) return;
     const fromQuery = searchParams.get("customerId");
@@ -810,6 +956,7 @@ export function BaziEditView({ id }: { id?: string }) {
     setCustomerId(cust.id);
     setSubject(cust.name);
     setGender(cust.gender === "female" ? "female" : "male");
+    setCreateCustomerAlso(false);
   }, [id, searchParams, customers]);
 
   useEffect(() => {
@@ -818,6 +965,7 @@ export function BaziEditView({ id }: { id?: string }) {
     if (record && record.module === "bazi" && record.baziData) {
       setSubject(record.subject);
       setCustomerId(record.customerId || "");
+      setTags(record.tags ?? []);
       setBazi(record.baziData);
       setRecordDate(record.baziData.birthDate);
       setLocation(record.baziData.location || "请选择地区");
@@ -826,243 +974,537 @@ export function BaziEditView({ id }: { id?: string }) {
     }
   }, [id, records, customers]);
 
-  const handleTimePickerConfirm = (data: BaziTimePickerConfirmData) => {
-    if (data.tab === "fourPillars") {
+  useEffect(() => {
+    if (!aiPrefill) return;
+    if (typeof aiPrefill._nonce !== "number") return;
+    if (lastAppliedAiNonceRef.current === aiPrefill._nonce) return;
+    lastAppliedAiNonceRef.current = aiPrefill._nonce;
+
+    const nextName = typeof aiPrefill.name === "string" ? aiPrefill.name.trim() : "";
+    const nextGender = aiPrefill.gender;
+    const nextLocation = typeof aiPrefill.location === "string" ? aiPrefill.location.trim() : "";
+
+    if (nextName && !subject.trim()) setSubject(nextName);
+    if (nextGender === "male" || nextGender === "female") setGender(nextGender);
+    if (nextLocation) setLocation(nextLocation);
+
+    const solar = aiPrefill.solar;
+    if (
+      solar &&
+      Number.isInteger(solar.y) &&
+      Number.isInteger(solar.m) &&
+      Number.isInteger(solar.d) &&
+      Number.isInteger(solar.h) &&
+      Number.isInteger(solar.min)
+    ) {
+      const derived = deriveBaziPickerFromSolar({
+        y: solar.y,
+        m: solar.m,
+        d: solar.d,
+        h: solar.h,
+        min: solar.min,
+      });
       setBazi((prev) => ({
         ...prev,
-        yearStem: data.fourPillars.yS,
-        yearBranch: data.fourPillars.yB,
-        monthStem: data.fourPillars.mS,
-        monthBranch: data.fourPillars.mB,
-        dayStem: data.fourPillars.dS,
-        dayBranch: data.fourPillars.dB,
-        hourStem: data.fourPillars.hS,
-        hourBranch: data.fourPillars.hB,
-        calendarType: "fourPillars",
+        yearStem: derived.fourPillars.yS,
+        yearBranch: derived.fourPillars.yB,
+        monthStem: derived.fourPillars.mS,
+        monthBranch: derived.fourPillars.mB,
+        dayStem: derived.fourPillars.dS,
+        dayBranch: derived.fourPillars.dB,
+        hourStem: derived.fourPillars.hS,
+        hourBranch: derived.fourPillars.hB,
+        calendarType: "solar",
       }));
-      const dateStr = `${data.solar.y}-${pad2(data.solar.m)}-${pad2(data.solar.d)}T${pad2(data.solar.h)}:${pad2(data.solar.min)}:00`;
-      setRecordDate(new Date(dateStr).toISOString());
-    } else {
-      const dateStr = `${data.solar.y}-${pad2(data.solar.m)}-${pad2(data.solar.d)}T${pad2(data.solar.h)}:${pad2(data.solar.min)}:00`;
-      setRecordDate(new Date(dateStr).toISOString());
-      setBazi((prev) => ({ ...prev, calendarType: data.tab }));
+      setRecordDate(toBjIsoFromSolar(derived.solar));
+    } else if (aiPrefill.fourPillars) {
+      const fp = aiPrefill.fourPillars;
+      const yS = typeof fp.yearStem === "string" ? fp.yearStem.trim() : "";
+      const yB = typeof fp.yearBranch === "string" ? fp.yearBranch.trim() : "";
+      const mS = typeof fp.monthStem === "string" ? fp.monthStem.trim() : "";
+      const mB = typeof fp.monthBranch === "string" ? fp.monthBranch.trim() : "";
+      const dS = typeof fp.dayStem === "string" ? fp.dayStem.trim() : "";
+      const dB = typeof fp.dayBranch === "string" ? fp.dayBranch.trim() : "";
+      const hS = typeof fp.hourStem === "string" ? fp.hourStem.trim() : "";
+      const hB = typeof fp.hourBranch === "string" ? fp.hourBranch.trim() : "";
+
+      const canApply =
+        STEMS.includes(yS) &&
+        BRANCHES.includes(yB) &&
+        STEMS.includes(mS) &&
+        BRANCHES.includes(mB) &&
+        STEMS.includes(dS) &&
+        BRANCHES.includes(dB) &&
+        STEMS.includes(hS) &&
+        BRANCHES.includes(hB);
+
+      if (canApply) {
+        setBazi((prev) => ({
+          ...prev,
+          yearStem: yS,
+          yearBranch: yB,
+          monthStem: mS,
+          monthBranch: mB,
+          dayStem: dS,
+          dayBranch: dB,
+          hourStem: hS,
+          hourBranch: hB,
+          calendarType: "fourPillars",
+        }));
+      }
     }
+
+    window.setTimeout(() => {
+      scrollAndFlash(nameInputRef.current);
+      scrollAndFlash(genderRef.current);
+      scrollAndFlash(timeCardRef.current);
+      scrollAndFlash(locationRowRef.current);
+    }, 0);
+  }, [aiPrefill, subject]);
+
+  const handleTimePickerConfirm = (data: BaziTimePickerConfirmData) => {
+    setBazi((prev) => ({
+      ...prev,
+      yearStem: data.fourPillars.yS,
+      yearBranch: data.fourPillars.yB,
+      monthStem: data.fourPillars.mS,
+      monthBranch: data.fourPillars.mB,
+      dayStem: data.fourPillars.dS,
+      dayBranch: data.fourPillars.dB,
+      hourStem: data.fourPillars.hS,
+      hourBranch: data.fourPillars.hB,
+      calendarType: data.tab,
+    }));
+    setRecordDate(toBjIsoFromSolar(data.solar));
     toast.show("时间已更新", "info");
   };
 
-  const handleSave = () => {
+  const addTagsFromText = React.useCallback(
+    (input: string) => {
+      const parts = input
+        .split(/[,\s，]+/)
+        .map((t) => t.trim())
+        .filter(Boolean);
+      if (parts.length === 0) return;
+
+      const next: string[] = [];
+      const seen = new Set<string>();
+      for (const t of [...tags, ...parts]) {
+        const normalized = t.trim();
+        if (!normalized) continue;
+        if (normalized.length > 32) {
+          toast.show("标签过长（最多 32 字）", "warning");
+          continue;
+        }
+        if (seen.has(normalized)) continue;
+        seen.add(normalized);
+        next.push(normalized);
+        if (next.length >= 50) break;
+      }
+
+      if (next.length >= 50) toast.show("标签过多（最多 50 个）", "warning");
+      setTags(next);
+    },
+    [tags, toast],
+  );
+
+  const handleSave = async () => {
     const baziData = { ...(bazi as BaZiData), birthDate: recordDate, location };
-    if (id) {
-      updateRecord(id, { module: "bazi", subject, customerId, baziData });
-      toast.show("已保存", "success");
-    } else {
-      const fallbackTitle = customerId
-        ? `${customers.find((c) => c.id === customerId)?.name || "客户"}的命例`
-        : "未命名命例";
-      addRecord({
-        customerId,
-        module: "bazi",
-        subject: subject || fallbackTitle,
-        notes: "",
-        tags: [],
-        baziData,
-        verifiedStatus: "unverified",
-        verifiedNotes: "",
-      });
-      toast.show("录入成功", "success");
+    try {
+      if (id) {
+        await updateRecord(id, { module: "bazi", subject, customerId, tags, baziData });
+        toast.show("已保存", "success");
+      } else {
+        let resolvedCustomerId = customerId;
+        if (createCustomerAlso && !resolvedCustomerId) {
+          const name = subject.trim();
+          if (!name) {
+            toast.show("请输入姓名", "error");
+            return;
+          }
+
+          const m = recordDate.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+          const birthDate = m ? `${m[1]}-${m[2]}-${m[3]}` : undefined;
+          const birthTime = m ? `${m[4]}:${m[5]}` : undefined;
+
+          resolvedCustomerId = await addCustomer({
+            name,
+            gender,
+            birthDate,
+            birthTime,
+            tags: [],
+            notes: "",
+            customFields: {},
+          });
+          setCustomerId(resolvedCustomerId);
+        }
+
+        const fallbackTitle = resolvedCustomerId
+          ? `${customers.find((c) => c.id === resolvedCustomerId)?.name || "缘主"}的命例`
+          : "未命名命例";
+        await addRecord({
+          customerId: resolvedCustomerId,
+          module: "bazi",
+          subject: subject || fallbackTitle,
+          notes: "",
+          tags,
+          baziData,
+          verifiedStatus: "unverified",
+          verifiedNotes: "",
+        });
+        toast.show("录入成功", "success");
+      }
+      onSaved?.();
+      if (redirectTo === null) return;
+      router.push(redirectTo ?? "/bazi");
+    } catch {
+      toast.show("保存失败，请稍后重试", "error");
     }
-    router.push("/bazi");
   };
 
   const dateParts = useMemo(() => {
+    const m = recordDate.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+    if (m) {
+      const date = `${m[1]} / ${m[2]} / ${m[3]}`;
+      const time = `${m[4]}:${m[5]}`;
+      return { date, time };
+    }
+
     const d = new Date(recordDate);
     const date = `${d.getFullYear()} / ${pad2(d.getMonth() + 1)} / ${pad2(d.getDate())}`;
     const time = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
     return { date, time };
   }, [recordDate]);
 
-  return (
-    <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
-      <header className="flex items-center gap-4">
-        <div className="w-10 h-10 bg-black text-white rounded-none flex items-center justify-center shrink-0 rotate-45">
-          <Hash size={18} className="-rotate-45" />
-        </div>
-        <div className="flex-1">
-          <h2 className="text-2xl font-bold text-[#2F2F2F] chinese-font tracking-tight">
-            八字推演
-          </h2>
-          <p className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest opacity-60">
-            Professional Bazi Engine
-          </p>
-        </div>
-      </header>
+	  return (
+	    <div
+	      className={`w-full max-w-none animate-in fade-in duration-500 ${
+	        embedded ? "space-y-6" : "space-y-8 pb-20"
+	      }`}
+	    >
+      {!embedded ? (
+        <header className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-black text-white rounded-none flex items-center justify-center shrink-0 rotate-45">
+            <Hash size={18} className="-rotate-45" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold text-[#2F2F2F] chinese-font tracking-tight">
+              八字推演
+            </h2>
+            <p className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest opacity-60">
+              Professional Bazi Engine
+            </p>
+          </div>
+        </header>
+      ) : null}
 
-      <div className="bg-white p-10 rounded-[4px] border border-[#B37D56]/20 shadow-none space-y-12 relative">
-        <div className="absolute top-0 right-0 w-24 h-24 border-r border-t border-[#B37D56]/10 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 border-l border-b border-[#B37D56]/10 pointer-events-none" />
-
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 items-end">
-          <div className="md:col-span-3 space-y-2">
+	      <div
+	        className={
+	          embedded
+	            ? "space-y-8"
+	            : "bg-white rounded-[4px] border border-[#B37D56]/20 shadow-none relative p-10 space-y-12"
+	        }
+	      >
+	        {!embedded ? (
+	          <>
+	            <div className="absolute top-0 right-0 w-24 h-24 border-r border-t border-[#B37D56]/10 pointer-events-none" />
+	            <div className="absolute bottom-0 left-0 w-24 h-24 border-l border-b border-[#B37D56]/10 pointer-events-none" />
+	          </>
+	        ) : null}
+	
+	        <div
+	          className={`grid items-end ${
+	            embedded ? "grid-cols-1 gap-6" : "grid-cols-1 md:grid-cols-2 gap-8"
+	          }`}
+        >
+          <div className="space-y-2">
             <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest ml-1">
-              命主姓名 / 卷首语
+              姓名
             </label>
             <input
+              ref={nameInputRef}
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="输入姓名或事由"
+              placeholder="输入姓名"
               className="w-full bg-transparent border-b border-[#B37D56]/10 py-2 outline-none focus:border-[#B37D56] transition-all chinese-font font-bold text-lg"
             />
           </div>
-          <div className="md:col-span-2 relative">
-            <select
-              value={customerId}
-              onChange={(e) => {
-                const cust = customers.find((c) => c.id === e.target.value);
-                if (cust) {
-                  setCustomerId(cust.id);
-                  setSubject(cust.name);
-                  setGender(cust.gender === "female" ? "female" : "male");
-                } else {
-                  setCustomerId("");
-                }
-              }}
-              className="w-full bg-[#FAF7F2] border border-[#B37D56]/10 px-4 py-3 rounded-[2px] outline-none text-xs chinese-font appearance-none cursor-pointer hover:bg-[#FAF7F2]/80 transition-colors"
-            >
-              <option value="">-- 关联已有档案 --</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
+          <div className="space-y-2">
+            <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest ml-1">
+              性别
+            </label>
+            <div ref={genderRef} className="grid grid-cols-2 gap-3">
+              {(
+                [
+                  { id: "male", l: "乾造" },
+                  { id: "female", l: "坤造" },
+                ] as const
+              ).map((g) => (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => setGender(g.id)}
+                  className={`w-full py-2.5 rounded-[2px] text-xs chinese-font border transition-all font-bold ${
+                    gender === g.id
+                      ? "bg-[#2F2F2F] text-white border-[#2F2F2F]"
+                      : "bg-white border-[#B37D56]/20 text-[#2F2F2F]/40 hover:border-[#B37D56]/40"
+                  }`}
+                >
+                  {g.l}
+                </button>
               ))}
-            </select>
-            <ChevronRight
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#B37D56]/30 rotate-90 pointer-events-none"
-              size={14}
-            />
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          <div className="flex gap-4">
-            {(
-              [
-                { id: "male", l: "乾造" },
-                { id: "female", l: "坤造" },
-              ] as const
-            ).map((g) => (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-4">
+            <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest ml-1">
+              标签
+            </label>
+            {tags.length > 0 ? (
               <button
-                key={g.id}
-                onClick={() => setGender(g.id)}
-                className={`px-8 py-2.5 rounded-[2px] text-xs chinese-font border transition-all ${
-                  gender === g.id
-                    ? "bg-[#2F2F2F] text-white border-[#2F2F2F]"
-                    : "border-[#B37D56]/20 text-[#2F2F2F]/40 hover:border-[#B37D56]/40"
-                }`}
+                type="button"
+                onClick={() => setTags([])}
+                className="text-[10px] font-bold tracking-widest text-[#2F2F2F]/30 hover:text-[#A62121] transition-colors"
               >
-                {g.l}
+                清空
               </button>
-            ))}
+            ) : null}
           </div>
-          <div
-            className="flex items-center gap-3 cursor-pointer group"
-            onClick={() => setShowLocPicker(true)}
-          >
-            <MapPin
-              size={16}
-              className="text-[#B37D56]/40 group-hover:text-[#B37D56] transition-colors shrink-0"
-            />
-            <span
-              className={`flex-1 border-b border-[#B37D56]/10 py-2 text-xs chinese-font transition-all ${
-                location === "请选择地区" ? "text-[#2F2F2F]/20" : "text-[#2F2F2F]"
-              }`}
-            >
-              {location === "请选择地区" ? "请选择出生地" : location}
-            </span>
-          </div>
+
+          {tags.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => setTags((prev) => prev.filter((t) => t !== tag))}
+                  className="flex items-center gap-1 text-[10px] px-2 py-1 border border-[#B37D56]/10 bg-[#FAF7F2] text-[#2F2F2F]/70 font-bold tracking-widest rounded-[2px] hover:border-[#A62121]/30 hover:text-[#A62121] transition-colors"
+                >
+                  {tag}
+                  <X size={12} className="opacity-40" />
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          <input
+            value={tagDraft}
+            onChange={(e) => setTagDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addTagsFromText(tagDraft);
+                setTagDraft("");
+                return;
+              }
+              if (e.key === "Backspace" && tagDraft.length === 0 && tags.length > 0) {
+                setTags((prev) => prev.slice(0, -1));
+              }
+            }}
+            placeholder="输入标签，回车添加（支持逗号/空格分隔）"
+            className="w-full bg-white border border-[#B37D56]/10 px-3 py-2 text-xs font-bold rounded-[2px] outline-none focus:border-[#A62121] transition-colors chinese-font"
+          />
+          <p className="text-[10px] text-[#2F2F2F]/30 chinese-font ml-1">最多 50 个，每个最多 32 字。</p>
         </div>
 
         <div
-          onClick={() => setShowTimePicker(true)}
-          className="w-full bg-[#FAF7F2] hover:bg-white border border-[#B37D56]/15 py-5 px-8 rounded-[4px] cursor-pointer group transition-all flex items-center justify-between gap-4"
+          className={`w-full flex flex-col gap-4 ${
+            embedded ? "" : "md:flex-row md:items-stretch"
+          }`}
         >
-          <div className="flex items-center gap-5 flex-1 min-w-0">
-            <div className="w-10 h-10 bg-white border border-[#B37D56]/20 flex items-center justify-center text-[#B37D56] shrink-0 rounded-[2px]">
-              <CalendarDays size={18} />
-            </div>
-            <div className="flex items-center gap-4 flex-nowrap whitespace-nowrap overflow-hidden">
-              {bazi.calendarType === "fourPillars" ? (
-                <div className="flex gap-3 items-center">
-                  {[
-                    { s: bazi.yearStem, b: bazi.yearBranch },
-                    { s: bazi.monthStem, b: bazi.monthBranch },
-                    { s: bazi.dayStem, b: bazi.dayBranch },
-                    { s: bazi.hourStem, b: bazi.hourBranch },
-                  ].map((p, i) => (
-                    <span key={i} className="text-xl font-bold text-[#2F2F2F] chinese-font">
-                      {p.s}
-                      {p.b}
+          <div
+            ref={timeCardRef}
+            role="button"
+            tabIndex={0}
+            onClick={() => setShowTimePicker(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") setShowTimePicker(true);
+            }}
+            className={`flex items-center gap-4 flex-1 min-w-0 cursor-pointer bg-[#FAF7F2] hover:bg-white/80 rounded-[4px] transition-colors ${
+              embedded ? "px-5 py-4" : "px-8 py-5"
+            }`}
+          >
+            <div className="flex items-center gap-5 flex-1 min-w-0">
+              <div className="w-10 h-10 bg-white border border-[#B37D56]/20 flex items-center justify-center text-[#B37D56] shrink-0 rounded-[2px]">
+                <CalendarDays size={18} />
+              </div>
+              <div className="flex items-center gap-4 flex-nowrap whitespace-nowrap overflow-hidden">
+                {bazi.calendarType === "fourPillars" ? (
+                  <div className="flex gap-3 items-center">
+                    {[
+                      { s: bazi.yearStem, b: bazi.yearBranch },
+                      { s: bazi.monthStem, b: bazi.monthBranch },
+                      { s: bazi.dayStem, b: bazi.dayBranch },
+                      { s: bazi.hourStem, b: bazi.hourBranch },
+                    ].map((p, i) => (
+                      <span
+                        key={i}
+                        className={`font-bold text-[#2F2F2F] chinese-font ${embedded ? "text-lg" : "text-xl"}`}
+                      >
+                        {p.s}
+                        {p.b}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className={`${embedded ? "flex flex-col gap-1" : "flex items-center gap-4"}`}>
+                    <span
+                      className={`font-bold text-[#2F2F2F] chinese-font tracking-tight shrink-0 ${
+                        embedded ? "text-xl" : "text-2xl"
+                      }`}
+                    >
+                      {dateParts.date}
                     </span>
-                  ))}
-                </div>
-              ) : (
-                <>
-                  <span className="text-2xl font-bold text-[#2F2F2F] chinese-font tracking-tight shrink-0">
-                    {dateParts.date}
-                  </span>
-                  <span className="text-base font-bold text-[#B37D56] chinese-font opacity-60 shrink-0">
-                    {dateParts.time}
-                  </span>
-                </>
-              )}
+                    <span className="text-base font-bold text-[#B37D56] chinese-font opacity-60 shrink-0">
+                      {dateParts.time}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-5 shrink-0 border-l border-[#B37D56]/10 pl-5 h-8">
-            <div className="text-[#B37D56]/30 group-hover:text-[#B37D56] group-hover:rotate-180 transition-all duration-700">
-              <RefreshCw size={14} />
-            </div>
-          </div>
+	          <div
+	            className={`grid grid-cols-2 gap-3 items-center ${
+	              embedded ? "" : "md:w-[260px] md:shrink-0"
+	            }`}
+	          >
+	            <button
+	              type="button"
+	              onClick={() => setBazi({ ...bazi, isDst: !bazi.isDst })}
+	              className="w-full flex items-center gap-2 text-[10px] font-bold chinese-font tracking-widest text-[#2F2F2F]/40 hover:text-[#2F2F2F] transition-colors"
+	            >
+              <div
+                className={`w-4 h-4 rounded-[1px] border flex items-center justify-center transition-all ${
+                  bazi.isDst ? "bg-[#B37D56] border-[#B37D56]" : "border-[#B37D56]/20"
+                }`}
+              >
+                {bazi.isDst ? <Check size={10} className="text-white" /> : null}
+              </div>
+              夏令时
+            </button>
+            <button
+              type="button"
+              onClick={() => setBazi({ ...bazi, isTrueSolarTime: !bazi.isTrueSolarTime })}
+              className="w-full flex items-center gap-2 text-[10px] font-bold chinese-font tracking-widest text-[#2F2F2F]/40 hover:text-[#2F2F2F] transition-colors"
+            >
+              <div
+                className={`w-4 h-4 rounded-[1px] border flex items-center justify-center transition-all ${
+                  bazi.isTrueSolarTime ? "bg-[#B37D56] border-[#B37D56]" : "border-[#B37D56]/20"
+                }`}
+              >
+                {bazi.isTrueSolarTime ? <Check size={10} className="text-white" /> : null}
+              </div>
+	              真太阳时
+	            </button>
+	          </div>
+	        </div>
+
+        <div
+          ref={locationRowRef}
+          className="flex items-center gap-3 cursor-pointer group"
+          onClick={() => setShowLocPicker(true)}
+        >
+          <MapPin
+            size={16}
+            className="text-[#B37D56]/40 group-hover:text-[#B37D56] transition-colors shrink-0"
+          />
+          <span
+            className={`flex-1 border-b border-[#B37D56]/10 py-2 text-xs chinese-font transition-all ${
+              location === "请选择地区" ? "text-[#2F2F2F]/20" : "text-[#2F2F2F]"
+            }`}
+          >
+            {location === "请选择地区" ? "请选择出生地" : location}
+          </span>
         </div>
 
-        <div className="flex justify-center gap-10 pt-2">
-          <button
-            type="button"
-            onClick={() => setBazi({ ...bazi, isDst: !bazi.isDst })}
-            className="flex items-center gap-2 text-[10px] font-bold chinese-font tracking-widest text-[#2F2F2F]/40 hover:text-[#2F2F2F] transition-colors"
+        <div className={`pt-6 ${embedded ? "mt-2" : "pt-8"} border-t border-[#B37D56]/10`}>
+          <div
+            className={`grid grid-cols-1 gap-4 items-start ${
+              embedded ? "" : "md:grid-cols-2"
+            }`}
           >
-            <div
-              className={`w-4 h-4 rounded-[1px] border flex items-center justify-center transition-all ${
-                bazi.isDst ? "bg-[#B37D56] border-[#B37D56]" : "border-[#B37D56]/20"
-              }`}
-            >
-              {bazi.isDst ? <Check size={10} className="text-white" /> : null}
+            <div className={`grid gap-3 ${id ? "grid-cols-1" : "grid-cols-2"} items-center`}>
+              <div className="relative w-full">
+                <select
+                  value={customerId}
+                  disabled={!id && createCustomerAlso}
+                  onChange={(e) => {
+                    const nextId = e.target.value;
+                    const cust = customers.find((c) => c.id === nextId);
+                    if (cust) {
+                      setCustomerId(cust.id);
+                      setSubject(cust.name);
+                      setGender(cust.gender === "female" ? "female" : "male");
+                      setCreateCustomerAlso(false);
+                    } else {
+                      setCustomerId("");
+                    }
+                  }}
+                  className={`w-full border border-[#B37D56]/10 px-4 py-3 rounded-[2px] outline-none text-xs chinese-font appearance-none transition-colors ${
+                    !id && createCustomerAlso
+                      ? "bg-[#FAF7F2]/40 text-[#2F2F2F]/30 cursor-not-allowed"
+                      : "bg-[#FAF7F2] cursor-pointer hover:bg-[#FAF7F2]/80"
+                  }`}
+                >
+                  <option value="">-- 关联已有档案 --</option>
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronRight
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#B37D56]/30 rotate-90 pointer-events-none"
+                  size={14}
+                />
+              </div>
+
+              {!id ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (customerId) return;
+                    setCreateCustomerAlso((v) => {
+                      const next = !v;
+                      if (next) setCustomerId("");
+                      return next;
+                    });
+                  }}
+                  className={`w-full h-[44px] border px-3 rounded-[2px] flex items-center gap-2 text-[10px] font-bold chinese-font tracking-widest transition-colors ${
+                    customerId
+                      ? "bg-[#FAF7F2]/40 border-[#B37D56]/10 text-[#2F2F2F]/20 cursor-not-allowed"
+                      : "bg-white border-[#B37D56]/20 text-[#2F2F2F]/40 hover:border-[#A62121] hover:text-[#2F2F2F]"
+                  }`}
+                >
+                  <div
+                    className={`w-4 h-4 rounded-[1px] border flex items-center justify-center transition-all ${
+                      createCustomerAlso
+                        ? "bg-[#B37D56] border-[#B37D56]"
+                        : customerId
+                          ? "border-[#B37D56]/10"
+                          : "border-[#B37D56]/20"
+                    }`}
+                  >
+                    {createCustomerAlso ? <Check size={10} className="text-white" /> : null}
+                  </div>
+                  同时创建缘主档案
+                </button>
+              ) : null}
             </div>
-            夏令时
-          </button>
-          <button
-            type="button"
-            onClick={() => setBazi({ ...bazi, isTrueSolarTime: !bazi.isTrueSolarTime })}
-            className="flex items-center gap-2 text-[10px] font-bold chinese-font tracking-widest text-[#2F2F2F]/40 hover:text-[#2F2F2F] transition-colors"
-          >
-            <div
-              className={`w-4 h-4 rounded-[1px] border flex items-center justify-center transition-all ${
-                bazi.isTrueSolarTime ? "bg-[#B37D56] border-[#B37D56]" : "border-[#B37D56]/20"
-              }`}
+
+            <button
+              onClick={() => void handleSave()}
+              className="w-full h-12 md:h-[52px] bg-[#2F2F2F] text-white rounded-[2px] text-lg font-bold chinese-font tracking-[0.6em] hover:bg-black transition-all active:scale-[0.98] flex items-center justify-center shadow-none"
             >
-              {bazi.isTrueSolarTime ? <Check size={10} className="text-white" /> : null}
-            </div>
-            真太阳时
-          </button>
+              {id ? "保存" : "立即排盘"}
+            </button>
+          </div>
         </div>
       </div>
-
-      <button
-        onClick={handleSave}
-        className="w-full h-16 bg-[#2F2F2F] text-white rounded-[2px] text-xl font-bold chinese-font tracking-[0.6em] hover:bg-black transition-all active:scale-[0.98] flex items-center justify-center shadow-lg"
-      >
-        立即排盘
-      </button>
 
       <BaziTimePickerModal
         isOpen={showTimePicker}
@@ -1073,6 +1515,7 @@ export function BaziEditView({ id }: { id?: string }) {
         isOpen={showLocPicker}
         onClose={() => setShowLocPicker(false)}
         onConfirm={setLocation}
+        initialLocation={location}
       />
     </div>
   );

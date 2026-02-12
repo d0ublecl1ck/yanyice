@@ -1,44 +1,28 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Save, 
-  Trash2, 
   Sparkles, 
   Plus, 
-  UserPlus, 
+  UserPlus,
   X,
-  Layers,
-  CalendarDays,
+  Search,
   RefreshCw
 } from 'lucide-react';
 import { useCaseStore } from '@/stores/useCaseStore';
 import { useCustomerStore } from '@/stores/useCustomerStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { useToastStore } from '@/stores/useToastStore';
-import { LineType, LiuYaoData, BaZiData } from '@/lib/types';
+import { LineType, type LiuyaoGender, LiuYaoData, BaZiData } from '@/lib/types';
+import { ApiError } from '@/lib/apiClient';
 import { LINE_SYMBOLS, BRANCHES, STEMS } from '@/lib/constants';
-import { extractLiuYaoData } from '@/lib/geminiService';
+import { calcLiuyaoGanzhiFromIso } from "@/lib/lunarGanzhi";
+import { loadLocationPickerSchema, findSelectionByNames, formatSelection } from '@/lib/locationData';
+import { filterCities, filterDistricts, filterProvinces, type LocationNode } from '@/lib/locationSearch';
 import { ChineseDatePicker } from '@/components/ChineseDatePicker';
 import { ChineseTimePicker } from '@/components/ChineseTimePicker';
-
-const PROVINCES = ['北京市', '上海市', '天津市', '广东省', '江苏省', '浙江省', '四川省'];
-const CITIES: Record<string, string[]> = {
-  '北京市': ['北京市'],
-  '上海市': ['上海市'],
-  '天津市': ['天津市'],
-  '广东省': ['广州市', '深圳市', '珠海市', '佛山市'],
-  '江苏省': ['南京市', '苏州市', '无锡市'],
-  '浙江省': ['杭州市', '宁波市', '温州市'],
-  '四川省': ['成都市', '绵阳市', '德阳市'],
-};
-const DISTRICTS: Record<string, string[]> = {
-  '广州市': ['越秀区', '荔湾区', '海珠区', '天河区', '白云区'],
-  '深圳市': ['罗湖区', '福田区', '南山区', '宝安区'],
-  '杭州市': ['西湖区', '上城区', '拱墅区'],
-  '南京市': ['玄武区', '鼓楼区', '秦淮区'],
-  '成都市': ['锦江区', '青羊区', '武侯区'],
-};
 
 const pad2 = (n: number) => n.toString().padStart(2, '0');
 
@@ -55,6 +39,129 @@ const setIsoTime = (iso: string, hhmm: string) => {
   return d.toISOString();
 };
 
+const LIUYAO_GENDER_OPTIONS: Array<{ id: LiuyaoGender; label: string }> = [
+  { id: 'male', label: '男' },
+  { id: 'female', label: '女' },
+  { id: 'unknown', label: '不祥' },
+];
+
+type PickerItem = string | number | LocationNode;
+
+const PickerColumn = ({
+  items,
+  value,
+  onChange,
+  label,
+  renderItem,
+  showDivider = true,
+}: {
+  items: PickerItem[];
+  value: string | number;
+  onChange: (val: string | number) => void;
+  label: string;
+  renderItem?: (label: string) => React.ReactNode;
+  showDivider?: boolean;
+}) => {
+  const scrollerRef = React.useRef<HTMLDivElement>(null);
+  const rafRef = React.useRef<number | null>(null);
+  const settleTimerRef = React.useRef<number | null>(null);
+  const lastEmittedRef = React.useRef<string>(String(value));
+
+  const commitClosestToCenter = React.useCallback(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+
+    const scrollerRect = scroller.getBoundingClientRect();
+    const centerY = scrollerRect.top + scrollerRect.height / 2;
+    const buttons = scroller.querySelectorAll<HTMLButtonElement>("button[data-picker-item='1']");
+
+    let best: { dist: number; value: string } | null = null;
+    for (const btn of buttons) {
+      const rect = btn.getBoundingClientRect();
+      const btnCenter = rect.top + rect.height / 2;
+      const dist = Math.abs(btnCenter - centerY);
+      const v = btn.dataset.pickerValue ?? "";
+      if (!best || dist < best.dist) best = { dist, value: v };
+    }
+
+    if (!best) return;
+    if (best.value === lastEmittedRef.current) return;
+    lastEmittedRef.current = best.value;
+    onChange(typeof value === "number" ? Number(best.value) : best.value);
+  }, [onChange, value]);
+
+  const handleScroll = React.useCallback(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      if (settleTimerRef.current) window.clearTimeout(settleTimerRef.current);
+      settleTimerRef.current = window.setTimeout(() => {
+        commitClosestToCenter();
+      }, 120);
+    });
+  }, [commitClosestToCenter]);
+
+  React.useEffect(() => {
+    lastEmittedRef.current = String(value);
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const selector = `button[data-picker-item='1'][data-picker-value='${CSS.escape(String(value))}']`;
+    const btn = scroller.querySelector<HTMLButtonElement>(selector);
+    btn?.scrollIntoView({ block: "center", behavior: "auto" });
+  }, [value]);
+
+  React.useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (settleTimerRef.current) window.clearTimeout(settleTimerRef.current);
+    };
+  }, []);
+
+  return (
+    <div
+      className={`flex flex-col items-center w-full relative ${
+        showDivider ? "border-r border-[#B37D56]/10" : ""
+      }`}
+    >
+      <span className="text-[10px] text-[#B37D56] font-bold mb-6 uppercase tracking-widest">
+        {label}
+      </span>
+      <div className="relative w-full h-44 flex items-center justify-center">
+        <div className="absolute inset-x-0 top-[calc(50%-20px)] h-[0.5px] bg-[#B37D56]/30 z-0" />
+        <div className="absolute inset-x-0 top-[calc(50%+20px)] h-[0.5px] bg-[#B37D56]/30 z-0" />
+        <div
+          ref={scrollerRef}
+          onScroll={handleScroll}
+          className="h-full overflow-y-auto no-scrollbar w-full snap-y snap-mandatory relative z-10"
+        >
+          <div className="py-20 flex flex-col items-center">
+            {items.map((item) => (
+              <button
+                key={typeof item === "object" ? item.id : item}
+                onClick={() => {
+                  const nextValue = typeof item === "object" ? item.id : String(item);
+                  onChange(typeof value === "number" ? Number(nextValue) : nextValue);
+                }}
+                data-picker-item="1"
+                data-picker-value={typeof item === "object" ? item.id : String(item)}
+                className={`w-full py-2 text-center transition-all duration-300 snap-center chinese-font outline-none ${
+                  (typeof item === "object" ? item.id : item.toString()) === value.toString()
+                    ? "text-[#2F2F2F] font-bold text-base"
+                    : "text-[#2F2F2F]/10 text-xs hover:text-[#2F2F2F]/30"
+                }`}
+              >
+                {(() => {
+                  const labelText = typeof item === "object" ? item.name : String(item);
+                  return renderItem ? renderItem(labelText) : labelText;
+                })()}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const LocationPickerModal = ({
   open,
   initial,
@@ -66,90 +173,197 @@ const LocationPickerModal = ({
   onClose: () => void;
   onConfirm: (loc: string) => void;
 }) => {
-  const [prov, setProv] = useState('北京市');
-  const [city, setCity] = useState('北京市');
-  const [dist, setDist] = useState('--');
+  const [regionType, setRegionType] = useState<"domestic" | "overseas">("domestic");
+  const [schema, setSchema] = useState<Awaited<ReturnType<typeof loadLocationPickerSchema>> | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [level1Id, setLevel1Id] = useState<string>("");
+  const [level2Id, setLevel2Id] = useState<string>("");
+  const [level3Id, setLevel3Id] = useState<string>("");
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     if (!open) return;
-    const [p, c, d] = (initial || '').split(' ').filter(Boolean);
-    if (p && PROVINCES.includes(p)) setProv(p);
-    if (c) setCity(c);
-    if (d) setDist(d);
-  }, [open, initial]);
+    setIsLoading(true);
+    loadLocationPickerSchema(regionType)
+      .then((s) => setSchema(s))
+      .finally(() => setIsLoading(false));
+  }, [open, regionType]);
 
   useEffect(() => {
-    const cities = CITIES[prov] || ['--'];
-    if (!cities.includes(city)) setCity(cities[0] || '--');
-  }, [prov, city]);
+    if (!open || !schema) return;
+    const [a, b, c] = (initial || "").split(" ").filter(Boolean);
+    const found = findSelectionByNames(schema, { level1: a, level2: b, level3: c });
+    if (found.level1Id) setLevel1Id(found.level1Id);
+    if (found.level2Id) setLevel2Id(found.level2Id);
+    if (found.level3Id) setLevel3Id(found.level3Id);
+  }, [open, initial, schema]);
 
   useEffect(() => {
-    const dists = DISTRICTS[city] || ['--'];
-    if (!dists.includes(dist)) setDist(dists[0] || '--');
-  }, [city, dist]);
+    if (!open) return;
+    setQuery("");
+  }, [open, regionType]);
+
+  const filteredLevel1 = useMemo(
+    () => (schema ? filterProvinces(schema.hierarchy, query) : []),
+    [schema, query],
+  );
+
+  const filteredLevel2 = useMemo(
+    () => (schema && level1Id ? filterCities(schema.hierarchy, level1Id, query) : []),
+    [schema, level1Id, query],
+  );
+
+  const filteredLevel3 = useMemo(
+    () => (schema && level2Id ? filterDistricts(schema.hierarchy, level2Id, query) : []),
+    [schema, level2Id, query],
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    if (filteredLevel1.length === 0) return;
+    if (!filteredLevel1.some((n) => n.id === level1Id)) setLevel1Id(filteredLevel1[0].id);
+  }, [filteredLevel1, level1Id, open]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (filteredLevel2.length === 0) return;
+    if (!filteredLevel2.some((n) => n.id === level2Id)) setLevel2Id(filteredLevel2[0].id);
+  }, [filteredLevel2, level2Id, open]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (filteredLevel3.length === 0) return;
+    if (!filteredLevel3.some((n) => n.id === level3Id)) setLevel3Id(filteredLevel3[0].id);
+  }, [filteredLevel3, level3Id, open]);
+
+  const highlight = useMemo(() => {
+    const q = query.trim();
+    if (!q) return undefined;
+
+    const qLower = q.toLowerCase();
+    function renderHighlightedText(labelText: string) {
+      const lower = labelText.toLowerCase();
+      const idx = lower.indexOf(qLower);
+      if (idx < 0) return labelText;
+
+      const before = labelText.slice(0, idx);
+      const match = labelText.slice(idx, idx + q.length);
+      const after = labelText.slice(idx + q.length);
+      return (
+        <>
+          {before}
+          <span className="text-[#B37D56]">{match}</span>
+          {after}
+        </>
+      );
+    }
+
+    return renderHighlightedText;
+  }, [query]);
 
   if (!open) return null;
-
-  const availableCities = CITIES[prov] || ['--'];
-  const availableDists = DISTRICTS[city] || ['--'];
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-sm rounded-[4px] border border-[#B37D56]/20 shadow-none overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="p-6 border-b border-[#B37D56]/10 flex justify-between items-center">
-          <p className="text-xs font-bold tracking-widest chinese-font text-[#2F2F2F]">选择地区</p>
-          <button onClick={onClose} className="text-[#2F2F2F]/20 hover:text-[#A62121]">
-            <X size={20} />
-          </button>
-        </div>
-        <div className="p-6 grid grid-cols-3 gap-3 border-b border-[#B37D56]/10">
-          <div className="space-y-2">
-            <p className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">省份</p>
-            <select
-              value={prov}
-              onChange={(e) => setProv(e.target.value)}
-              className="w-full bg-white border border-[#B37D56]/10 px-3 py-2 text-xs font-bold rounded-[2px]"
-            >
-              {PROVINCES.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
+        <div className="p-6 border-b border-[#B37D56]/10 flex flex-col gap-6">
+          <div className="flex justify-between items-center">
+            <div className="flex bg-[#FAF7F2] p-0.5 border border-[#B37D56]/10 rounded-[2px]">
+              <button
+                onClick={() => setRegionType("domestic")}
+                className={`px-6 py-1.5 text-[10px] chinese-font transition-all rounded-[1px] ${
+                  regionType === "domestic" ? "bg-[#B37D56] text-white" : "text-[#2F2F2F]/30"
+                }`}
+              >
+                国内
+              </button>
+              <button
+                onClick={() => setRegionType("overseas")}
+                className={`px-6 py-1.5 text-[10px] chinese-font transition-all rounded-[1px] ${
+                  regionType === "overseas" ? "bg-[#B37D56] text-white" : "text-[#2F2F2F]/30"
+                }`}
+              >
+                海外
+              </button>
+            </div>
+            <button onClick={onClose} className="text-[#2F2F2F]/20 hover:text-[#A62121]">
+              <X size={20} />
+            </button>
           </div>
-          <div className="space-y-2">
-            <p className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">城市</p>
-            <select
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              className="w-full bg-white border border-[#B37D56]/10 px-3 py-2 text-xs font-bold rounded-[2px]"
-            >
-              {availableCities.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-2">
-            <p className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">区县</p>
-            <select
-              value={dist}
-              onChange={(e) => setDist(e.target.value)}
-              className="w-full bg-white border border-[#B37D56]/10 px-3 py-2 text-xs font-bold rounded-[2px]"
-            >
-              {availableDists.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
+          <div className="relative">
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B37D56]/40"
+            />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="搜索全国城市及地区"
+              className="w-full bg-[#FAF7F2] border border-[#B37D56]/10 pl-9 pr-4 py-2 text-xs rounded-[4px] outline-none focus:border-[#B37D56] transition-all"
+            />
           </div>
         </div>
-        <div className="p-6">
+
+        <div className="p-8 flex justify-between min-h-[240px]">
+          {isLoading || !schema ? (
+            <div className="w-full py-16 text-center text-xs text-[#2F2F2F]/30 chinese-font">
+              加载中…
+            </div>
+          ) : (
+            <>
+              <PickerColumn
+                label={schema.labels.level1}
+                items={filteredLevel1}
+                value={level1Id}
+                onChange={(v) => {
+                  const nextLevel1Id = String(v);
+                  setLevel1Id(nextLevel1Id);
+                  const nextLevel2 = filterCities(schema.hierarchy, nextLevel1Id, query);
+                  const nextLevel2Id = nextLevel2[0]?.id ?? "";
+                  setLevel2Id(nextLevel2Id);
+                  const nextLevel3 = nextLevel2Id
+                    ? filterDistricts(schema.hierarchy, nextLevel2Id, query)
+                    : [];
+                  setLevel3Id(nextLevel3[0]?.id ?? "");
+                }}
+                renderItem={highlight}
+              />
+              <PickerColumn
+                label={schema.labels.level2}
+                items={filteredLevel2}
+                value={level2Id}
+                onChange={(v) => {
+                  const nextLevel2Id = String(v);
+                  setLevel2Id(nextLevel2Id);
+                  const nextLevel3 = filterDistricts(schema.hierarchy, nextLevel2Id, query);
+                  setLevel3Id(nextLevel3[0]?.id ?? "");
+                }}
+                renderItem={highlight}
+              />
+              <PickerColumn
+                label={schema.labels.level3}
+                items={filteredLevel3}
+                value={level3Id}
+                onChange={(v) => setLevel3Id(String(v))}
+                showDivider={false}
+                renderItem={highlight}
+              />
+            </>
+          )}
+        </div>
+
+        <div className="p-6 pt-0">
           <button
             onClick={() => {
-              onConfirm(`${prov} ${city} ${dist}`);
+              if (!schema) return;
+              onConfirm(
+                formatSelection(schema, {
+                  level1Id,
+                  level2Id,
+                  level3Id,
+                }),
+              );
               onClose();
             }}
             className="w-full h-12 bg-[#2F2F2F] text-white font-bold chinese-font tracking-[0.4em] rounded-[2px] hover:bg-black transition-all"
@@ -165,10 +379,13 @@ const LocationPickerModal = ({
 export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const toast = useToastStore();
+  const showToast = useToastStore((s) => s.show);
+  const accessToken = useAuthStore((s) => s.accessToken);
   const records = useCaseStore(state => state.records);
   const addRecord = useCaseStore(state => state.addRecord);
   const updateRecord = useCaseStore(state => state.updateRecord);
+  const upsertLiuyaoRemote = useCaseStore((s) => s.upsertLiuyaoRemote);
+  const syncLiuyaoFromApi = useCaseStore((s) => s.syncLiuyaoFromApi);
   const { customers, addCustomer } = useCustomerStore();
   const [isRedirecting, setIsRedirecting] = useState(false);
 
@@ -181,7 +398,8 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
   // 六爻专有状态
   const [lines, setLines] = useState<LineType[]>([0, 0, 0, 0, 0, 0]);
   const [monthBranch, setMonthBranch] = useState('子');
-  const [dayBranch, setDayBranch] = useState('子');
+  const [dayBranch, setDayBranch] = useState('甲子');
+  const [liuyaoGender, setLiuyaoGender] = useState<LiuyaoGender>('unknown');
 
   // 八字专有状态
   const [bazi, setBazi] = useState<Partial<BaZiData>>({
@@ -199,7 +417,6 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
   const [baziBirthTime, setBaziBirthTime] = useState(() => isoTimeToHHmm(new Date().toISOString()));
   const [showLocPicker, setShowLocPicker] = useState(false);
 
-  const [isAiLoading, setIsAiLoading] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
   const [aiInput, setAiInput] = useState('');
   const [showQuickCustomerModal, setShowQuickCustomerModal] = useState(false);
@@ -214,8 +431,9 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
     if (moduleParam === 'bazi') {
       setIsRedirecting(true);
       const qs = new URLSearchParams();
+      qs.set("new", "1");
       if (customerParam) qs.set('customerId', customerParam);
-      router.replace(qs.size ? `/bazi/new?${qs.toString()}` : '/bazi/new');
+      router.replace(`/bazi?${qs.toString()}`);
       return;
     }
 
@@ -224,12 +442,20 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
   }, [id, router, searchParams]);
 
   useEffect(() => {
+    if (module !== "liuyao") return;
+    const ganzhi = calcLiuyaoGanzhiFromIso(recordDate);
+    if (!ganzhi) return;
+    setMonthBranch(ganzhi.monthBranch);
+    setDayBranch(ganzhi.dayGanzhi);
+  }, [module, recordDate]);
+
+  useEffect(() => {
     if (id) {
       const record = records.find(r => r.id === id);
-      if (record) {
-        if (record.module === 'bazi') {
+        if (record) {
+          if (record.module === 'bazi') {
           setIsRedirecting(true);
-          router.replace(`/bazi/edit/${id}`);
+          router.replace(`/bazi?edit=${encodeURIComponent(id)}`);
           return;
         }
         setModule(record.module);
@@ -241,6 +467,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
           setMonthBranch(record.liuyaoData.monthBranch);
           setDayBranch(record.liuyaoData.dayBranch);
           setRecordDate(record.liuyaoData.date);
+          setLiuyaoGender(record.liuyaoData.gender ?? 'unknown');
         }
         if (record.baziData) {
           setBazi(record.baziData);
@@ -249,6 +476,16 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
       }
     }
   }, [id, records, router]);
+
+  useEffect(() => {
+    if (!id) return;
+    if (!accessToken) return;
+    const exists = records.some((r) => r.id === id);
+    if (exists) return;
+    void syncLiuyaoFromApi(accessToken).catch(() => {
+      showToast('加载六爻记录失败，请稍后重试', 'warning');
+    });
+  }, [accessToken, id, records, showToast, syncLiuyaoFromApi]);
 
   if (isRedirecting) return null;
 
@@ -278,11 +515,11 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
   const importFromCustomer = () => {
     const customer = customers.find(c => c.id === customerId);
     if (!customer) {
-      toast.show('请先选择客户', 'warning');
+      showToast('请先选择缘主', 'warning');
       return;
     }
     if (!customer.birthDate) {
-      toast.show('该客户未录入出生日期', 'warning');
+      showToast('该缘主未录入出生日期', 'warning');
       return;
     }
 
@@ -298,16 +535,16 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
       calendarType: prev.calendarType ?? 'solar',
     }));
     setBaziBirthTime(isoTimeToHHmm(iso) || rawTime);
-    toast.show(`已导入客户 ${customer.name} 生辰信息`, 'success');
+    showToast(`已导入缘主 ${customer.name} 生辰信息`, 'success');
   };
 
-  const handleSave = () => {
-    if (!customerId) {
-      toast.show('请选择关联客户', 'error');
+  const handleSave = async () => {
+    if (!subject) {
+      showToast('请填写咨询主题', 'error');
       return;
     }
-    if (!subject) {
-      toast.show('请填写咨询主题', 'error');
+    if (module === "bazi" && !customerId) {
+      showToast("请选择关联缘主", "error");
       return;
     }
 
@@ -315,30 +552,60 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
       lines,
       date: recordDate,
       subject,
+      gender: liuyaoGender,
       monthBranch,
       dayBranch
     } : undefined;
 
     const baziData: BaZiData | undefined = module === 'bazi' ? bazi as BaZiData : undefined;
 
-    if (id) {
-      updateRecord(id, { subject, customerId, notes, module, liuyaoData, baziData });
-      toast.show('卷宗已成功更新', 'success');
-    } else {
-      addRecord({
-        customerId,
-        module,
-        subject,
-        notes,
-        tags: [],
-        liuyaoData,
-        baziData,
-        verifiedStatus: 'unverified',
-        verifiedNotes: ''
-      });
-      toast.show('新咨询已归档入册', 'success');
+    try {
+      if (module === 'liuyao' && liuyaoData && accessToken) {
+        const normalizedCustomerId = customerId.trim() ? customerId.trim() : null;
+        const customer = normalizedCustomerId ? customers.find((c) => c.id === normalizedCustomerId) : undefined;
+        await upsertLiuyaoRemote(accessToken, {
+          id,
+          payload: {
+            customerId: normalizedCustomerId,
+            customerName: customer?.name ?? null,
+            subject,
+            notes,
+            tags: [],
+            liuyaoData,
+            verifiedStatus: 'unverified',
+            verifiedNotes: '',
+          },
+        });
+        showToast(id ? '卷宗已成功更新' : '新咨询已归档入册', 'success');
+        router.push('/records');
+        return;
+      }
+
+      if (id) {
+        await updateRecord(id, { subject, customerId, notes, module, liuyaoData, baziData });
+        showToast('卷宗已成功更新', 'success');
+      } else {
+        await addRecord({
+          customerId,
+          module,
+          subject,
+          notes,
+          tags: [],
+          liuyaoData,
+          baziData,
+          verifiedStatus: 'unverified',
+          verifiedNotes: ''
+        });
+        showToast('新咨询已归档入册', 'success');
+      }
+      router.push('/records');
+    } catch (e) {
+      if (e instanceof ApiError) {
+        showToast(e.message, 'error');
+        return;
+      }
+      showToast('保存失败，请稍后重试', 'error');
     }
-    router.push('/cases');
   };
 
   return (
@@ -349,6 +616,86 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
         onClose={() => setShowLocPicker(false)}
         onConfirm={(loc) => setBazi((prev) => ({ ...prev, location: loc }))}
       />
+      {showQuickCustomerModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[210] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-[4px] border border-[#B37D56]/20 shadow-none overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-[#B37D56]/10 flex justify-between items-center">
+              <p className="text-xs font-bold tracking-widest chinese-font text-[#2F2F2F] flex items-center gap-2">
+                <UserPlus size={16} />
+                快速创建缘主
+              </p>
+              <button
+                onClick={() => setShowQuickCustomerModal(false)}
+                className="text-[#2F2F2F]/20 hover:text-[#A62121]"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div className="space-y-2">
+                <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">姓名</label>
+                <input
+                  value={quickName}
+                  onChange={(e) => setQuickName(e.target.value)}
+                  placeholder="请输入缘主姓名"
+                  className="w-full bg-white border border-[#B37D56]/10 px-3 py-2 text-xs font-bold rounded-[2px] outline-none focus:border-[#A62121] transition-colors chinese-font"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">性别/造化</label>
+                <div className="flex gap-3">
+                  {(['male', 'female'] as const).map((g) => (
+                    <button
+                      key={g}
+                      onClick={() => setQuickGender(g)}
+                      className={`px-4 py-2 text-xs border font-bold transition-all rounded-[2px] ${
+                        quickGender === g
+                          ? 'bg-[#2F2F2F] text-white border-[#2F2F2F]'
+                          : 'border-[#B37D56]/20 text-[#2F2F2F]/50 hover:border-[#A62121]'
+                      }`}
+                    >
+                      {g === 'male' ? '乾造' : '坤造'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  void (async () => {
+                    const name = quickName.trim();
+                    if (!name) {
+                      showToast('请先填写缘主姓名', 'warning');
+                      return;
+                    }
+                    try {
+                      const newId = await addCustomer({
+                        name,
+                        gender: quickGender,
+                        tags: [],
+                        notes: '',
+                        customFields: {},
+                      });
+                      setCustomerId(newId);
+                      setQuickName('');
+                      setQuickGender('male');
+                      setShowQuickCustomerModal(false);
+                      showToast('缘主已创建并已自动选择', 'success');
+                    } catch {
+                      showToast('创建失败，请稍后重试', 'error');
+                    }
+                  })();
+                }}
+                className="w-full h-12 bg-[#2F2F2F] text-white font-bold chinese-font tracking-[0.4em] rounded-[2px] hover:bg-black transition-all"
+              >
+                创建
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Header & Module Toggle */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-[#B37D56]/10 pb-6 gap-6">
         <div>
@@ -389,7 +736,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
             <div className="grid grid-cols-2 gap-8">
               <div className="space-y-2 group">
                 <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest flex justify-between">
-                  关联客户
+                  关联缘主
                   <button onClick={() => setShowQuickCustomerModal(true)} className="text-[#A62121] hover:underline flex items-center gap-1">
                     <Plus size={10} /> 快速创建
                   </button>
@@ -399,7 +746,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
                   onChange={(e) => setCustomerId(e.target.value)}
                   className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-2 outline-none focus:border-[#A62121] transition-colors chinese-font font-bold rounded-none"
                 >
-                  <option value="">-- 请选择客户 --</option>
+                  <option value="">-- 请选择缘主 --</option>
                   {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
@@ -416,20 +763,39 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
             </div>
 
             {module === 'liuyao' ? (
-              <div className="grid grid-cols-2 gap-8 items-end animate-in fade-in duration-300">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end animate-in fade-in duration-300">
                 <ChineseDatePicker label="起卦日期" value={recordDate} onChange={setRecordDate} />
+                <div className="space-y-2 group">
+                  <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">性别</label>
+                  <div className="flex flex-wrap gap-2">
+                    {LIUYAO_GENDER_OPTIONS.map((g) => (
+                      <button
+                        key={g.id}
+                        type="button"
+                        onClick={() => setLiuyaoGender(g.id)}
+                        className={`px-4 py-1.5 text-[10px] font-bold tracking-widest border transition-all rounded-[2px] ${
+                          liuyaoGender === g.id
+                            ? 'bg-[#2F2F2F] text-white border-[#2F2F2F]'
+                            : 'bg-white text-[#2F2F2F]/40 border-[#B37D56]/10 hover:border-[#A62121]'
+                        }`}
+                      >
+                        {g.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">月建</label>
-                    <select value={monthBranch} onChange={e => setMonthBranch(e.target.value)} className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-1.5 outline-none font-bold">
-                      {BRANCHES.map(b => <option key={b} value={b}>{b}月</option>)}
-                    </select>
+                    <div className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-1.5 font-bold chinese-font">
+                      {monthBranch}月
+                    </div>
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] text-[#B37D56] font-bold uppercase tracking-widest">日辰</label>
-                    <select value={dayBranch} onChange={e => setDayBranch(e.target.value)} className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-1.5 outline-none font-bold">
-                      {BRANCHES.map(b => <option key={b} value={b}>{b}日</option>)}
-                    </select>
+                    <div className="w-full bg-transparent border-b border-[#2F2F2F]/10 py-1.5 font-bold chinese-font">
+                      {dayBranch}日
+                    </div>
                   </div>
                 </div>
               </div>
@@ -441,7 +807,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
                     onClick={importFromCustomer}
                     className="text-[10px] flex items-center gap-1 text-[#A62121] font-bold uppercase hover:underline"
                   >
-                    <RefreshCw size={10} /> 从客户生辰导入
+                    <RefreshCw size={10} /> 从缘主生辰导入
                   </button>
                 </div>
 
@@ -602,8 +968,12 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
                         {p === 'year' ? '年' : p === 'month' ? '月' : p === 'day' ? '日' : '时'}
                       </div>
                       <div className="w-12 py-6 bg-[#FAF7F2] border border-[#B37D56]/10 flex flex-col items-center gap-2">
-                        <span className="text-2xl font-bold text-[#A62121] chinese-font">{bazi[`${p}Stem` as keyof BaZiData]}</span>
-                        <span className="text-2xl font-bold text-[#2F2F2F] chinese-font">{bazi[`${p}Branch` as keyof BaZiData]}</span>
+                        <span className="text-2xl font-bold text-[#A62121] chinese-font">
+                          {bazi[`${p}Stem` as keyof BaZiData] as string}
+                        </span>
+                        <span className="text-2xl font-bold text-[#2F2F2F] chinese-font">
+                          {bazi[`${p}Branch` as keyof BaZiData] as string}
+                        </span>
                       </div>
                    </div>
                  ))}
@@ -621,7 +991,7 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
       {/* Floating Save Button */}
       <div className="fixed bottom-10 right-28 z-40">
         <button 
-          onClick={handleSave}
+          onClick={() => void handleSave()}
           className="flex items-center gap-3 px-8 py-4 bg-[#2F2F2F] text-white font-bold tracking-[0.3em] hover:bg-black transition-all shadow-[0_12px_32px_rgba(0,0,0,0.15)] rounded-none group"
         >
           <Save size={18} className="group-hover:scale-110 transition-transform" />
@@ -642,13 +1012,13 @@ export const CaseEditView: React.FC<{ id?: string }> = ({ id }) => {
                   rows={8}
                   value={aiInput}
                   onChange={e => setAiInput(e.target.value)}
-                  placeholder={module === 'liuyao' ? "输入六爻卦例文字..." : "输入八字命例文字..."}
+                  placeholder={module === 'liuyao' ? "输入六爻卦谱文字..." : "输入八字命例文字..."}
                   className="w-full p-4 border border-[#B37D56]/10 focus:border-[#A62121] outline-none chinese-font"
                 />
              </div>
              <div className="p-8 bg-white flex justify-end">
                 <button 
-                  onClick={() => { toast.show('正在处理中...', 'info'); setShowAiModal(false); }}
+                  onClick={() => { showToast('正在处理中...', 'info'); setShowAiModal(false); }}
                   className="px-8 py-2 bg-[#2F2F2F] text-white font-bold tracking-widest hover:bg-black"
                 >
                   开始提取

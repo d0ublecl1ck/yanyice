@@ -27,6 +27,7 @@ describe("buildCustomerTimeline", () => {
         tags: [],
         verifiedStatus: "unverified",
         verifiedNotes: "",
+        pinnedAt: null,
         createdAt: 500,
       },
     ];
@@ -56,4 +57,3 @@ describe("buildCustomerTimeline", () => {
     expect(timeline[0]?.sortKey).toBe(new Date("2015-01-01T00:00:00.000Z").getTime());
   });
 });
-

@@ -1,25 +1,67 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { Layout } from "@/components/Layout";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useCaseStore } from "@/stores/useCaseStore";
+import { useCustomerStore } from "@/stores/useCustomerStore";
+import { useRuleStore } from "@/stores/useRuleStore";
+import { useToastStore } from "@/stores/useToastStore";
+import { useAiConfigStore } from "@/stores/useAiConfigStore";
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const hasHandledUnauthorized = useRef(false);
 
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const status = useAuthStore((s) => s.status);
   const hasHydrated = useAuthStore((s) => s.hasHydrated);
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const syncLiuyaoFromApi = useCaseStore((s) => s.syncLiuyaoFromApi);
+  const showToast = useToastStore((s) => s.show);
+  const caseHasHydrated = useCaseStore((s) => s.hasHydrated);
+  const customerHasHydrated = useCustomerStore((s) => s.hasHydrated);
+  const ruleHasHydrated = useRuleStore((s) => s.hasHydrated);
 
   useEffect(() => {
     if (!hasHydrated) return;
-    if (!isAuthenticated) router.replace("/login");
-  }, [hasHydrated, isAuthenticated, router]);
+    if (status === "unauthenticated") router.replace("/login");
+  }, [hasHydrated, status, router]);
+
+  useEffect(() => {
+    const handler = () => {
+      if (hasHandledUnauthorized.current) return;
+      hasHandledUnauthorized.current = true;
+      useAuthStore.getState().logout();
+      showToast("登录已失效，请重新登录", "warning");
+      router.replace("/login");
+    };
+    window.addEventListener("yanyice:unauthorized", handler);
+    return () => window.removeEventListener("yanyice:unauthorized", handler);
+  }, [router, showToast]);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (status !== "authenticated") return;
+    if (!caseHasHydrated || !customerHasHydrated || !ruleHasHydrated) return;
+    void useCaseStore.getState().bootstrap();
+    void useCustomerStore.getState().bootstrap();
+    void useRuleStore.getState().bootstrap();
+    void useAiConfigStore.getState().bootstrap();
+    if (!accessToken) return;
+    void syncLiuyaoFromApi(accessToken).catch(() => {
+      showToast("六爻记录同步失败（可稍后重试）", "warning");
+    });
+    if (!accessToken) return;
+    void syncLiuyaoFromApi(accessToken).catch(() => {
+      showToast("六爻记录同步失败（可稍后重试）", "warning");
+    });
+  }, [accessToken, hasHydrated, status, caseHasHydrated, customerHasHydrated, ruleHasHydrated, showToast, syncLiuyaoFromApi]);
 
   if (!hasHydrated) return null;
-  if (!isAuthenticated) return null;
+  if (status !== "authenticated") return null;
 
   return <Layout key={pathname}>{children}</Layout>;
 }

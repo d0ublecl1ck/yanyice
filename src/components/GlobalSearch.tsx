@@ -7,6 +7,8 @@ import { Search, User, FileText, ChevronRight, X, Command } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCustomerStore } from '@/stores/useCustomerStore';
 import { useCaseStore } from '@/stores/useCaseStore';
+import { recordAnalysisHref } from "@/lib/caseLinks";
+import { searchCustomers, searchRecords } from "@/lib/globalSearch";
 
 interface Props {
   isOpen: boolean;
@@ -37,13 +39,10 @@ export const GlobalSearch: React.FC<Props> = ({ isOpen, onClose }) => {
     return () => window.removeEventListener('keydown', handleEsc);
   }, [onClose]);
 
-  const filteredCustomers = query ? customers.filter(c => 
-    c.name.includes(query) || (c.phone && c.phone.includes(query))
-  ).slice(0, 5) : [];
+  const queryLower = query.trim().toLowerCase();
 
-  const filteredRecords = query ? records.filter(r => 
-    r.subject.includes(query) || r.notes.includes(query)
-  ).slice(0, 5) : [];
+  const filteredCustomers = queryLower ? searchCustomers(customers, queryLower, 5) : [];
+  const filteredRecords = queryLower ? searchRecords(records, queryLower, 5) : [];
 
   const handleSelect = (path: string) => {
     router.push(path);
@@ -66,7 +65,7 @@ export const GlobalSearch: React.FC<Props> = ({ isOpen, onClose }) => {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="搜索客户、咨询记录、断语笔记..."
+            placeholder="搜索缘主、六爻、八字（含标签）..."
             className="flex-1 bg-transparent border-none outline-none text-lg chinese-font placeholder:text-[#2F2F2F]/20"
           />
           <div className="flex items-center gap-2">
@@ -84,7 +83,7 @@ export const GlobalSearch: React.FC<Props> = ({ isOpen, onClose }) => {
                 <Command size={20} className="text-[#B37D56]/30 -rotate-45" />
               </div>
               <p className="text-sm text-[#2F2F2F]/40 chinese-font italic tracking-widest">
-                输入姓名、手机号或咨询关键词进行全库检索
+                输入姓名、标签、手机号或咨询关键词进行全库检索
               </p>
             </div>
           ) : (
@@ -92,11 +91,11 @@ export const GlobalSearch: React.FC<Props> = ({ isOpen, onClose }) => {
               {/* Customers Section */}
               {filteredCustomers.length > 0 && (
                 <div className="p-4">
-                  <h3 className="px-4 text-[10px] font-bold text-[#B37D56] uppercase tracking-[0.3em] mb-2">匹配客户</h3>
+                  <h3 className="px-4 text-[10px] font-bold text-[#B37D56] uppercase tracking-[0.3em] mb-2">匹配缘主</h3>
                   {filteredCustomers.map(c => (
                     <button
                       key={c.id}
-                      onClick={() => handleSelect(`/customers/edit/${c.id}`)}
+                      onClick={() => handleSelect(`/customers/view/${c.id}`)}
                       className="w-full flex items-center justify-between p-4 hover:bg-[#FAF7F2] group transition-all"
                     >
                       <div className="flex items-center gap-4">
@@ -121,7 +120,7 @@ export const GlobalSearch: React.FC<Props> = ({ isOpen, onClose }) => {
                   {filteredRecords.map(r => (
                     <button
                       key={r.id}
-                      onClick={() => handleSelect(`/cases/edit/${r.id}`)}
+                      onClick={() => handleSelect(recordAnalysisHref(r.module, r.id))}
                       className="w-full flex items-center justify-between p-4 hover:bg-[#FAF7F2] group transition-all"
                     >
                       <div className="flex items-center gap-4">

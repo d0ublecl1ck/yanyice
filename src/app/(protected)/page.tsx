@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Users,
@@ -14,19 +14,30 @@ import {
 
 import { useCustomerStore } from "@/stores/useCustomerStore";
 import { useCaseStore } from "@/stores/useCaseStore";
+import { useRuleStore } from "@/stores/useRuleStore";
+import { formatGanzhiYearMonth } from "@/lib/lunarGanzhi";
+import { getDashboardCounts } from "@/lib/dashboardMetrics";
+import { newCaseHref, recordAnalysisHref } from "@/lib/caseLinks";
 
 export default function Page() {
   const customers = useCustomerStore((state) => state.customers);
   const records = useCaseStore((state) => state.records);
+  const rules = useRuleStore((state) => state.rules);
+  const [ganzhiYearMonth, setGanzhiYearMonth] = useState<string>("");
+
+  useEffect(() => {
+    setGanzhiYearMonth(formatGanzhiYearMonth(new Date()));
+  }, []);
 
   const recentRecords = records.slice(-5).reverse();
+  const counts = getDashboardCounts({ customers, records, rules });
 
   return (
     <div className="space-y-12">
       <header className="flex justify-between items-end">
         <div>
           <h2 className="text-4xl font-bold text-[#2F2F2F] chinese-font tracking-tight">
-            工作台首页
+            案头
           </h2>
           <p className="text-[#B37D56] font-medium mt-3 chinese-font opacity-80">
             欢迎回来，今日已记录{" "}
@@ -45,31 +56,75 @@ export default function Page() {
             农历岁次
           </p>
           <p className="text-lg font-bold text-[#2F2F2F] chinese-font">
-            乙巳年 丙戌月
+            {ganzhiYearMonth}
           </p>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
         {[
-          { label: "客户总数", val: customers.length, icon: Users, color: "#8DA399" },
-          { label: "记录总数", val: records.length, icon: BookOpen, color: "#A62121" },
-          { label: "规则条数", val: 12, icon: ShieldCheck, color: "#B37D56" },
-        ].map((stat, i) => (
-          <div
+          {
+            title: "缘主档案",
+            subtitle: "Customers",
+            val: counts.customers,
+            icon: Users,
+            href: "/customers",
+            color: "#8DA399",
+          },
+          {
+            title: "八字案卷",
+            subtitle: "Bazi Cases",
+            val: counts.baziRecords,
+            icon: Hash,
+            href: "/bazi",
+            color: "#2F2F2F",
+          },
+          {
+            title: "六爻卦谱",
+            subtitle: "I Ching Cases",
+            val: counts.liuyaoRecords,
+            icon: BookOpen,
+            href: "/liuyao",
+            color: "#A62121",
+          },
+          {
+            title: "规则",
+            subtitle: "Rules",
+            val: counts.rules,
+            icon: ShieldCheck,
+            href: "/rules",
+            color: "#B37D56",
+          },
+        ].map((card, i) => (
+          <Link
             key={i}
-            className="bg-white p-8 border border-[#B37D56]/10 relative group hover:border-[#B37D56]/30 transition-all duration-500 rounded-[4px]"
+            href={card.href}
+            className="bg-white p-8 border border-[#B37D56]/10 relative group hover:border-[#B37D56]/30 transition-all duration-500 rounded-[4px] hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A62121]/30"
           >
-            <stat.icon size={16} className="absolute top-8 right-8 text-[#2F2F2F]/20" />
-            <p className="text-xs text-[#2F2F2F]/40 font-bold tracking-[0.2em] mb-2 uppercase">
-              {stat.label}
+            <card.icon size={16} className="absolute top-8 right-8 text-[#2F2F2F]/20" />
+            <p className="text-[10px] text-[#2F2F2F]/30 uppercase tracking-[0.3em] font-bold">
+              {card.subtitle}
             </p>
-            <p className="text-3xl font-bold text-[#2F2F2F]">{stat.val}</p>
+            <p className="mt-2 text-xl font-bold text-[#2F2F2F] chinese-font tracking-widest">
+              {card.title}
+            </p>
+            <div className="mt-5 flex items-end justify-between">
+              <div>
+                <p className="text-xs text-[#2F2F2F]/30 font-bold tracking-[0.2em] uppercase">
+                  总数
+                </p>
+                <p className="text-3xl font-bold text-[#2F2F2F]">{card.val}</p>
+              </div>
+              <ArrowRight
+                size={16}
+                className="text-[#2F2F2F]/10 group-hover:text-[#A62121] transform group-hover:translate-x-1 transition-all"
+              />
+            </div>
             <div
-              className="w-6 h-[1.5px] mt-4 transition-all duration-500 group-hover:w-12"
-              style={{ backgroundColor: stat.color }}
+              className="w-6 h-[1.5px] mt-6 transition-all duration-500 group-hover:w-12"
+              style={{ backgroundColor: card.color }}
             />
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -81,7 +136,7 @@ export default function Page() {
               最近咨询记录
             </h3>
             <Link
-              href="/cases"
+              href="/records"
               className="text-xs text-[#B37D56] hover:text-[#A62121] font-bold tracking-widest uppercase flex items-center gap-1 transition-colors"
             >
               查看全部 <ArrowRight size={12} />
@@ -93,7 +148,7 @@ export default function Page() {
               recentRecords.map((record) => (
                 <Link
                   key={record.id}
-                  href={`/cases/edit/${record.id}`}
+                  href={recordAnalysisHref(record.module, record.id)}
                   className="group flex items-center justify-between p-6 hover:bg-black/[0.02] border-b border-[#B37D56]/10 transition-all"
                 >
                   <div className="space-y-1">
@@ -142,7 +197,7 @@ export default function Page() {
 
           <div className="space-y-4">
             <Link
-              href="/cases/new"
+              href={newCaseHref("liuyao")}
               className="block p-8 bg-[#A62121] text-white relative group overflow-hidden rounded-none shadow-sm"
             >
               <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/brush-strokes.png')] pointer-events-none" />
@@ -161,7 +216,7 @@ export default function Page() {
             </Link>
 
             <Link
-              href="/bazi/new"
+              href="/bazi?new=1"
               onClick={() => {
                 // TODO: 考虑通过 state 传递默认 module
               }}
@@ -182,11 +237,11 @@ export default function Page() {
             </Link>
 
             <Link
-              href="/customers/new"
+              href="/customers?new=1"
               className="block p-8 bg-white border border-[#B37D56]/20 group hover:border-[#A62121] transition-all rounded-none"
             >
               <p className="text-xl font-bold text-[#2F2F2F] group-hover:text-[#A62121] transition-colors chinese-font mb-1 tracking-widest">
-                添加客户
+                添加缘主
               </p>
               <p className="text-[#2F2F2F]/40 text-[10px] chinese-font">
                 Register New Customer

@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
+import { CaseLiuyao } from "../cases/_components/caseLiuyao";
 
 export default function Page() {
-  redirect("/cases?module=liuyao");
+  return <CaseLiuyao />;
 }
-

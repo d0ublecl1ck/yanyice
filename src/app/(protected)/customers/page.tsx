@@ -1,17 +1,58 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { User, Calendar, ChevronRight, History, Search } from "lucide-react";
 
 import { useCustomerStore } from "@/stores/useCustomerStore";
+import { useToastStore } from "@/stores/useToastStore";
+import { ApiError } from "@/lib/apiClient";
+import type { CustomerGender } from "@/lib/types";
+import { CreateCustomerRecordModal } from "./_components/CreateCustomerRecordModal";
 
 export default function Page() {
   const customers = useCustomerStore((state) => state.customers);
+  const addCustomer = useCustomerStore((state) => state.addCustomer);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const toast = useToastStore();
   const [search, setSearch] = useState("");
   const [genderFilter, setGenderFilter] = useState<"all" | "male" | "female">("all");
+
+  const isCreateOpen = searchParams.get("new") === "1";
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
+  const [createName, setCreateName] = useState("");
+  const [createGender, setCreateGender] = useState<CustomerGender>("other");
+  const [createPhone, setCreatePhone] = useState("");
+  const [createNotes, setCreateNotes] = useState("");
+  const [createTags, setCreateTags] = useState<string[]>([]);
+  const [createNewTag, setCreateNewTag] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+
+  const closeCreateModal = () => {
+    router.replace("/customers");
+  };
+
+  const openCreateModal = () => {
+    router.push("/customers?new=1");
+  };
+
+  useEffect(() => {
+    if (!isCreateOpen) return;
+    const t = setTimeout(() => nameInputRef.current?.focus(), 0);
+    return () => clearTimeout(t);
+  }, [isCreateOpen]);
+
+  useEffect(() => {
+    if (!isCreateOpen) return;
+    setCreateName("");
+    setCreateGender("other");
+    setCreatePhone("");
+    setCreateNotes("");
+    setCreateTags([]);
+    setCreateNewTag("");
+  }, [isCreateOpen]);
 
   const genderFilters = [
     { id: "all", label: "全部" },
@@ -19,29 +60,79 @@ export default function Page() {
     { id: "female", label: "坤造" },
   ] as const;
 
-  const filteredCustomers = customers.filter((c) => {
-    const matchesSearch = c.name.includes(search) || (c.phone && c.phone.includes(search));
-    const matchesGender = genderFilter === "all" || c.gender === genderFilter;
-    return matchesSearch && matchesGender;
-  });
+  const filteredCustomers = useMemo(() => {
+    return customers.filter((c) => {
+      const matchesSearch = c.name.includes(search) || (c.phone && c.phone.includes(search));
+      const matchesGender = genderFilter === "all" || c.gender === genderFilter;
+      return matchesSearch && matchesGender;
+    });
+  }, [customers, genderFilter, search]);
 
   return (
     <div className="space-y-8">
+      <CreateCustomerRecordModal
+        open={isCreateOpen}
+        onClose={closeCreateModal}
+        nameInputRef={nameInputRef}
+        createName={createName}
+        setCreateName={setCreateName}
+        createGender={createGender}
+        setCreateGender={setCreateGender}
+        createPhone={createPhone}
+        setCreatePhone={setCreatePhone}
+        createNotes={createNotes}
+        setCreateNotes={setCreateNotes}
+        createTags={createTags}
+        setCreateTags={setCreateTags}
+        createNewTag={createNewTag}
+        setCreateNewTag={setCreateNewTag}
+        isCreating={isCreating}
+        onSubmit={() => {
+          void (async () => {
+            const name = createName.trim();
+            if (!name) {
+              toast.show("请先填写缘主姓名", "warning");
+              return;
+            }
+            setIsCreating(true);
+            try {
+              await addCustomer({
+                name,
+                gender: createGender,
+                phone: createPhone.trim() || undefined,
+                notes: createNotes,
+                tags: createTags,
+              });
+              toast.show("新缘主已成功建档", "success");
+              closeCreateModal();
+            } catch (e) {
+              if (e instanceof ApiError) {
+                toast.show(e.message, "error");
+                return;
+              }
+              toast.show("创建失败：接口不可用或网络异常（请确认服务已启动）", "error");
+            } finally {
+              setIsCreating(false);
+            }
+          })();
+        }}
+      />
+
       <header className="flex justify-between items-end border-b border-[#B37D56]/10 pb-6">
         <div>
           <h2 className="text-3xl font-bold text-[#2F2F2F] chinese-font tracking-widest">
-            客户名录
+            缘主名录
           </h2>
           <p className="text-xs text-[#B37D56] font-bold mt-1 uppercase tracking-widest">
             Inscribed Customers ({filteredCustomers.length})
           </p>
         </div>
-        <Link
-          href="/customers/new"
+        <button
+          onClick={openCreateModal}
           className="px-6 py-2 bg-[#A62121] text-white font-bold text-sm tracking-widest hover:bg-[#8B1A1A] transition-all rounded-[2px]"
         >
-          登记新客户
-        </Link>
+          登记新缘主
+        </button>
       </header>
 
       <div className="space-y-4">

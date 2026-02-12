@@ -1,6 +1,8 @@
 import { CustomerEditView } from "../../_components/CustomerEditView";
 
-export default function Page({ params }: { params: { id: string } }) {
-  const { id } = params;
+type PageProps = { params: Promise<{ id: string }> | { id: string } };
+
+export default async function Page({ params }: PageProps) {
+  const { id } = await params;
   return <CustomerEditView id={id} />;
 }

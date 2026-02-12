@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
+import RulesPageClient from "@/components/rules/RulesPageClient";
 
 export default function Page() {
-  redirect("/rules?module=bazi");
+  return <RulesPageClient module="bazi" />;
 }
-

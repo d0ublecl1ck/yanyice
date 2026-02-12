@@ -1,5 +1,7 @@
 import { LunarDay, SolarTime } from "tyme4ts";
 
+import { BRANCHES, STEMS } from "@/lib/constants";
+
 export const BAZI_PICKER_YEAR_START = 1900;
 export const BAZI_PICKER_YEAR_END = 2099;
 
@@ -200,4 +202,54 @@ export const tryDeriveSolarFromLunar = (lunar: BaziPickerLunar): BaziPickerSolar
   } catch {
     return null;
   }
+};
+
+export const parseQuickSolarInput = (input: string): BaziPickerSolar | null => {
+  const digits = input.replace(/\D/g, "");
+  if (![8, 10, 12].includes(digits.length)) return null;
+
+  const y = Number(digits.slice(0, 4));
+  const m = Number(digits.slice(4, 6));
+  const d = Number(digits.slice(6, 8));
+  const h = digits.length >= 10 ? Number(digits.slice(8, 10)) : 0;
+  const min = digits.length === 12 ? Number(digits.slice(10, 12)) : 0;
+
+  if (!Number.isFinite(y) || y < BAZI_PICKER_YEAR_START || y > BAZI_PICKER_YEAR_END) return null;
+  if (!Number.isFinite(m) || m < 1 || m > 12) return null;
+  if (!Number.isFinite(h) || h < 0 || h > 23) return null;
+  if (!Number.isFinite(min) || min < 0 || min > 59) return null;
+
+  const maxDay = new Date(y, m, 0).getDate();
+  if (!Number.isFinite(d) || d < 1 || d > maxDay) return null;
+
+  return { y, m, d, h, min };
+};
+
+export const parseQuickFourPillarsInput = (input: string): BaziPickerFourPillars | null => {
+  const cleaned = input
+    .trim()
+    .replace(/\s+/g, "")
+    .replace(/[年月日时柱、，,;:：\-\|/]/g, "");
+
+  const chars = Array.from(cleaned);
+  if (chars.length !== 8) return null;
+
+  for (let i = 0; i < chars.length; i += 2) {
+    const stem = chars[i];
+    const branch = chars[i + 1];
+    if (!stem || !branch) return null;
+    if (!(STEMS as readonly string[]).includes(stem)) return null;
+    if (!(BRANCHES as readonly string[]).includes(branch)) return null;
+  }
+
+  return {
+    yS: chars[0],
+    yB: chars[1],
+    mS: chars[2],
+    mB: chars[3],
+    dS: chars[4],
+    dB: chars[5],
+    hS: chars[6],
+    hB: chars[7],
+  };
 };
