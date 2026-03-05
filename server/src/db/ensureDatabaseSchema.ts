@@ -4,10 +4,12 @@ import { fileURLToPath } from "node:url";
 
 import { createClient } from "@libsql/client";
 
+import { getDatabaseAuthToken } from "../config";
+import { applyLibsqlMigrations } from "./libsqlMigrations";
 import { ensureSqliteDirectory } from "./ensureSqliteDirectory";
 
 async function hasTable(databaseUrl: string, tableName: string): Promise<boolean> {
-  const client = createClient({ url: databaseUrl });
+  const client = createClient({ url: databaseUrl, authToken: getDatabaseAuthToken() });
   try {
     const result = await client.execute({
       sql: "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1",
@@ -22,9 +24,15 @@ async function hasTable(databaseUrl: string, tableName: string): Promise<boolean
 function runPrismaMigrateDeploy(databaseUrl: string) {
   const moduleDir = path.dirname(fileURLToPath(import.meta.url));
   const repoRoot = path.resolve(moduleDir, "../../..");
+  const authToken = getDatabaseAuthToken();
   const result = spawnSync("bunx", ["prisma", "migrate", "deploy", "--config", "prisma.config.ts"], {
     cwd: repoRoot,
-    env: { ...process.env, DATABASE_URL: databaseUrl },
+    env: {
+      ...process.env,
+      DATABASE_URL: databaseUrl,
+      TURSO_DATABASE_URL: databaseUrl,
+      ...(authToken ? { TURSO_AUTH_TOKEN: authToken, LIBSQL_AUTH_TOKEN: authToken } : {}),
+    },
     encoding: "utf8",
   });
 
@@ -38,7 +46,17 @@ export async function ensureDatabaseSchema(databaseUrl: string): Promise<void> {
 
   ensureSqliteDirectory(databaseUrl);
 
-  runPrismaMigrateDeploy(databaseUrl);
+  if (databaseUrl.startsWith("libsql://")) {
+    const moduleDir = path.dirname(fileURLToPath(import.meta.url));
+    const repoRoot = path.resolve(moduleDir, "../../..");
+    const migrationsDir = path.resolve(repoRoot, "server/prisma/migrations");
+    await applyLibsqlMigrations({
+      connection: { url: databaseUrl, authToken: getDatabaseAuthToken() },
+      migrationsDir,
+    });
+  } else {
+    runPrismaMigrateDeploy(databaseUrl);
+  }
 
   const nowInitialized = await hasTable(databaseUrl, "User");
   if (!nowInitialized) {

@@ -2,6 +2,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import crypto from "node:crypto";
 
+export type DatabaseConfig = {
+  url: string;
+  authToken?: string;
+};
+
 export function getEnv(name: string): string | undefined {
   const value = process.env[name];
   if (!value) return undefined;
@@ -12,6 +17,30 @@ export function getRequiredEnv(name: string): string {
   const value = getEnv(name);
   if (!value) throw new Error(`Missing required env var: ${name}`);
   return value;
+}
+
+export function getDatabaseAuthToken(): string | undefined {
+  const raw = getEnv("TURSO_AUTH_TOKEN") ?? getEnv("LIBSQL_AUTH_TOKEN");
+  if (!raw) return undefined;
+  const trimmed = raw.trim();
+  if (!trimmed) return undefined;
+  return trimmed;
+}
+
+export function getDatabaseConfig(): DatabaseConfig {
+  const tursoUrl = getEnv("TURSO_DATABASE_URL")?.trim();
+  const databaseUrl = getEnv("DATABASE_URL")?.trim();
+  const url = (tursoUrl && tursoUrl.length > 0 ? tursoUrl : databaseUrl) ?? "";
+
+  if (!url) {
+    throw new Error("Missing database config: set TURSO_DATABASE_URL (recommended) or DATABASE_URL (libsql://...).");
+  }
+
+  if (!url.startsWith("libsql://")) {
+    throw new Error(`Invalid database url for runtime (expected libsql://...): ${url}`);
+  }
+
+  return { url, authToken: getDatabaseAuthToken() };
 }
 
 export function getPort(): number {

@@ -20,6 +20,49 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## API & Database (Turso/libsql)
+
+This repo includes a Fastify API server under `server/`.
+
+### Required environment variables
+
+- `TURSO_DATABASE_URL`: `libsql://...turso.io`
+- `TURSO_AUTH_TOKEN`: Turso database token (rw)
+
+Notes:
+- `LIBSQL_AUTH_TOKEN` is accepted as an alias of `TURSO_AUTH_TOKEN`.
+- The API runtime is **Turso-only**: it will refuse to start unless the database URL is `libsql://...`.
+
+### Run API locally
+
+```bash
+# API only (default port 3311)
+TURSO_DATABASE_URL="libsql://..." TURSO_AUTH_TOKEN="..." bun run dev:api
+```
+
+### Dev: use `.env` (via Vercel CLI)
+
+Pull Development env vars into `.env`:
+
+```bash
+vercel env pull .env --yes
+```
+
+### Migrate existing data to Turso
+
+By default, the migration script copies data from:
+
+- `/Users/d0ublecl1ck/d0ublecl1ck_pkm/备份/baghdad-v1.db`
+
+Run:
+
+```bash
+SOURCE_DATABASE_URL="file:/Users/d0ublecl1ck/d0ublecl1ck_pkm/备份/baghdad-v1.db" \
+TURSO_DATABASE_URL="libsql://..." \
+TURSO_AUTH_TOKEN="..." \
+bun run scripts/migrate-libsql.ts -- --wipe-destination=1
+```
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
