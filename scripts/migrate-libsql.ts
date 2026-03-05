@@ -2,6 +2,7 @@ import "dotenv/config";
 
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { spawnSync } from "node:child_process";
 
 import { createClient } from "@libsql/client";
 
@@ -56,17 +57,14 @@ function runPrismaMigrateDeploy(destination: ConnectionConfig) {
     env.LIBSQL_AUTH_TOKEN = destination.authToken;
   }
 
-  const result = Bun.spawnSync(["bunx", "prisma", "migrate", "deploy", "--config", "prisma.config.ts"], {
+  const result = spawnSync("bunx", ["prisma", "migrate", "deploy", "--config", "prisma.config.ts"], {
     cwd: repoRoot,
     env,
-    stdout: "pipe",
-    stderr: "pipe",
+    encoding: "utf8",
   });
 
-  if (result.exitCode !== 0) {
-    const stderr = new TextDecoder().decode(result.stderr);
-    const stdout = new TextDecoder().decode(result.stdout);
-    throw new Error(`prisma migrate deploy failed\nstdout:\n${stdout}\nstderr:\n${stderr}`);
+  if (result.status !== 0) {
+    throw new Error(`prisma migrate deploy failed\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`);
   }
 }
 
@@ -144,7 +142,7 @@ export async function migrateDatabases(options: MigrateDatabasesOptions): Promis
 }
 
 if (import.meta.main) {
-  const argv = Bun.argv.slice(2);
+  const argv = process.argv.slice(2);
   const wipeDestination =
     argv.includes("--wipe-destination") || argv.includes("--wipe-destination=1") || argv.includes("--wipe-destination=true");
 
