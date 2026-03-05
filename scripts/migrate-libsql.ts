@@ -143,7 +143,13 @@ export async function migrateDatabases(options: MigrateDatabasesOptions): Promis
   }
 }
 
-if (import.meta.main) {
+const isMain = (() => {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  return path.resolve(entry) === fileURLToPath(import.meta.url);
+})();
+
+if (isMain) {
   const argv = process.argv.slice(2);
   const wipeDestination =
     argv.includes("--wipe-destination") || argv.includes("--wipe-destination=1") || argv.includes("--wipe-destination=true");
