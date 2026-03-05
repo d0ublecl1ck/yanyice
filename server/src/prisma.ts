@@ -1,7 +1,7 @@
 import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { PrismaClient } from "@prisma/client";
 
-import { getDatabaseUrl } from "./config";
+import { getDatabaseAuthToken, getDatabaseUrl } from "./config";
 import { ensureSqliteDirectory } from "./db/ensureSqliteDirectory";
 
 export type PrismaBundle = {
@@ -12,7 +12,8 @@ export type PrismaBundle = {
 export function createPrismaBundle(databaseUrl?: string): PrismaBundle {
   const url = databaseUrl ?? process.env.DATABASE_URL ?? getDatabaseUrl();
   ensureSqliteDirectory(url);
-  const adapter = new PrismaLibSql({ url });
+  const authToken = getDatabaseAuthToken();
+  const adapter = new PrismaLibSql({ url, authToken });
   const prisma = new PrismaClient({ adapter });
 
   return {

@@ -1,4 +1,4 @@
-import { CaseEditView } from "../../cases/_components/CaseEditView";
+import { CaseEditView } from "../../_components/CaseEditView";
 
 type PageProps = { params: Promise<{ id: string }> | { id: string } };
 
