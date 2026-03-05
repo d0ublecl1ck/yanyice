@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
 import { createClient } from "@libsql/client";
+import type { InStatement, InValue, Row } from "@libsql/core/api";
 
 import { applyLibsqlMigrations } from "../server/src/db/libsqlMigrations";
 
@@ -70,12 +71,13 @@ function runPrismaMigrateDeploy(destination: ConnectionConfig) {
 
 async function getTableColumns(client: ReturnType<typeof createClient>, tableName: string): Promise<string[]> {
   const res = await client.execute({ sql: `PRAGMA table_info("${tableName}")` });
-  return res.rows.map((row) => String((row as unknown as { name?: unknown }).name ?? ""));
+  return (res.rows as Row[]).map((row) => String(row["name"] ?? ""));
 }
 
 async function countRows(client: ReturnType<typeof createClient>, tableName: string): Promise<number> {
   const res = await client.execute({ sql: `SELECT COUNT(*) AS cnt FROM "${tableName}"` });
-  return Number((res.rows[0] as unknown as { cnt?: unknown } | undefined)?.cnt ?? 0);
+  const row = (res.rows[0] as Row | undefined) ?? ({} as Row);
+  return Number(row["cnt"] ?? 0);
 }
 
 function toInsertSql(tableName: string, columns: string[]): string {
@@ -107,7 +109,7 @@ export async function migrateDatabases(options: MigrateDatabasesOptions): Promis
       if (columns.length === 0) continue;
 
       const selectSql = `SELECT ${columns.map((c) => `"${c}"`).join(",")} FROM "${table}"`;
-      const rows = (await sourceClient.execute({ sql: selectSql })).rows as Record<string, unknown>[];
+      const rows = (await sourceClient.execute({ sql: selectSql })).rows as Row[];
       if (rows.length === 0) continue;
 
       log(`${table}: copying ${rows.length} rows`);
@@ -115,9 +117,9 @@ export async function migrateDatabases(options: MigrateDatabasesOptions): Promis
       const insertSql = toInsertSql(table, columns);
       for (let i = 0; i < rows.length; i += batchSize) {
         const chunk = rows.slice(i, i + batchSize);
-        const stmts = chunk.map((row) => ({
+        const stmts: InStatement[] = chunk.map((row) => ({
           sql: insertSql,
-          args: columns.map((c) => (row as Record<string, unknown>)[c]),
+          args: columns.map((c) => row[c] as InValue),
         }));
         await destClient.batch(stmts);
       }
