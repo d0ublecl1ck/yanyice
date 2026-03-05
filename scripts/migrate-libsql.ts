@@ -51,7 +51,7 @@ function runPrismaMigrateDeploy(destination: ConnectionConfig) {
   const moduleDir = path.dirname(fileURLToPath(import.meta.url));
   const repoRoot = path.resolve(moduleDir, "..");
 
-  const env: Record<string, string> = { ...process.env, DATABASE_URL: destination.url, TURSO_DATABASE_URL: destination.url };
+  const env: NodeJS.ProcessEnv = { ...process.env, DATABASE_URL: destination.url, TURSO_DATABASE_URL: destination.url };
   if (destination.authToken) {
     env.TURSO_AUTH_TOKEN = destination.authToken;
     env.LIBSQL_AUTH_TOKEN = destination.authToken;
