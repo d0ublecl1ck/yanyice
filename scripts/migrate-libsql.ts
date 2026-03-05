@@ -70,12 +70,12 @@ function runPrismaMigrateDeploy(destination: ConnectionConfig) {
 
 async function getTableColumns(client: ReturnType<typeof createClient>, tableName: string): Promise<string[]> {
   const res = await client.execute({ sql: `PRAGMA table_info("${tableName}")` });
-  return res.rows.map((row) => String((row as { name: unknown }).name));
+  return res.rows.map((row) => String((row as unknown as { name?: unknown }).name ?? ""));
 }
 
 async function countRows(client: ReturnType<typeof createClient>, tableName: string): Promise<number> {
   const res = await client.execute({ sql: `SELECT COUNT(*) AS cnt FROM "${tableName}"` });
-  return Number((res.rows[0] as { cnt?: unknown } | undefined)?.cnt ?? 0);
+  return Number((res.rows[0] as unknown as { cnt?: unknown } | undefined)?.cnt ?? 0);
 }
 
 function toInsertSql(tableName: string, columns: string[]): string {
