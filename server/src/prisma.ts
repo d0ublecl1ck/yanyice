@@ -10,7 +10,8 @@ export type PrismaBundle = {
 };
 
 export function createPrismaBundle(databaseUrl?: string): PrismaBundle {
-  const url = databaseUrl ?? process.env.DATABASE_URL ?? getDatabaseUrl();
+  const url =
+    databaseUrl ?? process.env.TURSO_DATABASE_URL ?? process.env.DATABASE_URL ?? getDatabaseUrl();
   ensureSqliteDirectory(url);
   const authToken = getDatabaseAuthToken();
   const adapter = new PrismaLibSql({ url, authToken });

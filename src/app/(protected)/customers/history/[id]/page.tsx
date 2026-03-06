@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { use, useMemo } from "react";
 import Link from "next/link";
 import { ChevronLeft, History, FileText, Star, ExternalLink } from "lucide-react";
 
@@ -201,7 +201,7 @@ function CustomerHistoryPage({ id }: { id: string }) {
 
 type PageProps = { params: Promise<{ id: string }> | { id: string } };
 
-export default async function Page({ params }: PageProps) {
-  const { id } = await params;
+export default function Page({ params }: PageProps) {
+  const { id } = use(Promise.resolve(params));
   return <CustomerHistoryPage id={id} />;
 }

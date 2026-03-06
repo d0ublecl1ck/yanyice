@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { use, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -239,7 +239,7 @@ function CustomerViewPage({ id }: { id: string }) {
 
 type PageProps = { params: Promise<{ id: string }> | { id: string } };
 
-export default async function Page({ params }: PageProps) {
-  const { id } = await params;
+export default function Page({ params }: PageProps) {
+  const { id } = use(Promise.resolve(params));
   return <CustomerViewPage id={id} />;
 }
