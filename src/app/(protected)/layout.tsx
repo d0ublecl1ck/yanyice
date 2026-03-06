@@ -54,10 +54,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     void syncLiuyaoFromApi(accessToken).catch(() => {
       showToast("六爻记录同步失败（可稍后重试）", "warning");
     });
-    if (!accessToken) return;
-    void syncLiuyaoFromApi(accessToken).catch(() => {
-      showToast("六爻记录同步失败（可稍后重试）", "warning");
-    });
   }, [accessToken, hasHydrated, status, caseHasHydrated, customerHasHydrated, ruleHasHydrated, showToast, syncLiuyaoFromApi]);
 
   if (!hasHydrated) return null;

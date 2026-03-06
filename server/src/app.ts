@@ -32,7 +32,7 @@ declare module "@fastify/jwt" {
   }
 }
 
-export function buildApp(options?: { databaseUrl?: string; logger?: boolean }) {
+export function buildApp(options?: { databaseUrl?: string; logger?: boolean; includeDocs?: boolean }) {
   const app = Fastify({ logger: options?.logger ?? true });
 
   const prismaBundle = createPrismaBundle(options?.databaseUrl);
@@ -59,20 +59,22 @@ export function buildApp(options?: { databaseUrl?: string; logger?: boolean }) {
     }
   });
 
-  app.register(swagger, {
-    openapi: {
-      info: { title: "Yanyice API", version: "0.1.0" },
-      components: {
-        securitySchemes: {
-          bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT" },
+  if (options?.includeDocs ?? true) {
+    app.register(swagger, {
+      openapi: {
+        info: { title: "Yanyice API", version: "0.1.0" },
+        components: {
+          securitySchemes: {
+            bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT" },
+          },
         },
       },
-    },
-  });
+    });
 
-  app.register(swaggerUi, { routePrefix: "/docs" });
+    app.register(swaggerUi, { routePrefix: "/docs" });
 
-  app.get("/openapi.json", async () => app.swagger());
+    app.get("/openapi.json", async () => app.swagger());
+  }
 
   app.get("/health", async () => ({ ok: true }));
 
